@@ -343,7 +343,7 @@ function generateDay(seed){
  for(g=0;g<N3;g++){var a=min1[3*g],b=min1[3*g+1],c3=min1[3*g+2];bar3.push({o:a.o,h:Math.max(a.h,b.h,c3.h),l:Math.min(a.l,b.l,c3.l),c:c3.c,v:a.v+b.v+c3.v})}
  var daily=genDaily(rnd,prevClose);
  var sum9=0;for(i=daily.length-9;i<daily.length;i++)sum9+=daily[i].c;
- return {bars:bar3,min1:min1,daily:daily,sum9:sum9,prevClose:prevClose,open:open,arch:arch,N:N3,
+ return {bars:bar3,min1:min1,daily:daily,sum9:sum9,prevClose:prevClose,open:open,arch:arch,N:N3,startMin:540,
    name:NAMES[Math.floor(rnd()*NAMES.length)],code:(100000+Math.floor(rnd()*899999)).toString(),
    mktcapEok:Math.round(CAPS[Math.floor(rnd()*CAPS.length)]*(0.8+rnd()*0.5)),reason:REASONS[Math.floor(rnd()*REASONS.length)]};
 }
@@ -435,7 +435,10 @@ function loadRealCase(json){
   var bars=bar3from(min1);
   var prevClose=+(j.prevClose||daily[daily.length-1].c);
   var open=+(j.open||min1[0].o);
-  var day={bars:bars,min1:min1,daily:daily,prevClose:prevClose,open:open,N:bars.length,real:true,
+  var ms=(j.min1Start||'').toString().replace(/[^0-9]/g,'');
+  var sh=ms.length>=4?parseInt(ms.slice(0,2),10):9, sm=ms.length>=4?parseInt(ms.slice(2,4),10):0;
+  var startMin=(isFinite(sh)?sh:9)*60+(isFinite(sm)?sm:0);
+  var day={bars:bars,min1:min1,daily:daily,prevClose:prevClose,open:open,N:bars.length,real:true,startMin:startMin,
     arch:{name:(j.name||'실데이터')+' ('+(j.date||'')+')'},
     name:j.name||j.code||'실데이터 종목',code:(j.code||'').toString(),date:j.date||'',
     mktcapEok:+(j.mktcapEok||j.marketcap||0),reason:j.reason||'',limitPct:+(j.limitPct||j.changePct||0)};
@@ -605,7 +608,7 @@ function render(){
  var b=curBar(),p=b.c,chg=(p/S.day.prevClose-1)*100,chgOpen=(p/S.day.open-1)*100;
  $('#q-px').textContent=won(p); $('#q-px').className='px num '+cls(chg);
  $('#q-chg').textContent=pct(chg)+' (전일比) · '+pct(chgOpen)+' (시가比)'; $('#q-chg').className='chg num '+cls(chg);
- var mins=S.i,hh=9+Math.floor(mins/60),mm=mins%60;
+ var tot=(S.day.startMin||540)+S.i,hh=Math.floor(tot/60),mm=tot%60;
  $('#q-time').textContent=(hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm;
  $('#st-avg').textContent=S.shares?won(S.avg):'—';
  $('#st-qty').textContent=fmt(S.shares);
@@ -705,7 +708,7 @@ function volPanel(bars,rev,R,opts){
  ctx.globalAlpha=1;ctx.restore();
  ctx.fillStyle=C.muted;ctx.textAlign='left';ctx.font='9px IBM Plex Sans KR,sans-serif';ctx.textBaseline='middle';ctx.fillText('거래량',R.x+5,R.y+8);
  ctx.font='8px IBM Plex Mono,monospace';ctx.fillText(fmt(maxV),R.x+R.w+5,R.y+7);
- if(opts.perHour){ctx.fillStyle=C.muted;ctx.textAlign='center';ctx.font='8.5px IBM Plex Mono,monospace';for(i=winStart;i<rev;i++){if(i%opts.perHour===0){var mm=i*(60/opts.perHour),hh=9+Math.floor(mm/60),mn=mm%60,xx=R.x+(i-winStart+0.5)*bw;if(xx>=R.x&&xx<=R.x+R.w)ctx.fillText((hh<10?'0':'')+hh+':'+(mn<10?'0':'')+mn,xx,R.y+R.h+7);}}}
+ if(opts.perHour){var st=(S&&S.day&&S.day.startMin!=null)?S.day.startMin:540;ctx.fillStyle=C.muted;ctx.textAlign='center';ctx.font='8.5px IBM Plex Mono,monospace';for(i=winStart;i<rev;i++){if(i%opts.perHour===0){var tot=st+i*(60/opts.perHour),hh=Math.floor(tot/60),mn=tot%60,xx=R.x+(i-winStart+0.5)*bw;if(xx>=R.x&&xx<=R.x+R.w)ctx.fillText((hh<10?'0':'')+hh+':'+(mn<10?'0':'')+mn,xx,R.y+R.h+7);}}}
 }
 function draw(){
  if(!S||!S.day.min1)return;
