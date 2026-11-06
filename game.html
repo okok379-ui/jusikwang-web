@@ -722,7 +722,26 @@ var toTimer=null;
 function toast(msg){var t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toTimer);toTimer=setTimeout(function(){t.classList.remove('show')},1400);}
 
 /* ---------- 기준봉 케이스 라이브러리 ---------- */
-function openCases(){ renderCases(''); $('#case-overlay').hidden=false; var si=$('#case-search'); if(si){si.value='';si.focus();} }
+/* ---- Supabase 케이스 자동 로드 (관리자가 올린 실데이터 종목) ---- */
+function buildLib(arr){
+  var byDate={}, cases={};
+  arr.forEach(function(c){
+    var key=c.id||((c.date||'')+'_'+c.code);
+    cases[key]=c;
+    var d=c.date||c.base_date||'';
+    (byDate[d]=byDate[d]||[]).push({key:key,code:(''+(c.code||'')),name:c.name||'',
+      limitPct:+(c.limitPct||0),mktcapEok:+(c.mktcapEok||0),reason:c.reason||''});
+  });
+  var manifest=Object.keys(byDate).sort().reverse().map(function(d){return {date:d,items:byDate[d]};});
+  return {manifest:manifest,cases:cases};
+}
+function loadCasesFromServer(){
+  return sbrpc('jusikwang_list_cases',{}).then(function(res){
+    if(Array.isArray(res)&&res.length){ window.CASE_LIB=buildLib(res); window.CASE_SERVER=true; }
+  }).catch(function(){});
+}
+function openCases(){ renderCases(''); $('#case-overlay').hidden=false; var si=$('#case-search'); if(si){si.value='';si.focus();}
+  if(!window.CASE_SERVER){ loadCasesFromServer().then(function(){ renderCases($('#case-search')?$('#case-search').value:''); }); } }
 function renderCases(filter){
  var lib=window.CASE_LIB,box=$('#case-list');
  if(!lib||!lib.manifest){box.innerHTML='<div style="color:var(--muted);padding:20px;text-align:center">케이스 데이터를 불러오지 못했습니다.</div>';return;}
@@ -740,7 +759,18 @@ function renderCases(filter){
  });
  if(!html)html='<div style="color:var(--muted);padding:20px;text-align:center">검색 결과가 없습니다.</div>';
  box.innerHTML=html;
- box.querySelectorAll('.case-row').forEach(function(b){b.addEventListener('click',function(){var c=lib.cases[b.getAttribute('data-key')];if(c){loadRealCase(c);$('#case-overlay').hidden=true;}});});
+ box.querySelectorAll('.case-row').forEach(function(b){b.addEventListener('click',function(){
+   var key=b.getAttribute('data-key'), c=window.CASE_LIB.cases[key];
+   if(!c)return;
+   if(c.min1&&c.min1.length){ loadRealCase(c); $('#case-overlay').hidden=true; return; }
+   // 메타만 있는 경우(서버) → 전체 데이터 조회
+   b.disabled=true; var old=b.style.opacity; b.style.opacity='0.5';
+   sbrpc('jusikwang_get_case',{p_id:key}).then(function(full){
+     b.disabled=false; b.style.opacity=old;
+     if(full&&full.code&&full.min1){ window.CASE_LIB.cases[key]=full; loadRealCase(full); $('#case-overlay').hidden=true; }
+     else toast('케이스 데이터를 불러오지 못했습니다');
+   });
+ });});
 }
 
 /* ---------- wire up ---------- */
@@ -809,7 +839,7 @@ new MutationObserver(function(){draw()}).observe(document.documentElement,{attri
 if(window.matchMedia)window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',draw);
 
 function boot(data){
- renderStat(); fit(); syncFromServer();
+ renderStat(); fit(); syncFromServer(); loadCasesFromServer();
  if(data&&data.S&&data.S.day&&data.S.day.min1){S=data.S;speed=data.speed||260;curMode=S.mode||'manual';if(S.i==null)S.i=(S.idx!=null?S.idx*3+2:8);if(S.maxMin==null)S.maxMin=S.day.N*3-1;if(!S.eng)S.eng={ratios:[.1,.2,.4],bought:[false,false,false],shake:[null,null,null],peak:0,armed:false,done:true,lines:[0,0,0]};document.querySelectorAll('.md').forEach(function(x){x.classList.toggle('on',x.getAttribute('data-mode')===curMode)});$('#h-name').textContent=S.day.name;$('#h-code').textContent=S.day.code;$('#h-cap').textContent='시총 '+capText(S.day.mktcapEok||0);$('#h-reason').innerHTML='전일 <b>상한가(+30%)</b> · 사유: '+(S.day.reason||'');$('#q-prev').textContent=won(S.day.prevClose);$('#q-open').textContent=won(S.day.open);render();draw();if(S.finished)showResult((S.cash-START)/START*100);}
  else newRound();
 }
