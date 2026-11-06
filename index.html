@@ -378,11 +378,14 @@ function setMode(m){authMode=m;
  document.querySelectorAll('.login-only').forEach(function(e){e.hidden=(m==='signup');});
  $('#do-auth').textContent=(m==='signup'?'무료 회원가입':'로그인');
 }
-function openLogin(){ $('#login-ov').hidden=false; setMode('login'); var i=$('#in-key'); if(i)i.focus(); }
+function openLogin(){ $('#login-ov').hidden=false; setMode('login');
+ var i=$('#in-key'); var lk=''; try{lk=localStorage.getItem('jusikwang_lastkey')||'';}catch(e){}
+ if(i){ if(lk)i.value=lk; i.focus(); } }
 function logout(){ S.user=null; S.lic=null; S.plan='free'; save(S); render(); toast('로그아웃했습니다'); }
 /* 세션 적용 */
 function applyMember(info, licKey){
  S.lic=licKey;
+ try{if(licKey)localStorage.setItem('jusikwang_lastkey',licKey);}catch(e){}
  S.user={phone:info.phone||'', nick:(info.name||('회원'+(info.phone||'').slice(-4)))};
  S.plan=(info.plan==='paid')?'pro':'free';
  S.exp=info.expires_at||null;
