@@ -240,7 +240,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
     <div class="comment" id="r-comment"></div>
     <div class="rstats">
       <div class="rstat"><div class="k">내 수익</div><div class="v num" id="r-mine">—</div></div>
-      <div class="rstat"><div class="k">교과서 최대수익</div><div class="v num" id="r-ideal">—</div></div>
+      <div class="rstat"><div class="k">교과서 매매(원칙)</div><div class="v num" id="r-ideal">—</div></div>
       <div class="rstat"><div class="k">평균 매수가</div><div class="v num" id="r-buy">—</div></div>
       <div class="rstat"><div class="k">이 종목 패턴</div><div class="v" id="r-pat" style="font-family:var(--sans);font-size:12.5px">—</div></div>
     </div>
@@ -348,6 +348,29 @@ function generateDay(seed){
    mktcapEok:Math.round(CAPS[Math.floor(rnd()*CAPS.length)]*(0.8+rnd()*0.5)),reason:REASONS[Math.floor(rnd()*REASONS.length)]};
 }
 function idealStats(bars){var N=bars.length,maxP=0,bi=-1,si=-1,bp=0,sp=0;for(var i=1;i<N-1;i++){for(var j=i+1;j<N;j++){var p=(bars[j].h/bars[i].l-1)*100;if(p>maxP){maxP=p;bi=i;si=j;bp=bars[i].l;sp=bars[j].h}}}return {maxProfit:maxP,buyIdx:bi,sellIdx:si,buyP:bp,sellP:sp}}
+/* 교과서(단타 원칙) 매매:
+   매수 = 3분봉 10이평 상승 중 & 3분봉 종가가 10이평 위로 올라탈 때
+   매도 = 1분봉 음봉 4연속 또는 3분봉 음봉 2연속, 신호 없으면 종가 청산 */
+function ruleTrade(day){
+  var b=day.bars||[], m1=day.min1||[], N=b.length, P=10;
+  function ma(i){ if(i<P-1)return null; var s=0; for(var k=i-P+1;k<=i;k++)s+=b[k].c; return s/P; }
+  var buy=-1;
+  for(var i=P;i<N-1;i++){ var cur=ma(i),prev=ma(i-1); if(cur==null||prev==null)continue;
+    if(cur>prev && b[i].c>cur && b[i-1].c<=prev){ buy=i; break; } }
+  if(buy<0) return null;
+  var buyP=b[buy].c, sell=-1, sellP=0, how='';
+  // 3분봉 음봉 2연속
+  for(var j=buy+1;j<N;j++){ if(b[j].c<b[j].o && b[j-1].c<b[j-1].o){ sell=j; sellP=b[j].c; how='3분봉 음봉 2연속'; break; } }
+  // 1분봉 음봉 4연속 (더 이른 시점이면 교체)
+  var startK=buy*3+3;
+  for(var k=startK;k<m1.length;k++){
+    if(m1[k].c<m1[k].o && m1[k-1].c<m1[k-1].o && m1[k-2].c<m1[k-2].o && m1[k-3].c<m1[k-3].o){
+      var s3=Math.floor(k/3);
+      if(sell<0 || s3<sell){ sell=s3; sellP=m1[k].c; how='1분봉 음봉 4연속'; }
+      break; } }
+  if(sell<0){ sell=N-1; sellP=b[N-1].c; how='신호 없음 → 종가 청산'; }
+  return {buyIdx:buy,sellIdx:sell,buyP:buyP,sellP:sellP,ret:(sellP/buyP-1)*100,how:how};
+}
 function maArray(bars,rev,period){var out=[],i;for(i=0;i<rev;i++){if(i<period-1){out.push(null);continue}var s=0,k;for(k=i-period+1;k<=i;k++)s+=bars[k].c;out.push(s/period)}return out}
 function maSeeded(bars,rev,period,seed){var out=[],i,k;for(i=0;i<rev;i++){var s=0;for(k=0;k<period;k++){var idx=i-k;s+=(idx>=0?bars[idx].c:seed);}out.push(s/period);}return out}
 function live3(min1,mMax){var b=[],g,cnt=Math.floor(mMax/3)+1,k;for(g=0;g<cnt;g++){var s=g*3,e=Math.min(s+2,mMax),o=min1[s].o,h=-Infinity,l=Infinity,c=min1[e].c,v=0;for(k=s;k<=e;k++){if(min1[k].h>h)h=min1[k].h;if(min1[k].l<l)l=min1[k].l;v+=(min1[k].v||0);}b.push({o:o,h:h,l:l,c:c,v:v});}return b;}
@@ -385,7 +408,7 @@ function syncFromServer(){
 var userLines=[], drawMode=false, PANELS=[], lineType='h', pendingPt=null, zoom=1;
 
 function startWithDay(day,seed){
- S={seed:(seed==null?-1:seed),day:day,ideal:idealStats(day.bars),i:8,maxMin:day.N*3-1,cash:START,shares:0,avg:0,realized:0,trades:[],playing:false,finished:false,mode:curMode};
+ S={seed:(seed==null?-1:seed),day:day,ideal:idealStats(day.bars),rule:ruleTrade(day),i:8,maxMin:day.N*3-1,cash:START,shares:0,avg:0,realized:0,trades:[],playing:false,finished:false,mode:curMode};
  var gj=day.daily[day.daily.length-1],body=gj.c-gj.o;
  S.eng={ratios:[.3,.3,.4],bought:[false,false,false],shake:[null,null,null],peak:0,armed:false,done:false,lines:[roundTick(gj.c-body*0.5),roundTick(gj.c-body*0.75),roundTick(gj.o)],stop:roundTick(gj.l)};
  stop(); $('#overlay').hidden=true; var br=$('#back-result');if(br)br.hidden=true; updateModeUI(); userLines=[]; pendingPt=null;
@@ -514,7 +537,8 @@ function showResult(ret){
  var rr=$('#r-ret'); rr.textContent=signpct(ret); rr.className='result-ret num '+cls(ret);
  $('#r-comment').textContent=comment;
  $('#r-mine').textContent=signpct(ret); $('#r-mine').className='v num '+cls(ret);
- $('#r-ideal').textContent='+'+id.maxProfit.toFixed(1)+'%';
+ $('#r-ideal').textContent=S.rule?((S.rule.ret>=0?'+':'')+S.rule.ret.toFixed(1)+'%'):'관망';
+ $('#r-ideal').className='v num '+(S.rule?cls(S.rule.ret):'flat');
  $('#r-buy').textContent=buyVwap?won(buyVwap):'—';
  $('#r-pat').textContent=arch.name;
  S.result={ret:ret,grade:grade,buyVwap:buyVwap,ideal:id.maxProfit};
@@ -648,7 +672,7 @@ function candlePanel(bars,rev,R,opts){
  var gl=opts.grid||2;
  for(i=0;i<=gl;i++){var pv=lo+(hi-lo)*i/gl,yy=Y(pv);ctx.beginPath();ctx.moveTo(R.x,yy);ctx.lineTo(R.x+R.w,yy);ctx.stroke();ctx.fillStyle=C.muted;ctx.textAlign='left';ctx.fillText(fmt(pv),R.x+R.w+5,yy);}
  if(opts.levels)opts.levels.forEach(function(L){if(L.p<lo||L.p>hi)return;var yy=Y(L.p);ctx.save();ctx.setLineDash(L.dash||[]);ctx.strokeStyle=L.color;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(R.x,yy);ctx.lineTo(R.x+R.w,yy);ctx.stroke();ctx.restore();if(L.text){ctx.fillStyle=L.color;ctx.textAlign='left';ctx.font='9px IBM Plex Mono,monospace';ctx.fillText(L.text,R.x+3,yy-5);}});
- if(opts.ideal&&S.finished){var id=S.ideal;if(id.buyIdx>=winStart&&id.buyIdx<rev){ctx.fillStyle='rgba(243,165,43,.14)';var x1=X(id.buyIdx)-bw/2,x2=X(id.sellIdx)+bw/2;ctx.fillRect(Math.max(R.x,x1),R.y,Math.min(x2,R.x+R.w)-Math.max(R.x,x1),R.h);ctx.fillStyle=C.accent;ctx.textAlign='center';ctx.font='9px IBM Plex Mono,monospace';ctx.beginPath();ctx.arc(X(id.buyIdx),Y(id.buyP),3,0,7);ctx.fill();ctx.fillText('매수',X(id.buyIdx),Y(id.buyP)+11);ctx.beginPath();ctx.arc(X(id.sellIdx),Y(id.sellP),3,0,7);ctx.fill();ctx.fillText('매도',X(id.sellIdx),Y(id.sellP)-9);}}
+ if(opts.ideal&&S.finished){var id=S.rule||S.ideal;if(id&&id.buyIdx>=winStart&&id.buyIdx<rev){ctx.fillStyle='rgba(243,165,43,.14)';var x1=X(id.buyIdx)-bw/2,x2=X(id.sellIdx)+bw/2;ctx.fillRect(Math.max(R.x,x1),R.y,Math.min(x2,R.x+R.w)-Math.max(R.x,x1),R.h);ctx.fillStyle=C.accent;ctx.textAlign='center';ctx.font='9px IBM Plex Mono,monospace';ctx.beginPath();ctx.arc(X(id.buyIdx),Y(id.buyP),3,0,7);ctx.fill();ctx.fillText('매수',X(id.buyIdx),Y(id.buyP)+11);ctx.beginPath();ctx.arc(X(id.sellIdx),Y(id.sellP),3,0,7);ctx.fill();ctx.fillText('매도',X(id.sellIdx),Y(id.sellP)-9);}}
  for(i=winStart;i<rev;i++){var b=bars[i],up=b.c>=b.o,col=up?C.up:C.down;ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=1;var xc=X(i);ctx.beginPath();ctx.moveTo(xc,Y(b.h));ctx.lineTo(xc,Y(b.l));ctx.stroke();var yo=Y(b.o),yc=Y(b.c),top=Math.min(yo,yc),bh=Math.max(1,Math.abs(yc-yo));if(cw<=1.5)ctx.fillRect(xc-0.6,top,1.2,bh);else ctx.fillRect(xc-cw/2,top,cw,bh);}
  if(opts.ma){ctx.strokeStyle=C.ma10;ctx.lineWidth=1.7;ctx.beginPath();var started=false;for(i=winStart;i<rev;i++){var mv=opts.ma[i];if(mv==null)continue;var mx=X(i),my=Y(mv);if(!started){ctx.moveTo(mx,my);started=true}else ctx.lineTo(mx,my);}ctx.stroke();for(i=rev-1;i>=winStart;i--){if(opts.ma[i]!=null){ctx.fillStyle=C.ma10;ctx.textAlign='left';ctx.font='9px IBM Plex Mono,monospace';ctx.fillText((opts.maLabel||'10')+' '+fmt(Math.round(opts.ma[i])),R.x+3,Y(opts.ma[i])-5);break;}}}
  if(opts.markers)opts.markers.forEach(function(t){if(t.i>=rev||t.i<winStart)return;var xc=X(t.i),lab=opts.labelMk;
@@ -837,10 +861,14 @@ $('#r-next').addEventListener('click',function(){ $('#overlay').hidden=true; ope
 $('#r-retry').addEventListener('click',function(){newRound(S.seed);});
 $('#case-random').addEventListener('click',function(){ $('#case-overlay').hidden=true; newRound(); });
 $('#r-ideal-view').addEventListener('click',function(){
-  if(!S||!S.ideal)return;
+  if(!S)return;
   zoom=1; $('#overlay').hidden=true; $('#back-result').hidden=false; draw();
-  var id=S.ideal;
-  toast('교과서: 눌림 저점('+won(id.buyP)+')에서 매수 → 반등 고점('+won(id.sellP)+')에서 매도 = +'+id.maxProfit.toFixed(1)+'% (3분봉의 주황 영역)');
+  var r=S.rule;
+  if(r){ var sign=(r.ret>=0?'+':'');
+    toast('교과서 매매: 3분봉 10이평 올라탈 때 매수('+won(r.buyP)+') → '+r.how+' 매도('+won(r.sellP)+') = '+sign+r.ret.toFixed(1)+'% (3분봉 주황 영역)');
+  } else {
+    toast('이 종목은 매수 조건(3분봉 10이평 상향 돌파)이 나오지 않았습니다 — 관망 자리였어요.');
+  }
 });
 $('#back-result').addEventListener('click',function(){ $('#back-result').hidden=true; $('#overlay').hidden=false; });
 document.querySelectorAll('.quick').forEach(function(q){q.addEventListener('click',function(){var a=q.getAttribute('data-amt');if(a==='max')setAmt(S?Math.floor(S.cash):0);else setAmt(parseInt(a,10));});});
