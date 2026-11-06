@@ -1,0 +1,498 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>주식왕 — 게임처럼 연습하고, 고수처럼 매매하라</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap">
+<style>
+:root{
+  --bg:#0e1116; --panel:#151b23; --panel2:#1b222c; --fg:#e7edf3; --muted:#8a97a7;
+  --border:#263040; --up:#f0433a; --down:#3b82f6; --accent:#f3a52b; --accent-ink:#15110a; --sup:#2bb3a3; --ma:#b57be6;
+  --shadow:0 1px 0 rgba(255,255,255,.03),0 12px 30px rgba(0,0,0,.42);
+  --sans:"IBM Plex Sans KR",system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme=dark]){
+  --bg:#eef1f5;--panel:#fff;--panel2:#f2f5f9;--fg:#121820;--muted:#5a6675;--border:#d6dce5;
+  --up:#e03131;--down:#1c64f2;--accent:#b9770a;--accent-ink:#fff;--sup:#0f8f81;--ma:#8e3fc9;
+  --shadow:0 1px 2px rgba(20,30,45,.06),0 12px 26px rgba(20,30,45,.1);color-scheme:light;
+}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.6;-webkit-text-size-adjust:100%}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+a{color:inherit}
+button{font-family:inherit;cursor:pointer}
+.wrap{max-width:960px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left)) 40px max(16px,env(safe-area-inset-right))}
+
+/* header */
+header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.hd{max-width:960px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:11px max(16px,env(safe-area-inset-left))}
+.logo{font-size:19px;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:6px}
+.hd .sp{flex:1}
+.plan{font-size:11px;font-weight:700;border-radius:999px;padding:3px 10px;border:1px solid var(--border);color:var(--muted)}
+.plan.pro{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.u-chip{font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:7px}
+.lnk{background:none;border:none;color:var(--muted);font-size:12.5px;font-weight:600}
+.lnk:hover{color:var(--fg)}
+.btn{border:1px solid transparent;border-radius:10px;padding:9px 15px;font-weight:700;font-size:13.5px}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;border-color:var(--border);color:var(--fg);font-weight:600}
+.btn.kakao{background:#FEE500;color:#191600;border-color:transparent}
+.authtab{background:transparent;border:none;color:var(--muted);font-family:inherit;font-weight:600;font-size:13.5px;border-radius:8px;padding:8px;cursor:pointer}
+.authtab.on{background:var(--panel);color:var(--fg);box-shadow:var(--shadow)}
+.btn.block{display:block;width:100%;text-align:center;padding:13px;font-size:15px;border-radius:12px}
+
+/* hero */
+.hero{padding:46px 0 30px;text-align:center}
+.hero .crown{font-size:46px}
+.hero h1{font-size:clamp(26px,6vw,40px);margin:8px 0 6px;letter-spacing:-.03em;line-height:1.15}
+.hero .copy{font-size:clamp(15px,3.6vw,19px);color:var(--accent);font-weight:600;margin-bottom:6px}
+.hero .sub{color:var(--muted);max-width:520px;margin:0 auto 22px;font-size:14.5px}
+.hero .ctas{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.hero .btn{padding:13px 22px;font-size:15px;border-radius:12px}
+.trust{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;margin-top:24px;color:var(--muted);font-size:12.5px}
+.trust b{color:var(--fg);font-family:var(--mono)}
+
+.sec{margin-top:34px}
+.sec h2{font-size:19px;margin:0 0 4px;letter-spacing:-.01em}
+.sec .lead{color:var(--muted);font-size:13.5px;margin:0 0 16px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow)}
+
+/* dashboard */
+.dash{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+@media(max-width:560px){.dash{grid-template-columns:repeat(2,1fr)}}
+.dstat{background:var(--panel);padding:15px 16px}
+.dstat .k{font-size:11px;color:var(--muted)}
+.dstat .v{font-family:var(--mono);font-weight:700;font-size:21px;margin-top:3px}
+
+/* lessons */
+.lessons{display:flex;flex-direction:column;gap:10px}
+.lesson{display:flex;align-items:center;gap:13px;padding:15px 16px}
+.lnum{width:40px;height:40px;border-radius:11px;flex:none;display:grid;place-items:center;font-weight:700;font-family:var(--mono);font-size:15px;color:#fff}
+.lesson .body{flex:1;min-width:0}
+.lesson .ti{font-weight:600;font-size:15px}
+.lesson .de{font-size:12.5px;color:var(--muted);margin-top:1px}
+.tag{font-size:10.5px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.tag.free{background:color-mix(in srgb,var(--sup) 18%,transparent);color:var(--sup)}
+.tag.open{background:color-mix(in srgb,var(--sup) 18%,transparent);color:var(--sup)}
+.tag.soon{background:var(--panel2);color:var(--muted);border:1px solid var(--border)}
+.tag.pro{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+.lesson.locked{opacity:.62}
+.go-s{background:var(--panel2);border:1px solid var(--border);color:var(--fg);border-radius:9px;padding:8px 13px;font-weight:600;font-size:12.5px;white-space:nowrap}
+.go-s:hover{border-color:var(--accent);color:var(--accent)}
+
+/* game card */
+.gamecard{padding:20px;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.gamecard .ic{font-size:40px}
+.gamecard .body{flex:1;min-width:200px}
+.gamecard h3{margin:0 0 4px;font-size:18px}
+.gamecard p{margin:0;color:var(--muted);font-size:13.5px}
+.gamecard .act{display:flex;flex-direction:column;gap:7px;align-items:stretch;min-width:180px}
+.limit{font-size:11.5px;color:var(--muted);text-align:center}
+.limit b{color:var(--fg);font-family:var(--mono)}
+
+/* curriculum stages */
+.stages{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:560px){.stages{grid-template-columns:1fr}}
+.stage{padding:15px;border-radius:14px}
+.stage .h{font-weight:700;font-size:14px;margin-bottom:6px;display:flex;align-items:center;gap:7px}
+.stage .d{font-size:12.5px;color:var(--muted);line-height:1.5}
+.dot{width:9px;height:9px;border-radius:50%;flex:none}
+
+/* pricing */
+.price{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.price{grid-template-columns:1fr}}
+.plan-c{padding:20px}
+.plan-c.hi{border:1.5px solid var(--accent)}
+.plan-c .nm{font-weight:700;font-size:16px}
+.plan-c .pr{font-family:var(--mono);font-weight:700;font-size:26px;margin:6px 0 2px}
+.plan-c .pr small{font-size:13px;color:var(--muted);font-weight:500}
+.plan-c ul{list-style:none;padding:0;margin:12px 0 16px;display:flex;flex-direction:column;gap:7px}
+.plan-c li{font-size:13px;padding-left:20px;position:relative}
+.plan-c li::before{content:'✓';position:absolute;left:0;color:var(--sup);font-weight:700}
+.plan-c li.off{color:var(--muted)}
+.plan-c li.off::before{content:'—';color:var(--muted)}
+
+.foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--border);color:var(--muted);font-size:11.5px;line-height:1.6;text-align:center}
+
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(6,9,13,.72);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;backdrop-filter:blur(3px)}
+.ov[hidden]{display:none}
+.modal{background:var(--panel);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);max-width:380px;width:100%;padding:22px}
+.modal h3{margin:0 0 4px;font-size:18px}
+.modal p{margin:0 0 16px;color:var(--muted);font-size:13px}
+.fld{margin-bottom:11px}
+.fld label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:4px}
+.fld input{width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:inherit;font-size:15px;padding:11px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:24px;background:var(--panel);border:1px solid var(--border);box-shadow:var(--shadow);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;z-index:60;opacity:0;transition:.18s;pointer-events:none;max-width:90%;text-align:center}
+.toast.show{opacity:1}
+</style></head>
+<body>
+<header><div class="hd">
+  <div class="logo">👑 주식왕</div>
+  <div class="sp"></div>
+  <span class="plan" id="h-plan">무료</span>
+  <span id="h-auth"></span>
+</div></header>
+
+<div class="wrap">
+
+  <section class="hero">
+    <div class="crown">👑</div>
+    <div class="copy">게임처럼 연습하고, 고수처럼 매매하라</div>
+    <h1>기준봉 눌림목,<br>차트 재생으로 몸에 익힌다</h1>
+    <p class="sub">이론을 배우고 → 실제 차트를 재생하며 연습하고 → 교과서 매매와 비교해 교정한다. 돈 잃지 않고 하루에 수십 번 반복하는 주식 트레이닝.</p>
+    <div class="ctas">
+      <button class="btn primary" id="cta-play">▶ 무료로 연습 시작</button>
+      <button class="btn ghost" id="cta-learn">커리큘럼 보기</button>
+    </div>
+    <div class="trust">
+      <span>누적 연습 <b id="t-plays">0</b>판</span>
+      <span>레슨 <b>2</b>개 공개</span>
+      <span>실데이터 케이스 지원</span>
+    </div>
+  </section>
+
+  <section class="sec" id="dash-sec" hidden>
+    <h2>나의 현황</h2>
+    <p class="lead">연습을 반복할수록 실력이 숫자로 쌓입니다.</p>
+    <div class="dash">
+      <div class="dstat"><div class="k">현재 단계</div><div class="v" id="d-level">초보</div></div>
+      <div class="dstat"><div class="k">오늘 연습</div><div class="v num" id="d-today">0</div></div>
+      <div class="dstat"><div class="k">누적 연습</div><div class="v num" id="d-total">0</div></div>
+      <div class="dstat"><div class="k">플랜</div><div class="v" id="d-plan">무료</div></div>
+    </div>
+    <div id="d-kakao" class="lead" style="margin:9px 0 0"></div>
+  </section>
+
+  <section class="sec">
+    <h2>커리큘럼 · 레슨</h2>
+    <p class="lead">배우고 바로 게임에서 연습하는 레슨. 초보 단계부터 순서대로.</p>
+    <div class="lessons" id="lesson-list"></div>
+  </section>
+
+  <section class="sec">
+    <h2>실전 연습</h2>
+    <p class="lead">배운 전략을 실제 차트에서. 자동/수동 매매, 지지선 긋기, 확대·축소, 연습기록.</p>
+    <div class="card gamecard">
+      <div class="ic">📈</div>
+      <div class="body">
+        <h3>주식왕 — 기준봉 눌림 매매</h3>
+        <p>기준봉이 나온 종목의 당일 눌림을 1분봉 단위로 재생하며 분할매수·익절·손절을 연습합니다.</p>
+      </div>
+      <div class="act">
+        <button class="btn primary block" id="game-go">연습하기 ▸</button>
+        <div class="limit" id="game-limit"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2>성장 단계</h2>
+    <p class="lead">실제 연습 성과(승률·수익)로 단계가 올라갑니다.</p>
+    <div class="stages">
+      <div class="card stage"><div class="h"><span class="dot" style="background:var(--sup)"></span>초보</div><div class="d">캔들·거래량·지지저항·손절의 개념. 가이드 따라 매매.<br><b style="color:var(--fg)">졸업</b> 10판 완료</div></div>
+      <div class="card stage"><div class="h"><span class="dot" style="background:var(--accent)"></span>중급</div><div class="d">기준봉·눌림목, 분할매수, 익절·손절 원칙. 자유 매매.<br><b style="color:var(--fg)">졸업</b> 승률 55%+</div></div>
+      <div class="card stage"><div class="h"><span class="dot" style="background:var(--ma)"></span>고수</div><div class="d">실데이터 케이스·시장국면·멘탈·전략 커스터마이즈.<br><b style="color:var(--fg)">졸업</b> 상위 랭킹</div></div>
+    </div>
+  </section>
+
+  <section class="sec" id="pricing">
+    <h2>요금제</h2>
+    <p class="lead">무료로 맛보고, 제대로 할 때 프로.</p>
+    <div class="price">
+      <div class="card plan-c">
+        <div class="nm">무료</div>
+        <div class="pr">0원</div>
+        <ul>
+          <li>기초 레슨 열람</li>
+          <li>가상차트 연습 <b>하루 3판</b></li>
+          <li>기본 통계·연습기록</li>
+          <li class="off">전 커리큘럼·심화 레슨</li>
+          <li class="off">실데이터 케이스</li>
+        </ul>
+        <button class="btn ghost block" id="free-btn">무료로 시작</button>
+      </div>
+      <div class="card plan-c hi">
+        <div class="nm">프로 <span class="tag pro">추천</span></div>
+        <div class="pr">33,000원<small> / 월</small></div>
+        <ul>
+          <li>연습 <b>무제한</b></li>
+          <li>전 커리큘럼 + 심화 레슨</li>
+          <li>교과서 비교·성장 트래킹</li>
+          <li>실데이터 케이스(실제 과거 상한가)</li>
+          <li>전략 라이브러리·대회·랭킹</li>
+        </ul>
+        <button class="btn primary block" id="pro-btn">프로 신청</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">
+    가상의 종목·가격 데이터로 매매 원리를 연습하는 교육용 서비스입니다. 특정 종목의 매수·매도를 권유하지 않으며, 실제 투자 수익을 보장하지 않습니다.<br>
+    회원가입은 무료이며, 프로는 입금 확인 후 활성화됩니다.
+  </div>
+</div>
+
+<!-- login modal -->
+<div class="ov" id="login-ov" hidden>
+  <div class="modal">
+    <div style="display:flex;gap:4px;margin-bottom:15px;background:var(--panel2);border:1px solid var(--border);border-radius:11px;padding:3px">
+      <button class="authtab on" data-mode="login" style="flex:1">로그인</button>
+      <button class="authtab" data-mode="signup" style="flex:1">회원가입</button>
+    </div>
+    <!-- 로그인: 라이선스 키 -->
+    <div class="login-only">
+      <div class="fld"><label>라이선스 키</label><input id="in-key" placeholder="A1B2-C3D4-E5F6-7890" style="font-family:var(--mono);text-transform:uppercase"></div>
+      <div style="font-size:11.5px;color:var(--muted);line-height:1.5">가입 시 발급받은 키를 입력하세요. 가입한 기기에서는 자동 로그인됩니다.</div>
+    </div>
+    <!-- 회원가입: 이름 + 전화번호 -->
+    <div class="signup-only" hidden>
+      <div class="fld"><label>이름</label><input id="in-name" placeholder="홍길동"></div>
+      <div class="fld"><label>전화번호</label><input id="in-phone" type="tel" inputmode="numeric" placeholder="010-1234-5678"></div>
+      <div class="fld"><label>추천인 (선택)</label><input id="in-ref" placeholder="추천해준 분 이름/번호"></div>
+      <div style="font-size:11.5px;color:var(--muted);line-height:1.5">무료로 바로 시작합니다. 가입 시 <b>라이선스 키</b>가 발급되며, 이 키로 다른 기기에서도 로그인할 수 있어요.</div>
+    </div>
+    <button class="btn primary block" id="do-auth" style="margin-top:12px">로그인</button>
+    <button class="lnk" id="login-cancel" style="display:block;margin:10px auto 0">취소</button>
+  </div>
+</div>
+
+<!-- pro request modal -->
+<div class="ov" id="pro-ov" hidden>
+  <div class="modal">
+    <div style="font-size:17px;font-weight:800;margin-bottom:4px">프로 신청 <span class="tag pro">PRO</span></div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px">아래 중 한 가지로 입금 후 신청하면, 관리자 확인 후 프로가 활성화됩니다.</div>
+    <div id="pay-info" style="background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px 13px;font-size:13px;line-height:1.7;margin-bottom:14px"></div>
+    <div class="fld"><label>입금 수단</label>
+      <select id="pay-method" style="width:100%;padding:11px;border-radius:9px;border:1px solid var(--border);background:var(--panel);color:var(--fg);font-family:inherit;font-size:14px">
+        <option value="계좌입금">계좌입금</option>
+        <option value="카카오페이">카카오페이</option>
+      </select>
+    </div>
+    <div class="fld"><label>입금자명</label><input id="pay-name" placeholder="입금하신 분 성함"></div>
+    <button class="btn primary block" id="pay-submit" style="margin-top:8px">입금했어요 · 프로 신청</button>
+    <button class="lnk" id="pro-cancel" style="display:block;margin:10px auto 0">닫기</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+var $=function(s){return document.querySelector(s)};
+var GAME='game.html';
+var LESSONS=[
+ {n:1,ti:'지지와 저항',de:'가격이 멈추고 돌아서는 자리 — 모든 매매의 좌표',url:'lesson-sr.html',tier:'free'},
+ {n:2,ti:'이동평균선',de:'움직이는 지지저항 · 추세와 정배열·골든크로스',url:'lesson-ma.html',tier:'free'},
+ {n:3,ti:'캔들·거래량 기초',de:'차트의 기본 언어 읽기',url:'',tier:'soon'},
+ {n:4,ti:'기준봉 매매 (심화)',de:'몸통 등분 지지선·분할매수·재매수·익절 3방식',url:'',tier:'pro'}
+];
+var FREE_PLAYS=3;
+
+/* ---- Supabase (efree 프로젝트 · 주식왕 전용 테이블) ---- */
+var SB_URL='https://swekuozzyonslloqghpc.supabase.co';
+var SB_KEY='sb_publishable_w4-fBKFRRsO3u9ApjO8shQ_KuwW002P';
+/* 프로 결제 안내 — 실제 계좌/카카오페이 정보로 교체하세요 */
+var PAY={
+  price:'33,000원 / 월',
+  bank:'○○은행 123-456-7890 (예금주: 홍길동)',
+  kakao:'카카오페이 송금 → 010-0000-0000'
+};
+function rpc(fn,body){
+  return fetch(SB_URL+'/rest/v1/rpc/'+fn,{
+    method:'POST',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'},
+    body:JSON.stringify(body||{})
+  }).then(function(r){return r.json();}).catch(function(){return{ok:false,msg:'서버 연결 실패'};});
+}
+function deviceId(){
+  var d=null; try{d=localStorage.getItem('jusikwang_dev');}catch(e){}
+  if(!d){d='web-'+Math.random().toString(36).slice(2)+Date.now().toString(36);try{localStorage.setItem('jusikwang_dev',d);}catch(e){}}
+  return d;
+}
+
+/* ---- state ---- */
+function load(){try{var r=localStorage.getItem('jusikwang_hub');return r?JSON.parse(r):{}}catch(e){return{}}}
+function save(s){try{localStorage.setItem('jusikwang_hub',JSON.stringify(s))}catch(e){}}
+var S=load();
+function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function playsToday(){ if(!S.play||S.play.date!==today())return 0; return S.play.n||0; }
+function isPro(){return S.plan==='pro';}
+
+/* ---- render ---- */
+function render(){
+ var authed=!!S.user;
+ $('#h-plan').textContent=isPro()?'프로':'무료';
+ $('#h-plan').classList.toggle('pro',isPro());
+ $('#h-auth').innerHTML = authed
+   ? '<span class="u-chip">📱 '+esc(S.user.nick)+' <button class="lnk" id="logout">로그아웃</button></span>'
+   : '<button class="btn primary" id="open-login" style="padding:8px 14px">로그인</button>';
+ if(authed){$('#logout').addEventListener('click',logout);} else {$('#open-login').addEventListener('click',openLogin);}
+ // dashboard
+ $('#dash-sec').hidden=!authed;
+ if(authed){
+   $('#d-level').textContent = (S.total||0)>=10?'중급':'초보';
+   $('#d-today').textContent = playsToday();
+   $('#d-total').textContent = S.total||0;
+   $('#d-plan').textContent = isPro()?'프로':'무료';
+   var dk=$('#d-kakao'); if(dk)dk.innerHTML='로그인 계정 · 📱 <b style="color:var(--fg);font-family:var(--mono)">'+esc(fmtPhone(S.user.phone||''))+'</b>';
+ }
+ $('#t-plays').textContent = S.total||0;
+ // game limit text
+ var gl=$('#game-limit');
+ if(isPro()) gl.innerHTML='프로 · <b>무제한</b> 연습';
+ else gl.innerHTML='무료 · 오늘 <b>'+playsToday()+' / '+FREE_PLAYS+'</b>판';
+ renderLessons();
+}
+function renderLessons(){
+ var box=$('#lesson-list'); box.innerHTML='';
+ LESSONS.forEach(function(L){
+   var locked = L.tier==='soon' || (L.tier==='pro' && !isPro());
+   var el=document.createElement('div');
+   el.className='card lesson'+(locked?' locked':'');
+   var col = L.tier==='pro' ? 'var(--accent)' : (L.tier==='soon'?'var(--muted)':'var(--sup)');
+   var tag = L.tier==='free' ? '<span class="tag free">무료</span>'
+           : L.tier==='pro' ? '<span class="tag pro">PRO</span>'
+           : '<span class="tag soon">준비중</span>';
+   var action = (L.tier==='soon') ? '<span class="tag soon">곧 공개</span>'
+     : (L.tier==='pro' && !isPro()) ? '<button class="go-s" data-up="1">프로로 열기</button>'
+     : '<button class="go-s" data-url="'+L.url+'">배우기 ▸</button>';
+   el.innerHTML='<div class="lnum" style="background:'+col+'">'+L.n+'</div>'
+     +'<div class="body"><div class="ti">'+L.ti+' '+tag+'</div><div class="de">'+L.de+'</div></div>'
+     +action;
+   box.appendChild(el);
+ });
+ box.querySelectorAll('[data-url]').forEach(function(b){b.addEventListener('click',function(){var u=b.getAttribute('data-url');if(!u)return;if(!S.user){toast('레슨도 로그인이 필요합니다');openLogin();return;}window.open(u,'_blank','noopener');});});
+ box.querySelectorAll('[data-up]').forEach(function(b){b.addEventListener('click',function(){toast('프로 레슨입니다 — 아래 요금제에서 프로를 시작해보세요');location.hash='#pricing';});});
+}
+function esc(s){return(s||'').replace(/[<>&]/g,function(c){return{'<':'&lt;','>':'&gt;','&':'&amp;'}[c]});}
+
+/* ---- actions ---- */
+var authMode='login';
+function normPhone(v){return (v||'').replace(/[^0-9]/g,'');}
+function fmtPhone(p){p=p||'';if(p.length===11)return p.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3');if(p.length===10)return p.replace(/(\d{3})(\d{3,4})(\d{4})/,'$1-$2-$3');return p;}
+function setMode(m){authMode=m;
+ document.querySelectorAll('.authtab').forEach(function(t){t.classList.toggle('on',t.getAttribute('data-mode')===m);});
+ document.querySelectorAll('.signup-only').forEach(function(e){e.hidden=(m!=='signup');});
+ document.querySelectorAll('.login-only').forEach(function(e){e.hidden=(m==='signup');});
+ $('#do-auth').textContent=(m==='signup'?'무료 회원가입':'로그인');
+}
+function openLogin(){ $('#login-ov').hidden=false; setMode('login'); var i=$('#in-key'); if(i)i.focus(); }
+function logout(){ S.user=null; S.lic=null; S.plan='free'; save(S); render(); toast('로그아웃했습니다'); }
+/* 세션 적용 */
+function applyMember(info, licKey){
+ S.lic=licKey;
+ S.user={phone:info.phone||'', nick:(info.name||('회원'+(info.phone||'').slice(-4)))};
+ S.plan=(info.plan==='paid')?'pro':'free';
+ S.exp=info.expires_at||null;
+ save(S); render();
+}
+/* 저장된 키로 자동 검증(로드 시) */
+function refreshSession(){
+ if(!S.lic) return;
+ rpc('jusikwang_verify',{p_key:S.lic,p_device:deviceId()}).then(function(res){
+   if(res&&res.ok){ applyMember(res,S.lic); }
+   else { /* 키가 무효면 로그아웃 */ S.user=null;S.lic=null;S.plan='free';save(S);render(); }
+ });
+}
+function doAuth(){
+ var btn=$('#do-auth'); if(btn.disabled)return; btn.disabled=true;
+ var done=function(){btn.disabled=false;};
+ if(authMode==='signup'){
+   var name=($('#in-name').value||'').trim();
+   var ph=normPhone($('#in-phone').value);
+   var ref=($('#in-ref').value||'').trim();
+   if(!name){toast('이름을 입력하세요');done();return;}
+   if(ph.length<10){toast('올바른 전화번호를 입력하세요');done();return;}
+   rpc('jusikwang_signup',{p_name:name,p_phone:ph,p_referral:ref,p_device:deviceId()}).then(function(res){
+     done();
+     if(!res||!res.ok){toast((res&&res.msg)||'가입에 실패했습니다');return;}
+     applyMember({name:res.name||name,phone:ph,plan:res.plan||'free'},res.license_key);
+     $('#login-ov').hidden=true;
+     if(res.existing) toast('이미 가입된 번호입니다 — 로그인했어요');
+     else showKey(res.license_key);
+   });
+ } else {
+   var key=($('#in-key').value||'').trim().toUpperCase();
+   if(!key){toast('라이선스 키를 입력하세요');done();return;}
+   rpc('jusikwang_verify',{p_key:key,p_device:deviceId()}).then(function(res){
+     done();
+     if(!res||!res.ok){toast((res&&res.msg)||'로그인에 실패했습니다');return;}
+     applyMember(res,key);
+     $('#login-ov').hidden=true;
+     toast('환영합니다, '+(res.name||'')+'님 👑');
+   });
+ }
+}
+/* 가입 직후 발급 키 안내 */
+function showKey(key){
+ var html='가입 완료! 🎉<br>회원님의 <b>라이선스 키</b>입니다. 다른 기기 로그인에 필요하니 꼭 보관하세요.<br>'
+   +'<div style="font-family:var(--mono);font-size:16px;font-weight:800;color:var(--accent);background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:12px;margin-top:10px;text-align:center;letter-spacing:1px">'+esc(key)+'</div>';
+ $('#pay-info').innerHTML=html;
+ $('#pro-ov').querySelector('.modal').setAttribute('data-keyonly','1');
+ // reuse pro modal as a simple notice
+ var m=$('#pro-ov'); m.hidden=false;
+ m.querySelector('#pay-method').parentNode.style.display='none';
+ m.querySelector('#pay-name').parentNode.style.display='none';
+ $('#pay-submit').style.display='none';
+ $('#pro-cancel').textContent='확인';
+ m.querySelector('.modal>div').textContent='회원가입 완료';
+}
+function startPractice(){
+ if(!S.user){openLogin();return;}
+ if(!isPro() && playsToday()>=FREE_PLAYS){
+   toast('무료 플랜은 하루 '+FREE_PLAYS+'판까지 — 프로로 무제한 연습하세요');
+   location.hash='#pricing'; return;
+ }
+ var n = (S.play&&S.play.date===today()? (S.play.n||0):0) + 1;
+ S.play={date:today(),n:n}; S.total=(S.total||0)+1; save(S);
+ render();
+ var url=GAME+(GAME.indexOf('?')<0?'?':'&')+'lic='+encodeURIComponent(S.lic||'')+'&plan='+(isPro()?'pro':'free');
+ window.open(url,'_blank','noopener');
+}
+/* 프로 결제 신청 */
+function openPro(){
+ if(!S.user){openLogin();return;}
+ if(isPro()){toast('이미 프로 회원입니다 👑');return;}
+ var m=$('#pro-ov');
+ m.querySelector('.modal>div').textContent='프로 신청';
+ m.querySelector('#pay-method').parentNode.style.display='';
+ m.querySelector('#pay-name').parentNode.style.display='';
+ $('#pay-submit').style.display='';
+ $('#pro-cancel').textContent='닫기';
+ $('#pay-info').innerHTML='<b>'+esc(PAY.price)+'</b><br>· 계좌입금: '+esc(PAY.bank)+'<br>· 카카오페이: '+esc(PAY.kakao)
+   +'<br><span style="color:var(--muted)">입금 후 아래 신청을 누르면 관리자 확인 뒤 프로가 활성화됩니다.</span>';
+ var pn=$('#pay-name'); if(pn)pn.value=(S.user&&S.user.nick)||'';
+ m.hidden=false;
+}
+function submitPro(){
+ var method=$('#pay-method').value, who=($('#pay-name').value||'').trim();
+ if(!who){toast('입금자명을 입력하세요');return;}
+ var btn=$('#pay-submit'); btn.disabled=true;
+ rpc('jusikwang_request_pro',{p_key:S.lic,p_method:method,p_depositor:who}).then(function(res){
+   btn.disabled=false;
+   if(res&&res.ok){ $('#pro-ov').hidden=true; toast('프로 신청이 접수됐습니다 — 입금 확인 후 활성화됩니다'); }
+   else { toast((res&&res.msg)||'신청에 실패했습니다'); }
+ });
+}
+
+/* ---- wire ---- */
+$('#cta-play').addEventListener('click',startPractice);
+$('#game-go').addEventListener('click',startPractice);
+$('#cta-learn').addEventListener('click',function(){document.querySelector('.sec').scrollIntoView({behavior:'smooth'});});
+$('#free-btn').addEventListener('click',function(){ if(!S.user){openLogin();setMode('signup');} else toast('이미 무료로 이용 중입니다'); });
+$('#pro-btn').addEventListener('click',openPro);
+$('#do-auth').addEventListener('click',doAuth);
+$('#login-cancel').addEventListener('click',function(){$('#login-ov').hidden=true;});
+$('#pay-submit').addEventListener('click',submitPro);
+$('#pro-cancel').addEventListener('click',function(){$('#pro-ov').hidden=true;});
+document.querySelectorAll('.authtab').forEach(function(t){t.addEventListener('click',function(){setMode(t.getAttribute('data-mode'));});});
+['in-key','in-name','in-phone','in-ref'].forEach(function(id){var el=$('#'+id);if(el)el.addEventListener('keydown',function(e){if(e.key==='Enter')doAuth();});});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){$('#login-ov').hidden=true;$('#pro-ov').hidden=true;}});
+
+var tt;function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(function(){t.classList.remove('show')},2200);}
+render();
+refreshSession();
+})();
+</script>
+</body></html>
