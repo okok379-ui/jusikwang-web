@@ -247,12 +247,15 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
       <div class="rstat"><div class="k">이 종목 패턴</div><div class="v" id="r-pat" style="font-family:var(--sans);font-size:12.5px">—</div></div>
     </div>
     <div id="r-recent"></div>
+    <button class="btn ghost" id="r-ideal-view" style="width:100%;margin-bottom:9px">📖 교과서 매매 보기</button>
     <div class="modal-btns">
       <button class="btn ghost" id="r-retry">같은 종목 재도전</button>
       <button class="play" id="r-next" style="justify-content:center">새 종목 ▸</button>
     </div>
   </div>
 </div>
+
+<button id="back-result" hidden style="position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:60;background:var(--accent);color:var(--accent-ink);border:none;border-radius:11px;padding:12px 20px;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;box-shadow:var(--shadow)">↩ 결과로 돌아가기</button>
 
 <div class="overlay" id="log-overlay" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-label="나의 연습기록">
@@ -386,7 +389,7 @@ function startWithDay(day,seed){
  S={seed:(seed==null?-1:seed),day:day,ideal:idealStats(day.bars),i:8,maxMin:day.N*3-1,cash:START,shares:0,avg:0,realized:0,trades:[],playing:false,finished:false,mode:curMode};
  var gj=day.daily[day.daily.length-1],body=gj.c-gj.o;
  S.eng={ratios:[.3,.3,.4],bought:[false,false,false],shake:[null,null,null],peak:0,armed:false,done:false,lines:[roundTick(gj.c-body*0.5),roundTick(gj.c-body*0.75),roundTick(gj.o)],stop:roundTick(gj.l)};
- stop(); $('#overlay').hidden=true; updateModeUI(); userLines=[]; pendingPt=null;
+ stop(); $('#overlay').hidden=true; var br=$('#back-result');if(br)br.hidden=true; updateModeUI(); userLines=[]; pendingPt=null;
  $('#h-name').textContent=day.name; $('#h-code').textContent=day.code;
  $('#h-cap').textContent='시총 '+capText(day.mktcapEok);
  $('#h-reason').innerHTML=(day.real?'<b style="color:var(--sup)">실데이터</b> · ':'')+'전일 <b>상한가'+(day.limitPct?'(+'+day.limitPct.toFixed(1)+'%)':'')+'</b>'+(day.date?' · '+day.date:'')+(day.reason?' · '+day.reason:'');
@@ -833,6 +836,13 @@ $('#b-sell-half').addEventListener('click',function(){sell(0.5)});
 $('#b-sell-all').addEventListener('click',function(){sell(1)});
 $('#r-next').addEventListener('click',function(){newRound();});
 $('#r-retry').addEventListener('click',function(){newRound(S.seed);});
+$('#r-ideal-view').addEventListener('click',function(){
+  if(!S||!S.ideal)return;
+  zoom=1; $('#overlay').hidden=true; $('#back-result').hidden=false; draw();
+  var id=S.ideal;
+  toast('교과서: 눌림 저점('+won(id.buyP)+')에서 매수 → 반등 고점('+won(id.sellP)+')에서 매도 = +'+id.maxProfit.toFixed(1)+'% (3분봉의 주황 영역)');
+});
+$('#back-result').addEventListener('click',function(){ $('#back-result').hidden=true; $('#overlay').hidden=false; });
 document.querySelectorAll('.quick').forEach(function(q){q.addEventListener('click',function(){var a=q.getAttribute('data-amt');if(a==='max')setAmt(S?Math.floor(S.cash):0);else setAmt(parseInt(a,10));});});
 document.querySelectorAll('.sp').forEach(function(s){s.addEventListener('click',function(){document.querySelectorAll('.sp').forEach(function(x){x.classList.remove('on')});s.classList.add('on');speed=parseInt(s.getAttribute('data-sp'),10);if(S&&S.playing){clearInterval(timer);timer=setInterval(tick,speed);}});});
 document.querySelectorAll('.md').forEach(function(m){m.addEventListener('click',function(){curMode=m.getAttribute('data-mode');document.querySelectorAll('.md').forEach(function(x){x.classList.toggle('on',x===m)});if(S)S.mode=curMode;updateModeUI();});});
