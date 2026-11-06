@@ -170,6 +170,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
           <div class="stat"><div class="k">실현손익</div><div class="v num flat" id="st-rpl">0</div></div>
           <div class="stat"><div class="k">현금</div><div class="v num" id="st-cash">—</div></div>
           <div class="stat"><div class="k">총자산</div><div class="v num" id="st-eq">—</div></div>
+          <div class="stat"><div class="k">현재 수익률</div><div class="v num flat" id="st-roi">0.00%</div></div>
         </div>
         <div class="order">
           <div class="engine" id="eng-status" hidden></div>
@@ -588,7 +589,9 @@ function render(){
  $('#st-rpl').textContent=(S.realized>=0?'+':'')+won(S.realized); $('#st-rpl').className='v num '+cls(S.realized);
  $('#st-cash').textContent=won(S.cash);
  $('#st-eq').textContent=won(equity());
- $('#st-eq').className='v num '+cls((equity()-START)/START*100);
+ var roi=(equity()-START)/START*100;
+ $('#st-eq').className='v num '+cls(roi);
+ $('#st-roi').textContent=signpct(roi); $('#st-roi').className='v num '+cls(roi);
  var hasShares=S.shares>0, auto=S.mode==='auto';
  $('#b-sell-half').disabled=!hasShares||S.finished||auto; $('#b-sell-all').disabled=!hasShares||S.finished||auto;
  $('#b-buy').disabled=S.finished||auto; $('#b-add').disabled=S.finished||auto;
