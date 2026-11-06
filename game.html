@@ -351,6 +351,33 @@ function live3(min1,mMax){var b=[],g,cnt=Math.floor(mMax/3)+1,k;for(g=0;g<cnt;g+
 /* ---------- state ---------- */
 var START=10000000, BUYFEE=0.00015, SELLFEE=0.0023;
 var S=null, timer=null, speed=260, curMode='manual';
+
+/* ---- 회원 연동(Supabase) : ?lic=키 로 열리면 연습기록을 서버에 저장/조회 ---- */
+var SB_URL='https://swekuozzyonslloqghpc.supabase.co';
+var SB_KEY='sb_publishable_w4-fBKFRRsO3u9ApjO8shQ_KuwW002P';
+var LIC=(function(){
+  var q=new URLSearchParams(location.search), k=q.get('lic');
+  try{ if(k){localStorage.setItem('jusikwang_lic',k);} else {k=localStorage.getItem('jusikwang_lic');} }catch(e){}
+  return (k||'').trim();
+})();
+function sbrpc(fn,body){
+  return fetch(SB_URL+'/rest/v1/rpc/'+fn,{method:'POST',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'},
+    body:JSON.stringify(body||{})}).then(function(r){return r.json();}).catch(function(){return null;});
+}
+function saveServerRecord(rec){ if(!LIC)return; sbrpc('jusikwang_save_record',{p_key:LIC,p_rec:rec}); }
+function syncFromServer(){
+  if(!LIC)return;
+  sbrpc('jusikwang_list_records',{p_key:LIC,p_limit:200}).then(function(res){
+    if(!Array.isArray(res))return;
+    try{localStorage.setItem('jusikwang_log',JSON.stringify(res));}catch(e){}
+    var st={n:0,win:0,sum:0,best:-999};
+    res.forEach(function(r){st.n++;if(r.ret>0)st.win++;st.sum+=r.ret;if(r.ret>st.best)st.best=r.ret;});
+    if(st.n===0)st.best=-999;
+    try{localStorage.setItem('nullim_stats',JSON.stringify(st));}catch(e){}
+    renderStat(st); renderRecent();
+  });
+}
 var userLines=[], drawMode=false, PANELS=[], lineType='h', pendingPt=null, zoom=1;
 
 function startWithDay(day,seed){
@@ -499,9 +526,11 @@ function renderStat(st){st=st||loadStat();$('#s-games').textContent=st.n;$('#s-w
 /* ---------- 연습기록 (per-round log) ---------- */
 function loadLog(){try{var r=localStorage.getItem('jusikwang_log');return r?JSON.parse(r):[]}catch(e){return[]}}
 function saveRecord(){ if(!S||!S.result)return; var log=loadLog();
-  log.unshift({t:Date.now(),name:S.day.name,code:S.day.code,ret:S.result.ret,grade:S.result.grade,ideal:S.result.ideal,real:!!S.day.real});
+  var rec={t:Date.now(),name:S.day.name,code:S.day.code,ret:S.result.ret,grade:S.result.grade,ideal:S.result.ideal,real:!!S.day.real};
+  log.unshift(rec);
   if(log.length>200)log=log.slice(0,200);
   try{localStorage.setItem('jusikwang_log',JSON.stringify(log))}catch(e){}
+  saveServerRecord(rec);
 }
 function fmtDate(ts){var d=new Date(ts);function z(n){return(n<10?'0':'')+n}return (d.getMonth()+1)+'/'+z(d.getDate())+' '+z(d.getHours())+':'+z(d.getMinutes());}
 function renderLog(){var log=loadLog(),list=$('#log-list'),sum=$('#log-summary');
@@ -732,11 +761,11 @@ bType.addEventListener('click',function(){lineType=lineType==='h'?'trend':'h';pe
 $('#b-clearline').addEventListener('click',function(){userLines=[];pendingPt=null;if(S)draw();toast('지지·저항선 전체 삭제');});
 $('#b-finish').addEventListener('click',finishNow);
 $('#b-log').addEventListener('click',openLog);
-$('#b-learn').addEventListener('click',function(){window.open('lesson-sr.html','_blank','noopener');});
+$('#b-learn').addEventListener('click',function(){window.open('https://claude.ai/artifact/SVvQNtjDczrcKBfsNRywds','_blank','noopener');});
 $('#b-cases').addEventListener('click',openCases);
 $('#case-close').addEventListener('click',function(){$('#case-overlay').hidden=true;});
 $('#case-search').addEventListener('input',function(){renderCases(this.value);});
-$('#b-home').addEventListener('click',function(){window.open('index.html','_blank','noopener');});
+$('#b-home').addEventListener('click',function(){window.open('https://claude.ai/artifact/U83iJEbeY2NbGjVKypBcgz','_blank','noopener');});
 $('#log-close').addEventListener('click',function(){$('#log-overlay').hidden=true;});
 $('#log-clear').addEventListener('click',function(){try{localStorage.removeItem('jusikwang_log')}catch(e){}renderLog();toast('연습기록 전체 삭제');});
 cv.addEventListener('click',function(e){
@@ -780,7 +809,7 @@ new MutationObserver(function(){draw()}).observe(document.documentElement,{attri
 if(window.matchMedia)window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',draw);
 
 function boot(data){
- renderStat(); fit();
+ renderStat(); fit(); syncFromServer();
  if(data&&data.S&&data.S.day&&data.S.day.min1){S=data.S;speed=data.speed||260;curMode=S.mode||'manual';if(S.i==null)S.i=(S.idx!=null?S.idx*3+2:8);if(S.maxMin==null)S.maxMin=S.day.N*3-1;if(!S.eng)S.eng={ratios:[.1,.2,.4],bought:[false,false,false],shake:[null,null,null],peak:0,armed:false,done:true,lines:[0,0,0]};document.querySelectorAll('.md').forEach(function(x){x.classList.toggle('on',x.getAttribute('data-mode')===curMode)});$('#h-name').textContent=S.day.name;$('#h-code').textContent=S.day.code;$('#h-cap').textContent='시총 '+capText(S.day.mktcapEok||0);$('#h-reason').innerHTML='전일 <b>상한가(+30%)</b> · 사유: '+(S.day.reason||'');$('#q-prev').textContent=won(S.day.prevClose);$('#q-open').textContent=won(S.day.open);render();draw();if(S.finished)showResult((S.cash-START)/START*100);}
  else newRound();
 }
