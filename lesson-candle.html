@@ -1,0 +1,453 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>레슨 3 · 캔들과 거래량</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+:root{
+  --bg:#0e1116; --panel:#151b23; --panel2:#1b222c; --fg:#e7edf3; --muted:#8a97a7;
+  --border:#263040; --grid:#1d2733; --up:#f0433a; --down:#3b82f6; --accent:#f3a52b;
+  --accent-ink:#15110a; --sup:#2bb3a3; --res:#e06c9f; --ma:#b57be6;
+  --shadow:0 1px 0 rgba(255,255,255,.03),0 10px 28px rgba(0,0,0,.4);
+  --sans:"IBM Plex Sans KR",system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme=dark]){
+  --bg:#eef1f5;--panel:#fff;--panel2:#f2f5f9;--fg:#121820;--muted:#5a6675;--border:#d6dce5;--grid:#e6ebf1;
+  --up:#e03131;--down:#1c64f2;--accent:#b9770a;--accent-ink:#fff;--sup:#0f8f81;--res:#c03e78;--ma:#8e3fc9;
+  --shadow:0 1px 2px rgba(20,30,45,.06),0 10px 24px rgba(20,30,45,.09);color-scheme:light;
+}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.6;-webkit-text-size-adjust:100%}
+.wrap{min-height:100%;display:flex;flex-direction:column;max-width:720px;margin:0 auto;
+  padding:16px max(16px,env(safe-area-inset-left)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-right))}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.badge{background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:11px;border-radius:999px;padding:4px 10px;letter-spacing:.02em}
+.top h1{font-size:15px;margin:0;font-weight:600;letter-spacing:-.01em}
+.top .lv{font-size:11px;color:var(--muted);font-weight:600}
+.spk{margin-left:auto;background:var(--panel2);border:1px solid var(--border);color:var(--fg);border-radius:999px;padding:6px 12px;font-family:inherit;font-weight:600;font-size:12px;cursor:pointer;white-space:nowrap}
+.spk:hover{border-color:var(--sup);color:var(--sup)}
+.spk.on{background:var(--sup);color:#04201c;border-color:transparent}
+.prog{display:flex;gap:5px;margin-bottom:14px}
+.dot{flex:1;height:4px;border-radius:2px;background:var(--border);transition:background .2s}
+.dot.on{background:var(--accent)}
+.dot.done{background:var(--sup)}
+.stage{flex:1;position:relative}
+.card{display:none;animation:fade .28s ease}
+.card.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:20px}
+.kicker{font-size:11.5px;font-weight:700;color:var(--accent);letter-spacing:.06em;text-transform:uppercase}
+.card h2{font-size:21px;margin:6px 0 10px;letter-spacing:-.02em;line-height:1.3}
+.card p{margin:0 0 12px;color:var(--fg)}
+.card p.mut{color:var(--muted);font-size:13.5px}
+.card b{font-weight:600}
+.hl{color:var(--sup);font-weight:600}
+.hl-r{color:var(--res);font-weight:600}
+.hl-a{color:var(--accent);font-weight:600}
+.hl-u{color:var(--up);font-weight:600}
+.hl-d{color:var(--down);font-weight:600}
+.chartbox{width:100%;height:230px;background:var(--panel2);border:1px solid var(--border);border-radius:12px;margin:4px 0 12px;position:relative;overflow:hidden}
+canvas{width:100%;height:100%;display:block}
+.cap{font-size:12px;color:var(--muted);margin:-6px 0 12px;text-align:center}
+.steps{display:flex;flex-direction:column;gap:8px;margin:4px 0 12px}
+.step{display:flex;gap:11px;align-items:flex-start;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.step .n{flex:none;width:22px;height:22px;border-radius:7px;background:var(--sup);color:#04201c;font-weight:700;font-size:12px;display:grid;place-items:center;font-family:var(--mono)}
+.step.r .n{background:var(--res);color:#fff}
+.step.a .n{background:var(--accent);color:var(--accent-ink)}
+.step .t{font-size:13.5px;line-height:1.5}
+.step .t b{font-weight:600}
+.pills{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0 10px}
+.pill{font-size:12px;font-weight:600;border-radius:999px;padding:5px 11px;border:1px solid var(--border);background:var(--panel2);color:var(--muted)}
+.pill.sup{color:var(--sup);border-color:color-mix(in srgb,var(--sup) 45%,transparent)}
+.pill.res{color:var(--res);border-color:color-mix(in srgb,var(--res) 45%,transparent)}
+.pill.up{color:var(--up);border-color:color-mix(in srgb,var(--up) 45%,transparent)}
+.pill.dn{color:var(--down);border-color:color-mix(in srgb,var(--down) 45%,transparent)}
+.demo-btn{background:var(--panel2);border:1px solid var(--border);color:var(--fg);border-radius:9px;padding:9px 14px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer}
+.demo-btn:hover{border-color:var(--sup);color:var(--sup)}
+.note{background:color-mix(in srgb,var(--accent) 12%,transparent);border:1px solid color-mix(in srgb,var(--accent) 38%,transparent);border-radius:10px;padding:11px 13px;font-size:13px;line-height:1.55;margin:4px 0 2px}
+.note b{color:var(--accent)}
+.quiz{display:flex;flex-direction:column;gap:9px;margin:10px 0 0}
+.q{font-weight:600;margin-bottom:2px}
+.opt{text-align:left;background:var(--panel2);border:1px solid var(--border);color:var(--fg);border-radius:10px;padding:11px 13px;font-family:inherit;font-size:14px;cursor:pointer;transition:.15s}
+.opt:hover{border-color:var(--muted)}
+.opt.ok{border-color:var(--sup);background:color-mix(in srgb,var(--sup) 15%,transparent);color:var(--sup);font-weight:600}
+.opt.no{border-color:var(--up);background:color-mix(in srgb,var(--up) 13%,transparent);color:var(--up)}
+.qfb{font-size:13px;color:var(--muted);margin-top:4px;min-height:18px}
+.cta{text-align:center;padding:8px 0}
+.cta .big{font-size:40px}
+.cta h2{margin:6px 0}
+.cta .go{display:inline-block;margin-top:8px;background:var(--accent);color:var(--accent-ink);border:none;border-radius:11px;padding:13px 22px;font-family:inherit;font-weight:700;font-size:15px;cursor:pointer}
+.checklist{text-align:left;max-width:380px;margin:14px auto 0;display:flex;flex-direction:column;gap:7px}
+.checklist div{background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:9px 12px;font-size:13.5px}
+.checklist .mk{color:var(--sup);font-weight:700;margin-right:7px}
+.nav{display:flex;align-items:center;gap:10px;margin-top:14px}
+.nav button{font-family:inherit;font-weight:600;font-size:14px;border-radius:11px;padding:12px 18px;cursor:pointer;border:1px solid var(--border)}
+.nav .prev{background:transparent;color:var(--fg)}
+.nav .prev:disabled{opacity:.35;cursor:not-allowed}
+.nav .next{margin-left:auto;background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.nav .count{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.foot{font-size:11px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <span class="badge">레슨 3</span>
+    <h1>캔들과 거래량 — 차트의 글자 읽기</h1>
+    <button class="spk" id="b-home" style="margin-left:auto">🏠 처음으로</button>
+    <button class="spk" id="speak" aria-label="음성 설명 켜기">🔊 듣기</button>
+    <span class="lv">초보 단계</span>
+  </div>
+  <div class="prog" id="prog"></div>
+
+  <div class="stage" id="stage">
+
+    <!-- 1 -->
+    <section class="card on"><div class="panel">
+      <div class="kicker">LESSON 3 · INTRO</div>
+      <h2>캔들 하나에 하루의 '힘겨루기'가 담긴다</h2>
+      <p>차트의 막대 하나하나를 <b>캔들(봉)</b>이라고 해요. 캔들 하나는 그 시간 동안 <b class="hl-u">사려는 힘</b>과 <b class="hl-d">팔려는 힘</b>이 싸운 결과를 담은 그림입니다.</p>
+      <p class="mut">캔들이 '글자'라면, 거래량은 그 글자에 담긴 '목소리의 크기'예요. 이 둘을 같이 읽으면 가격이 왜 움직였는지 보이기 시작합니다. 듣기 버튼을 켜고 차트로 확인해 봅시다.</p>
+    </div></section>
+
+    <!-- 2 -->
+    <section class="card"><div class="panel">
+      <div class="kicker">캔들의 구조</div>
+      <h2>시가 · 고가 · 저가 · 종가, 그리고 몸통·꼬리</h2>
+      <div class="chartbox"><canvas data-demo="anatomy"></canvas></div>
+      <div class="steps">
+        <div class="step"><div class="n">몸</div><div class="t"><b>몸통</b> — 시가와 종가 사이. 종가가 더 높으면 <b class="hl-u">양봉</b>, 더 낮으면 <b class="hl-d">음봉</b>.</div></div>
+        <div class="step"><div class="n">꼬</div><div class="t"><b>꼬리(그림자)</b> — 몸통 위아래로 삐져나온 선. 그 시간의 <b>고가·저가</b>까지 갔다가 되돌아온 흔적입니다.</div></div>
+      </div>
+    </div></section>
+
+    <!-- 3 -->
+    <section class="card"><div class="panel">
+      <div class="kicker">색의 의미</div>
+      <h2>빨강은 오름, 파랑은 내림 <span class="mut" style="font-size:13px">(한국 기준)</span></h2>
+      <div class="chartbox"><canvas data-demo="updown"></canvas></div>
+      <div class="pills"><span class="pill up">빨강 = 양봉 (종가>시가)</span><span class="pill dn">파랑 = 음봉 (종가&lt;시가)</span></div>
+      <p class="mut">미국 차트는 반대(초록=상승, 빨강=하락)예요. 색보다 중요한 건 <b>종가가 시가보다 위냐 아래냐</b>입니다. 몸통이 길수록 그날 한쪽 힘이 압도했다는 뜻이에요.</p>
+    </div></section>
+
+    <!-- 4 -->
+    <section class="card"><div class="panel">
+      <div class="kicker">꼬리가 말해주는 것</div>
+      <h2>긴 꼬리 = 되돌림, 세력 싸움의 흔적</h2>
+      <div class="chartbox"><canvas data-demo="wick"></canvas></div>
+      <div class="steps">
+        <div class="step r"><div class="n">▲</div><div class="t"><b>긴 윗꼬리</b> — 위로 올랐다가 밀렸다. 위쪽에 <b class="hl-r">매도(저항)</b>가 강하다는 신호.</div></div>
+        <div class="step"><div class="n">▼</div><div class="t"><b>긴 아랫꼬리</b> — 아래로 눌렸다가 되올라왔다. 아래쪽에서 <b class="hl">매수(지지)</b>가 받쳤다는 신호.</div></div>
+      </div>
+      <div class="note"><b>연결</b> — 지지선 근처에서 <b>긴 아랫꼬리</b>가 나오면 "눌렀지만 사려는 힘이 이겼다"는 뜻. 레슨 1의 '지지 확인'과 같은 장면이에요.</div>
+    </div></section>
+
+    <!-- 5 -->
+    <section class="card"><div class="panel">
+      <div class="kicker">기억할 캔들 모양</div>
+      <h2>장대양봉 · 도지 · 망치형 · 유성형</h2>
+      <div class="chartbox"><canvas data-demo="shapes"></canvas></div>
+      <div class="steps">
+        <div class="step a"><div class="n">1</div><div class="t"><b>장대양봉</b> — 몸통이 큰 강한 상승. 거래량까지 터지면 <b class="hl-a">기준봉</b> 후보.</div></div>
+        <div class="step"><div class="n">2</div><div class="t"><b>도지</b> — 시가≈종가, 십자 모양. 힘의 균형 = <b>관망·전환 경고</b>.</div></div>
+        <div class="step"><div class="n">3</div><div class="t"><b>망치형</b> — 아랫꼬리가 긴 캔들. 바닥권에서 나오면 <b class="hl">반등 신호</b>.</div></div>
+        <div class="step r"><div class="n">4</div><div class="t"><b>유성형</b> — 윗꼬리가 긴 캔들. 고점권에서 나오면 <b class="hl-r">하락 경고</b>.</div></div>
+      </div>
+    </div></section>
+
+    <!-- 6 -->
+    <section class="card"><div class="panel">
+      <div class="kicker">거래량</div>
+      <h2>거래량은 캔들의 '진심'이다</h2>
+      <div class="chartbox"><canvas data-demo="volbasic"></canvas></div>
+      <p>아래 막대가 <b>거래량</b> — 그 시간에 몇 주가 거래됐는지예요. 같은 양봉이라도 <b>거래량이 많은 상승</b>은 믿을 만하고, <b>거래량 없는 상승</b>은 힘이 약합니다.</p>
+      <p class="mut">가격은 '결과', 거래량은 '얼마나 많은 사람이 동의했는가'. 둘이 같은 방향이면 신뢰도가 높아요.</p>
+    </div></section>
+
+    <!-- 7 -->
+    <section class="card"><div class="panel">
+      <div class="kicker">거래량 급증</div>
+      <h2>돌파는 거래량을 동반해야 진짜다</h2>
+      <div class="chartbox"><canvas data-demo="volspike"></canvas></div>
+      <div class="steps">
+        <div class="step a"><div class="n">✓</div><div class="t"><b>거래량 급증 + 장대양봉</b> = 세력·수급이 들어온 진짜 돌파. 눌림을 주면 노려볼 자리.</div></div>
+        <div class="step r"><div class="n">✕</div><div class="t"><b>거래량 없는 돌파</b> = 속임수(거짓 돌파)일 확률↑. 다시 제자리로 밀리기 쉬움.</div></div>
+      </div>
+      <div class="note"><b>실전 기준</b> — 평소 거래량의 몇 배(예: 3~5배 이상)로 터지는 날을 주목하세요. 관심이 폭발한 날입니다.</div>
+    </div></section>
+
+    <!-- 8 -->
+    <section class="card"><div class="panel">
+      <div class="kicker">캔들 + 거래량 = 기준봉</div>
+      <h2>기준봉 = 장대양봉 + 거래량 폭발</h2>
+      <div class="chartbox"><canvas data-demo="junvol"></canvas></div>
+      <p><b class="hl-a">기준봉</b>은 이 레슨의 두 가지가 겹치는 날이에요: <b>몸통이 큰 장대양봉</b>에 <b>거래량이 평소의 몇 배</b>로 터진 상한가급 상승. 이 봉의 몸통을 등분해 다음날 <b>눌림목 지지선</b>을 그립니다.</p>
+      <p class="mut">즉 캔들(모양)과 거래량(진심)을 함께 읽는 것이 기준봉 매매의 출발점입니다. 자세한 분할매수는 레슨 4(심화)에서 다뤄요.</p>
+    </div></section>
+
+    <!-- 9 -->
+    <section class="card"><div class="panel">
+      <div class="kicker">확인 퀴즈</div>
+      <h2>이해했는지 체크</h2>
+      <div class="quiz">
+        <div class="q">Q1. 바닥권에서 <b>긴 아랫꼬리</b> 캔들이 나왔다. 가장 알맞은 해석은?</div>
+        <button class="opt" data-ok="0">위쪽 매도가 강하다는 하락 신호</button>
+        <button class="opt" data-ok="1">아래서 매수가 받쳤다는 반등(지지) 신호</button>
+        <button class="opt" data-ok="0">거래가 없었다는 뜻</button>
+        <div class="qfb"></div>
+      </div>
+      <div class="quiz" style="margin-top:16px">
+        <div class="q">Q2. '진짜 돌파'로 신뢰할 수 있는 장면은?</div>
+        <button class="opt" data-ok="1">장대양봉 + 거래량 급증</button>
+        <button class="opt" data-ok="0">장대양봉 + 거래량 거의 없음</button>
+        <button class="opt" data-ok="0">도지 + 거래량 급증</button>
+        <div class="qfb"></div>
+      </div>
+    </div></section>
+
+    <!-- 10 -->
+    <section class="card"><div class="panel cta">
+      <div class="big">🕯️</div>
+      <h2>이제 직접 읽어보자</h2>
+      <p class="mut">주식왕에서 캔들의 몸통·꼬리와 아래 거래량을 같이 보세요.<br>거래량이 터진 장대양봉(기준봉)과, 눌림에서의 긴 아랫꼬리를 찾아보세요.</p>
+      <div class="checklist">
+        <div><span class="mk">✓</span>몸통이 큰 양봉 = 강한 상승</div>
+        <div><span class="mk">✓</span>긴 아랫꼬리 = 지지, 긴 윗꼬리 = 저항</div>
+        <div><span class="mk">✓</span>거래량 터진 돌파만 신뢰</div>
+      </div>
+      <button class="go" id="cta-go">주식왕으로 연습하기 ▸</button>
+    </div></section>
+
+  </div>
+
+  <div class="nav">
+    <button class="prev" id="prev" disabled>◂ 이전</button>
+    <span class="count" id="count">1 / 10</span>
+    <button class="next" id="next">다음 ▸</button>
+  </div>
+  <div class="foot">가상의 교육용 예시 차트입니다. 특정 종목의 매매를 권유하지 않습니다.</div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var cards=[].slice.call(document.querySelectorAll('.card'));
+var N=cards.length, cur=0;
+var prog=document.getElementById('prog');
+for(var i=0;i<N;i++){var d=document.createElement('div');d.className='dot'+(i===0?' on':'');prog.appendChild(d);}
+var dots=[].slice.call(prog.children);
+var prevB=document.getElementById('prev'),nextB=document.getElementById('next'),count=document.getElementById('count');
+
+/* ---------- 음성 내레이션 ---------- */
+var synth=window.speechSynthesis||null, autoRead=false, koVoice=null;
+var NAR=[
+ "레슨 3, 캔들과 거래량. 차트의 막대 하나를 캔들, 또는 봉이라고 합니다. 캔들 하나에는 그 시간 동안 사려는 힘과 팔려는 힘이 싸운 결과가 담겨 있어요. 캔들이 글자라면 거래량은 목소리의 크기입니다. 둘을 같이 읽으면 가격이 왜 움직였는지 보입니다.",
+ "캔들의 구조입니다. 몸통은 시가와 종가 사이를 말합니다. 종가가 시가보다 높으면 양봉, 낮으면 음봉이죠. 몸통 위아래로 삐져나온 선을 꼬리, 또는 그림자라고 하는데, 그 시간의 고가와 저가까지 갔다가 되돌아온 흔적입니다.",
+ "색의 의미입니다. 한국 차트에서는 빨강이 양봉, 오르는 봉이고 파랑이 음봉, 내리는 봉입니다. 미국은 반대예요. 색보다 중요한 건 종가가 시가보다 위냐 아래냐입니다. 몸통이 길수록 그날 한쪽 힘이 압도했다는 뜻입니다.",
+ "꼬리가 말해주는 것입니다. 긴 윗꼬리는 위로 올랐다가 밀려난 것으로, 위쪽에 매도, 즉 저항이 강하다는 신호입니다. 긴 아랫꼬리는 아래로 눌렸다가 되올라온 것으로, 아래에서 매수, 즉 지지가 받쳤다는 신호죠. 지지선 근처의 긴 아랫꼬리는 지지 확인과 같은 장면입니다.",
+ "기억할 캔들 모양 네 가지입니다. 장대양봉은 몸통이 큰 강한 상승으로, 거래량까지 터지면 기준봉 후보입니다. 도지는 시가와 종가가 거의 같은 십자 모양으로 힘의 균형, 전환 경고입니다. 망치형은 아랫꼬리가 긴 캔들로 바닥권에서 반등 신호, 유성형은 윗꼬리가 긴 캔들로 고점권에서 하락 경고입니다.",
+ "거래량입니다. 차트 아래의 막대가 거래량으로, 그 시간에 몇 주가 거래됐는지를 보여줍니다. 같은 양봉이라도 거래량이 많은 상승은 믿을 만하고, 거래량이 없는 상승은 힘이 약합니다. 가격은 결과이고, 거래량은 얼마나 많은 사람이 동의했는가입니다.",
+ "거래량 급증입니다. 돌파는 거래량을 동반해야 진짜입니다. 거래량이 급증한 장대양봉은 수급이 들어온 진짜 돌파이고, 거래량 없는 돌파는 속임수일 확률이 높아 다시 제자리로 밀리기 쉽습니다. 평소 거래량의 몇 배로 터지는 날을 주목하세요.",
+ "캔들과 거래량이 겹치면 기준봉입니다. 기준봉은 몸통이 큰 장대양봉에, 거래량이 평소의 몇 배로 터진 상한가급 상승입니다. 이 봉의 몸통을 등분해 다음날 눌림목 지지선을 그립니다. 분할매수 방법은 레슨 4 심화에서 다룹니다.",
+ "확인 퀴즈입니다. 두 문제를 풀며 점검해 보세요.",
+ "이제 직접 읽어볼 차례입니다. 주식왕에서 캔들의 몸통과 꼬리, 그리고 아래 거래량을 함께 보세요. 거래량이 터진 장대양봉과 눌림에서의 긴 아랫꼬리를 찾아보세요. 수고했습니다."
+];
+function pickVoice(){ if(!synth)return; var vs=synth.getVoices()||[]; koVoice=vs.filter(function(v){return /ko(-|_)?KR/i.test(v.lang)})[0]||vs.filter(function(v){return /korean|한국/i.test(v.name)})[0]||null; }
+if(synth){ pickVoice(); synth.onvoiceschanged=pickVoice; }
+function speakCard(){ if(!synth)return; synth.cancel(); if(!autoRead)return;
+  var u=new SpeechSynthesisUtterance(NAR[cur]||''); u.lang='ko-KR'; if(koVoice)u.voice=koVoice; u.rate=1; u.pitch=1; synth.speak(u); }
+var spB=document.getElementById('speak');
+if(!synth){ spB.style.display='none'; }
+else spB.addEventListener('click',function(){ autoRead=!autoRead; spB.classList.toggle('on',autoRead); spB.innerHTML=autoRead?'🔊 듣는 중':'🔊 듣기'; if(autoRead)speakCard(); else synth.cancel(); });
+window.addEventListener('beforeunload',function(){if(synth)synth.cancel();});
+
+function show(n){
+  n=Math.max(0,Math.min(N-1,n));
+  cards[cur].classList.remove('on'); dots[cur].classList.remove('on');
+  cur=n;
+  cards[cur].classList.add('on');
+  dots.forEach(function(dd,idx){dd.classList.toggle('on',idx===cur);dd.classList.toggle('done',idx<cur);});
+  prevB.disabled=cur===0;
+  nextB.textContent=cur===N-1?'처음으로 ↻':'다음 ▸';
+  count.textContent=(cur+1)+' / '+N;
+  drawIn(cards[cur]);
+  speakCard();
+  window.scrollTo(0,0);
+}
+prevB.addEventListener('click',function(){show(cur-1)});
+nextB.addEventListener('click',function(){cur===N-1?show(0):show(cur+1)});
+document.addEventListener('keydown',function(e){if(e.key==='ArrowRight')show(cur+1);else if(e.key==='ArrowLeft')show(cur-1);});
+
+/* ---------- candle + volume engine ---------- */
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+var UP=function(){return css('--up')},DOWN=function(){return css('--down')},MUT=function(){return css('--muted')},
+    ACC=function(){return css('--accent')},SUP=function(){return css('--sup')},RES=function(){return css('--res')};
+function drawCV(cv,candles,opts){
+  opts=opts||{};
+  var ctx=cv.getContext('2d'),r=cv.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);
+  var W=Math.max(60,r.width),H=Math.max(60,r.height);
+  cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+  var hasVol=opts.vol!==false;
+  var padR=opts.padR||48, padL=8, padT=12;
+  var priceH=(hasVol? H*0.64 : H-22), volTop=priceH+10, volH=H-volTop-6;
+  var lo=Infinity,hi=-Infinity,k;
+  for(k=0;k<candles.length;k++){if(candles[k].l<lo)lo=candles[k].l;if(candles[k].h>hi)hi=candles[k].h;}
+  (opts.levels||[]).forEach(function(L){if(L.p<lo)lo=L.p;if(L.p>hi)hi=L.p;});
+  var pad=(hi-lo)*0.14||1; lo-=pad; hi+=pad;
+  var plotW=W-padR-padL;
+  function X(i){return padL+(i+0.5)*(plotW/candles.length)}
+  function Y(p){return padT+(hi-p)/(hi-lo)*(priceH-padT-6)}
+  var bw=plotW/candles.length, cw=Math.max(3,bw*0.56);
+  // levels
+  (opts.levels||[]).forEach(function(L){
+    var y=Y(L.p);ctx.save();ctx.setLineDash(L.dash||[5,4]);ctx.strokeStyle=L.color;ctx.lineWidth=1.3;
+    ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(padL+plotW,y);ctx.stroke();ctx.restore();
+    if(L.label){ctx.fillStyle=L.color;ctx.font='600 10px IBM Plex Sans KR,sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(L.label,padL+plotW+5,y);}
+  });
+  // volume
+  if(hasVol){
+    var vmax=0;for(k=0;k<candles.length;k++){vmax=Math.max(vmax,candles[k].v||0);}
+    vmax=vmax||1;
+    for(k=0;k<candles.length;k++){
+      var vv=candles[k].v||0, up=candles[k].c>=candles[k].o;
+      var bh=Math.max(1,(vv/vmax)*volH), xc=X(k);
+      ctx.globalAlpha=(opts.volHi!=null&&opts.volHi===k)?1:0.55;
+      ctx.fillStyle=up?UP():DOWN();
+      ctx.fillRect(xc-cw/2,volTop+volH-bh,cw,bh);
+      ctx.globalAlpha=1;
+      if(opts.volHi!=null&&opts.volHi===k){
+        ctx.fillStyle=ACC();ctx.font='700 9px IBM Plex Sans KR,sans-serif';ctx.textAlign='center';
+        ctx.fillText('급증',xc,volTop+volH-bh-3);
+      }
+    }
+    ctx.fillStyle=MUT();ctx.font='600 9px IBM Plex Sans KR,sans-serif';ctx.textAlign='left';ctx.textBaseline='top';
+    ctx.fillText('거래량',padL,volTop-1);
+  }
+  // candles
+  for(k=0;k<candles.length;k++){
+    var b=candles[k],u=b.c>=b.o,col=u?UP():DOWN(),xc2=X(k);
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=1.3;
+    ctx.beginPath();ctx.moveTo(xc2,Y(b.h));ctx.lineTo(xc2,Y(b.l));ctx.stroke();
+    var yo=Y(b.o),yc=Y(b.c),top=Math.min(yo,yc),hh=Math.max(1.6,Math.abs(yc-yo));
+    ctx.fillRect(xc2-cw/2,top,cw,hh);
+    if(opts.annot&&opts.annot[k]){
+      var a=opts.annot[k];ctx.fillStyle=a.color||MUT();ctx.font='700 10px IBM Plex Sans KR,sans-serif';ctx.textAlign='center';
+      var ay=a.below?Y(b.l)+13:Y(b.h)-7;ctx.textBaseline='middle';ctx.fillText(a.t,xc2,ay);
+    }
+  }
+}
+
+/* 캔들 구조 설명 (라벨 포함 단일 그림) */
+function demoAnatomy(cv){
+  var ctx=cv.getContext('2d'),r=cv.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);
+  var W=Math.max(60,r.width),H=Math.max(60,r.height);
+  cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+  function candle(cx,o,h,l,c,col,labels){
+    var top=18,bot=H-18,hi=h,lo=l,sp=hi-lo;
+    function Y(p){return top+(hi-p)/sp*(bot-top)}
+    var cw=30;
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=1.6;
+    ctx.beginPath();ctx.moveTo(cx,Y(h));ctx.lineTo(cx,Y(l));ctx.stroke();
+    var yo=Y(o),yc=Y(c);ctx.fillRect(cx-cw/2,Math.min(yo,yc),cw,Math.max(2,Math.abs(yc-yo)));
+    if(labels){
+      ctx.font='600 11px IBM Plex Sans KR,sans-serif';ctx.fillStyle=MUT();ctx.textBaseline='middle';
+      ctx.textAlign='left';
+      ctx.fillText('고가',cx+cw/2+8,Y(h));
+      ctx.fillText(col===UP()?'종가':'시가',cx+cw/2+8,Y(Math.max(o,c)));
+      ctx.fillText(col===UP()?'시가':'종가',cx+cw/2+8,Y(Math.min(o,c)));
+      ctx.fillText('저가',cx+cw/2+8,Y(l));
+      ctx.textAlign='right';ctx.fillStyle=ACC();
+      ctx.fillText('윗꼬리',cx-cw/2-8,(Y(h)+Y(Math.max(o,c)))/2);
+      ctx.fillStyle=css('--sup');ctx.fillText('몸통',cx-cw/2-8,(yo+yc)/2);
+      ctx.fillStyle=ACC();ctx.fillText('아랫꼬리',cx-cw/2-8,(Y(l)+Y(Math.min(o,c)))/2);
+    }
+  }
+  candle(W*0.30,40,70,28,60,UP(),true);
+  // 음봉 예시
+  ctx.font='700 11px IBM Plex Sans KR,sans-serif';ctx.textAlign='center';
+  ctx.fillStyle=UP();ctx.fillText('양봉(상승)',W*0.30,H-4);
+  candle(W*0.76,60,70,30,42,DOWN(),false);
+  ctx.fillStyle=DOWN();ctx.fillText('음봉(하락)',W*0.76,H-4);
+}
+
+function demoFor(name,cv){
+  if(name==='anatomy'){ demoAnatomy(cv); return; }
+  if(name==='updown'){
+    drawCV(cv,[
+      {o:40,h:58,l:38,c:55,v:60},{o:55,h:60,l:46,c:48,v:52},{o:48,h:64,l:47,c:62,v:75},
+      {o:62,h:66,l:52,c:54,v:48},{o:54,h:58,l:40,c:43,v:66},{o:43,h:60,l:42,c:58,v:80},
+      {o:58,h:72,l:56,c:70,v:90}
+    ],{vol:false});
+  } else if(name==='wick'){
+    drawCV(cv,[
+      {o:50,h:52,l:44,c:49,v:40},
+      {o:49,h:72,l:48,c:52,v:70},   // 긴 윗꼬리
+      {o:52,h:55,l:40,c:50,v:55},
+      {o:50,h:54,l:30,c:51,v:85},   // 긴 아랫꼬리
+      {o:51,h:60,l:50,c:58,v:60}
+    ],{vol:false,annot:{1:{t:'윗꼬리',color:RES()},3:{t:'아랫꼬리',color:SUP(),below:true}}});
+  } else if(name==='shapes'){
+    drawCV(cv,[
+      {o:30,h:64,l:29,c:62,v:95},   // 장대양봉
+      {o:50,h:58,l:42,c:50.5,v:40}, // 도지
+      {o:52,h:55,l:34,c:53,v:70},   // 망치
+      {o:52,h:72,l:50,c:53,v:68}    // 유성
+    ],{vol:false,annot:{0:{t:'장대양봉',color:ACC()},1:{t:'도지',color:MUT()},2:{t:'망치',color:SUP(),below:true},3:{t:'유성',color:RES()}}});
+  } else if(name==='volbasic'){
+    drawCV(cv,[
+      {o:40,h:46,l:39,c:44,v:30},{o:44,h:50,l:43,c:48,v:34},{o:48,h:56,l:47,c:54,v:38},
+      {o:54,h:58,l:48,c:50,v:28},{o:50,h:62,l:49,c:60,v:44},{o:60,h:64,l:55,c:57,v:26},
+      {o:57,h:66,l:56,c:64,v:40}
+    ],{annot:{}});
+  } else if(name==='volspike'){
+    drawCV(cv,[
+      {o:40,h:44,l:38,c:42,v:22},{o:42,h:45,l:40,c:43,v:20},{o:43,h:46,l:41,c:44,v:24},
+      {o:44,h:47,l:43,c:45,v:21},{o:45,h:68,l:44,c:66,v:98},  // 돌파 + 거래량 급증
+      {o:66,h:70,l:62,c:68,v:60}
+    ],{volHi:4,levels:[{p:47,color:RES(),label:'직전 저항',dash:[4,3]}],annot:{4:{t:'돌파',color:ACC()}}});
+  } else if(name==='junvol'){
+    var jun={o:30,h:62,l:29,c:60,v:100};
+    var body=60-30,p1=60-body*0.5,p2=60-body*0.75,p3=30;
+    drawCV(cv,[
+      jun,
+      {o:56,h:58,l:48,c:49,v:40},{o:49,h:51,l:44.5,c:47,v:34},
+      {o:47,h:50,l:45.2,c:49,v:30},{o:49,h:57,l:48,c:55,v:52}
+    ],{volHi:0,padR:60,
+      levels:[{p:p1,color:SUP(),label:'1차 1/2',dash:[3,3]},{p:p2,color:SUP(),label:'2차 3/4',dash:[3,3]},{p:p3,color:SUP(),label:'3차 시가',dash:[3,3]}],
+      annot:{0:{t:'기준봉',color:ACC()}}});
+  }
+}
+
+function drawIn(card){
+  var cvs=card.querySelectorAll('canvas');
+  requestAnimationFrame(function(){
+    [].slice.call(cvs).forEach(function(cv){demoFor(cv.getAttribute('data-demo'),cv);});
+  });
+}
+
+/* quiz */
+[].slice.call(document.querySelectorAll('.quiz')).forEach(function(q){
+  var opts=[].slice.call(q.querySelectorAll('.opt')),fb=q.querySelector('.qfb'),answered=false;
+  opts.forEach(function(op){op.addEventListener('click',function(){
+    if(answered)return;answered=true;
+    var ok=op.getAttribute('data-ok')==='1';
+    op.classList.add(ok?'ok':'no');
+    if(!ok){opts.forEach(function(o2){if(o2.getAttribute('data-ok')==='1')o2.classList.add('ok');});}
+    fb.textContent=ok?'정확해요 — 캔들 모양과 거래량을 같이 보면 신뢰도가 올라갑니다.':'다시 생각해보기 — 정답은 초록색으로 표시했어요.';
+    fb.style.color=ok?SUP():'';
+  });});
+});
+
+/* links (같은 사이트 내 상대경로) */
+document.getElementById('cta-go').addEventListener('click',function(){
+  if(synth)synth.cancel(); window.open('game.html','_blank','noopener');
+});
+var bh=document.getElementById('b-home');if(bh)bh.addEventListener('click',function(){if(synth)synth.cancel();window.open('index.html','_self');});
+
+var rt;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(function(){drawIn(cards[cur])},120)});
+if(window.matchMedia)window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',function(){drawIn(cards[cur])});
+
+drawIn(cards[0]);
+})();
+</script>
+</body></html>

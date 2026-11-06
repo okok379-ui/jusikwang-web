@@ -793,11 +793,11 @@ bType.addEventListener('click',function(){lineType=lineType==='h'?'trend':'h';pe
 $('#b-clearline').addEventListener('click',function(){userLines=[];pendingPt=null;if(S)draw();toast('지지·저항선 전체 삭제');});
 $('#b-finish').addEventListener('click',finishNow);
 $('#b-log').addEventListener('click',openLog);
-$('#b-learn').addEventListener('click',function(){window.open('https://claude.ai/artifact/SVvQNtjDczrcKBfsNRywds','_blank','noopener');});
+$('#b-learn').addEventListener('click',function(){window.open('lesson-sr.html','_blank','noopener');});
 $('#b-cases').addEventListener('click',openCases);
 $('#case-close').addEventListener('click',function(){$('#case-overlay').hidden=true;});
 $('#case-search').addEventListener('input',function(){renderCases(this.value);});
-$('#b-home').addEventListener('click',function(){window.open('https://claude.ai/artifact/U83iJEbeY2NbGjVKypBcgz','_blank','noopener');});
+$('#b-home').addEventListener('click',function(){window.open('index.html','_blank','noopener');});
 $('#log-close').addEventListener('click',function(){$('#log-overlay').hidden=true;});
 $('#log-clear').addEventListener('click',function(){try{localStorage.removeItem('jusikwang_log')}catch(e){}renderLog();toast('연습기록 전체 삭제');});
 cv.addEventListener('click',function(e){
