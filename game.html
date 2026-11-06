@@ -250,7 +250,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
     <button class="btn ghost" id="r-ideal-view" style="width:100%;margin-bottom:9px">📖 교과서 매매 보기</button>
     <div class="modal-btns">
       <button class="btn ghost" id="r-retry">같은 종목 재도전</button>
-      <button class="play" id="r-next" style="justify-content:center">새 종목 ▸</button>
+      <button class="play" id="r-next" style="justify-content:center">새 종목 선택 ▸</button>
     </div>
   </div>
 </div>
@@ -277,7 +277,8 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
     </div>
     <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px">날짜별 기준봉 조건 충족 종목 · 종목명/코드로 직접 검색해 바로 플레이</div>
     <input id="case-search" placeholder="🔎 종목명 또는 코드 검색" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:inherit;font-size:14px;padding:10px;margin-bottom:10px">
-    <div id="case-list" style="max-height:56vh;overflow:auto"></div>
+    <button id="case-random" class="btn ghost" style="width:100%;margin-bottom:10px">🎲 랜덤 종목으로 연습</button>
+    <div id="case-list" style="max-height:52vh;overflow:auto"></div>
   </div>
 </div>
 
@@ -834,8 +835,9 @@ $('#b-buy').addEventListener('click',function(){buy(parseAmt())});
 $('#b-add').addEventListener('click',function(){buy(parseAmt())});
 $('#b-sell-half').addEventListener('click',function(){sell(0.5)});
 $('#b-sell-all').addEventListener('click',function(){sell(1)});
-$('#r-next').addEventListener('click',function(){newRound();});
+$('#r-next').addEventListener('click',function(){ $('#overlay').hidden=true; openCases(); });
 $('#r-retry').addEventListener('click',function(){newRound(S.seed);});
+$('#case-random').addEventListener('click',function(){ $('#case-overlay').hidden=true; newRound(); });
 $('#r-ideal-view').addEventListener('click',function(){
   if(!S||!S.ideal)return;
   zoom=1; $('#overlay').hidden=true; $('#back-result').hidden=false; draw();
