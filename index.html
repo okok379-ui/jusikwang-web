@@ -241,18 +241,14 @@ header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 8
       <button class="authtab on" data-mode="login" style="flex:1">로그인</button>
       <button class="authtab" data-mode="signup" style="flex:1">회원가입</button>
     </div>
-    <!-- 로그인: 라이선스 키 -->
-    <div class="login-only">
-      <div class="fld"><label>라이선스 키</label><input id="in-key" placeholder="A1B2-C3D4-E5F6-7890" style="font-family:var(--mono);text-transform:uppercase"></div>
-      <div style="font-size:11.5px;color:var(--muted);line-height:1.5">가입 시 발급받은 키를 입력하세요. 가입한 기기에서는 자동 로그인됩니다.</div>
-    </div>
-    <!-- 회원가입: 이름 + 전화번호 -->
+    <!-- 공통: 이름 + 전화번호 -->
+    <div class="fld"><label>이름</label><input id="in-name" placeholder="홍길동"></div>
+    <div class="fld"><label>전화번호</label><input id="in-phone" type="tel" inputmode="numeric" placeholder="010-1234-5678"></div>
     <div class="signup-only" hidden>
-      <div class="fld"><label>이름</label><input id="in-name" placeholder="홍길동"></div>
-      <div class="fld"><label>전화번호</label><input id="in-phone" type="tel" inputmode="numeric" placeholder="010-1234-5678"></div>
       <div class="fld"><label>추천인 (선택)</label><input id="in-ref" placeholder="추천해준 분 이름/번호"></div>
-      <div style="font-size:11.5px;color:var(--muted);line-height:1.5">무료로 바로 시작합니다. 가입 시 <b>라이선스 키</b>가 발급되며, 이 키로 다른 기기에서도 로그인할 수 있어요.</div>
+      <div style="font-size:11.5px;color:var(--muted);line-height:1.5">무료로 바로 시작합니다. 다음부터는 <b>가입한 이름·전화번호</b>로 로그인하면 돼요.</div>
     </div>
+    <div class="login-only" style="font-size:11.5px;color:var(--muted);line-height:1.5">가입한 <b>이름·전화번호</b>를 입력하면 로그인됩니다.</div>
     <button class="btn primary block" id="do-auth" style="margin-top:12px">로그인</button>
     <button class="lnk" id="login-cancel" style="display:block;margin:10px auto 0">취소</button>
   </div>
@@ -380,13 +376,16 @@ function setMode(m){authMode=m;
  $('#do-auth').textContent=(m==='signup'?'무료 회원가입':'로그인');
 }
 function openLogin(){ $('#login-ov').hidden=false; setMode('login');
- var i=$('#in-key'); var lk=''; try{lk=localStorage.getItem('jusikwang_lastkey')||'';}catch(e){}
- if(i){ if(lk)i.value=lk; i.focus(); } }
+ try{var ln=localStorage.getItem('jusikwang_lastname')||'';var lp=localStorage.getItem('jusikwang_lastphone')||'';
+   if(ln&&$('#in-name'))$('#in-name').value=ln; if(lp&&$('#in-phone'))$('#in-phone').value=fmtPhone(lp);}catch(e){}
+ var f=$('#in-name'); if(f)f.focus(); }
 function logout(){ S.user=null; S.lic=null; S.plan='free'; save(S); render(); toast('로그아웃했습니다'); }
 /* 세션 적용 */
 function applyMember(info, licKey){
  S.lic=licKey;
- try{if(licKey)localStorage.setItem('jusikwang_lastkey',licKey);}catch(e){}
+ try{if(licKey)localStorage.setItem('jusikwang_lastkey',licKey);
+   if(info.name)localStorage.setItem('jusikwang_lastname',info.name);
+   if(info.phone)localStorage.setItem('jusikwang_lastphone',info.phone);}catch(e){}
  S.user={phone:info.phone||'', nick:(info.name||('회원'+(info.phone||'').slice(-4)))};
  S.plan=(info.plan==='paid')?'pro':'free';
  S.exp=info.expires_at||null;
@@ -418,12 +417,14 @@ function doAuth(){
      else showKey(res.license_key);
    });
  } else {
-   var key=($('#in-key').value||'').trim().toUpperCase();
-   if(!key){toast('라이선스 키를 입력하세요');done();return;}
-   rpc('jusikwang_verify',{p_key:key,p_device:deviceId()}).then(function(res){
+   var lname=($('#in-name').value||'').trim();
+   var lph=normPhone($('#in-phone').value);
+   if(!lname){toast('이름을 입력하세요');done();return;}
+   if(lph.length<10){toast('올바른 전화번호를 입력하세요');done();return;}
+   rpc('jusikwang_login_phone',{p_name:lname,p_phone:lph}).then(function(res){
      done();
-     if(!res||!res.ok){toast((res&&res.msg)||'로그인에 실패했습니다');return;}
-     applyMember(res,key);
+     if(!res||!res.ok){toast((res&&res.msg)||'가입 정보를 찾을 수 없습니다 — 회원가입을 해주세요');return;}
+     applyMember(res,res.license_key);
      $('#login-ov').hidden=true;
      toast('환영합니다, '+(res.name||'')+'님 👑');
    });
@@ -492,7 +493,7 @@ $('#login-cancel').addEventListener('click',function(){$('#login-ov').hidden=tru
 $('#pay-submit').addEventListener('click',submitPro);
 $('#pro-cancel').addEventListener('click',function(){$('#pro-ov').hidden=true;});
 document.querySelectorAll('.authtab').forEach(function(t){t.addEventListener('click',function(){setMode(t.getAttribute('data-mode'));});});
-['in-key','in-name','in-phone','in-ref'].forEach(function(id){var el=$('#'+id);if(el)el.addEventListener('keydown',function(e){if(e.key==='Enter')doAuth();});});
+['in-name','in-phone','in-ref'].forEach(function(id){var el=$('#'+id);if(el)el.addEventListener('keydown',function(e){if(e.key==='Enter')doAuth();});});
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){$('#login-ov').hidden=true;$('#pro-ov').hidden=true;}});
 
 var tt;function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(function(){t.classList.remove('show')},2200);}
