@@ -231,6 +231,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
     <button class="pbtn" id="b-trend" title="추세선(저점·저점 연결)">╱ 추세선</button>
     <button class="pbtn" id="b-clearline" title="그은 선 모두 지우기">선 지우기</button>
     <button class="pbtn" id="b-phase" title="상승·하락·지지 구간을 배경색으로 표시">📈 구간 표시</button>
+    <button class="pbtn" id="b-autosr" title="고점·저점이 반복된 가격대를 자동으로 지지·저항선 표시">🤖 자동 지지저항</button>
     <div class="modes" role="group" aria-label="매매 모드">
       <button class="md on" data-mode="manual">수동</button>
       <button class="md" data-mode="auto">자동</button>
@@ -429,7 +430,21 @@ function syncFromServer(){
     renderStat(st); renderRecent();
   });
 }
-var userLines=[], drawMode=false, PANELS=[], lineType='h', pendingPt=null, zoom=1, phaseOn=false;
+var userLines=[], drawMode=false, PANELS=[], lineType='h', pendingPt=null, zoom=1, phaseOn=false, autoSROn=false;
+/* 자동 지지저항: 변곡점(고/저점) 중 여러 번 닿은 가격대를 군집화 */
+function autoSR(bars,rev){
+  var k=2,piv=[],i,j;
+  for(i=k;i<rev-k;i++){var hi=bars[i].h,lo=bars[i].l,ishi=true,islo=true;
+    for(j=i-k;j<=i+k;j++){if(j!==i){if(bars[j].h>=hi)ishi=false;if(bars[j].l<=lo)islo=false;}}
+    if(ishi)piv.push(hi);if(islo)piv.push(lo);}
+  if(piv.length<2)return [];
+  piv.sort(function(a,b){return a-b;});
+  var ref=bars[rev-1].c,tol=ref*0.004,cl=[],cur=[piv[0]];
+  for(i=1;i<piv.length;i++){if(piv[i]-cur[cur.length-1]<=tol)cur.push(piv[i]);else{cl.push(cur);cur=[piv[i]];}}
+  cl.push(cur);
+  var out=[];cl.forEach(function(c){if(c.length>=2){var a=0;c.forEach(function(x){a+=x;});out.push({p:a/c.length,n:c.length});}});
+  out.sort(function(a,b){return b.n-a.n;});return out.slice(0,5);
+}
 
 function startWithDay(day,seed){
  S={seed:(seed==null?-1:seed),day:day,ideal:idealStats(day.bars),rule:ruleTrade(day),i:8,maxMin:day.N*3-1,cash:START,shares:0,avg:0,realized:0,trades:[],playing:false,finished:false,mode:curMode};
@@ -715,6 +730,7 @@ function candlePanel(bars,rev,R,opts){
  var gl=opts.grid||2;
  for(i=0;i<=gl;i++){var pv=lo+(hi-lo)*i/gl,yy=Y(pv);ctx.beginPath();ctx.moveTo(R.x,yy);ctx.lineTo(R.x+R.w,yy);ctx.stroke();ctx.fillStyle=C.muted;ctx.textAlign='left';ctx.fillText(fmt(pv),R.x+R.w+5,yy);}
  if(opts.levels)opts.levels.forEach(function(L){if(L.p<lo||L.p>hi)return;var yy=Y(L.p);ctx.save();ctx.setLineDash(L.dash||[]);ctx.strokeStyle=L.color;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(R.x,yy);ctx.lineTo(R.x+R.w,yy);ctx.stroke();ctx.restore();if(L.text){ctx.fillStyle=L.color;ctx.textAlign='left';ctx.font='9px IBM Plex Mono,monospace';ctx.fillText(L.text,R.x+3,yy-5);}});
+ if(opts.autosr&&autoSROn){var refSR=bars[rev-1].c;autoSR(bars,rev).forEach(function(L){if(L.p<lo||L.p>hi)return;var yy=Y(L.p),sup=L.p<refSR,col=sup?'#2bb3a3':'#e06c9f';ctx.save();ctx.setLineDash([2,3]);ctx.strokeStyle=col;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(R.x,yy);ctx.lineTo(R.x+R.w,yy);ctx.stroke();ctx.restore();ctx.fillStyle=col;ctx.textAlign='right';ctx.font='9px IBM Plex Sans KR,sans-serif';ctx.fillText((sup?'지지':'저항'),R.x+R.w-3,yy-4);});}
  if(opts.ideal&&S.finished){var id=S.rule||S.ideal;if(id&&id.buyIdx>=winStart&&id.buyIdx<rev){ctx.fillStyle='rgba(243,165,43,.14)';var x1=X(id.buyIdx)-bw/2,x2=X(id.sellIdx)+bw/2;ctx.fillRect(Math.max(R.x,x1),R.y,Math.min(x2,R.x+R.w)-Math.max(R.x,x1),R.h);ctx.fillStyle=C.accent;ctx.textAlign='center';ctx.font='9px IBM Plex Mono,monospace';ctx.beginPath();ctx.arc(X(id.buyIdx),Y(id.buyP),3,0,7);ctx.fill();ctx.fillText('매수',X(id.buyIdx),Y(id.buyP)+11);ctx.beginPath();ctx.arc(X(id.sellIdx),Y(id.sellP),3,0,7);ctx.fill();ctx.fillText('매도',X(id.sellIdx),Y(id.sellP)-9);}}
  for(i=winStart;i<rev;i++){var b=bars[i],up=b.c>=b.o,col=up?C.up:C.down;ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=1;var xc=X(i);ctx.beginPath();ctx.moveTo(xc,Y(b.h));ctx.lineTo(xc,Y(b.l));ctx.stroke();var yo=Y(b.o),yc=Y(b.c),top=Math.min(yo,yc),bh=Math.max(1,Math.abs(yc-yo));if(cw<=1.5)ctx.fillRect(xc-0.6,top,1.2,bh);else ctx.fillRect(xc-cw/2,top,cw,bh);}
  if(opts.ma){ctx.strokeStyle=C.ma10;ctx.lineWidth=1.7;ctx.beginPath();var started=false;for(i=winStart;i<rev;i++){var mv=opts.ma[i];if(mv==null)continue;var mx=X(i),my=Y(mv);if(!started){ctx.moveTo(mx,my);started=true}else ctx.lineTo(mx,my);}ctx.stroke();for(i=rev-1;i>=winStart;i--){if(opts.ma[i]!=null){ctx.fillStyle=C.ma10;ctx.textAlign='left';ctx.font='9px IBM Plex Mono,monospace';ctx.fillText((opts.maLabel||'10')+' '+fmt(Math.round(opts.ma[i])),R.x+3,Y(opts.ma[i])-5);break;}}}
@@ -778,7 +794,7 @@ function draw(){
  y+=unitH+uGap;
  // 3분봉
  var w3=winOf(tRev,24);
- candlePanel(bars3,tRev,{x:x0,y:y,w:w,h:candleH},{label:'3분봉',grid:2,maxCW:14,winStart:w3.winStart,slots:w3.slots,levels:baseLevels(true),ma:maSeeded(bars3,tRev,10,d.prevClose),maLabel:'10',phase:true,phaseMarks:true,markers:S.trades.map(function(t){return {i:Math.floor(t.m/3),side:t.side,px:t.price,tag:t.tag}}),labelMk:true,ideal:true,prevClose:d.prevClose});
+ candlePanel(bars3,tRev,{x:x0,y:y,w:w,h:candleH},{label:'3분봉',grid:2,maxCW:14,winStart:w3.winStart,slots:w3.slots,levels:baseLevels(true),ma:maSeeded(bars3,tRev,10,d.prevClose),maLabel:'10',phase:true,phaseMarks:true,autosr:true,markers:S.trades.map(function(t){return {i:Math.floor(t.m/3),side:t.side,px:t.price,tag:t.tag}}),labelMk:true,ideal:true,prevClose:d.prevClose});
  volPanel(bars3,tRev,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:14,winStart:w3.winStart,slots:w3.slots,perHour:20});
  y+=unitH+uGap;
  // 일봉 + 오늘 형성중 봉 + 10일선
@@ -787,7 +803,7 @@ function draw(){
  var dBars=d.daily.concat([{o:d.open,h:th,l:tl,c:tc,v:tv}]);
  var dma=maArray(dBars,dBars.length,10);
  var VIEW=Math.max(8,Math.min(dBars.length,Math.round(22/zoom))), stt=Math.max(0,dBars.length-VIEW);
- candlePanel(dBars.slice(stt),dBars.length-stt,{x:x0,y:y,w:w,h:candleH},{label:'일봉',grid:2,maxCW:16,minSlots:VIEW,ma:dma.slice(stt),maLabel:'10일',prevClose:d.prevClose});
+ candlePanel(dBars.slice(stt),dBars.length-stt,{x:x0,y:y,w:w,h:candleH},{label:'일봉',grid:2,maxCW:16,minSlots:VIEW,ma:dma.slice(stt),maLabel:'10일',autosr:true,prevClose:d.prevClose});
  volPanel(dBars.slice(stt),dBars.length-stt,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:16,minSlots:VIEW});
 }
 
@@ -867,6 +883,7 @@ bH.addEventListener('click',function(){pickType('h');});
 bTrend.addEventListener('click',function(){pickType('trend');});
 $('#b-clearline').addEventListener('click',function(){userLines=[];pendingPt=null;if(S)draw();toast('지지·저항선 전체 삭제');});
 $('#b-phase').addEventListener('click',function(){phaseOn=!phaseOn;$('#b-phase').classList.toggle('on',phaseOn);if(S)draw();toast(phaseOn?'구간 표시 ON · 🟢상승(매수) 🔴하락(매도) ⚪지지(관망) — 10이평 기울기 기준':'구간 표시 OFF');});
+$('#b-autosr').addEventListener('click',function(){autoSROn=!autoSROn;$('#b-autosr').classList.toggle('on',autoSROn);if(S)draw();toast(autoSROn?'자동 지지저항 ON · 고점·저점이 반복된 가격대를 표시(초록=지지, 분홍=저항)':'자동 지지저항 OFF');});
 $('#b-finish').addEventListener('click',finishNow);
 $('#b-log').addEventListener('click',openLog);
 $('#b-learn').addEventListener('click',function(){window.open('lesson-sr.html','_blank','noopener');});
