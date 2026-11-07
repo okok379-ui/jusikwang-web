@@ -267,9 +267,12 @@ function gttsUrl(t){return 'https://translate.google.com/translate_tts?ie=UTF-8&
 function chunkText(t){var ps=(t||'').match(/[^.!?。]+[.!?。]?/g)||[t];var out=[],cur2='';ps.forEach(function(p){if((cur2+p).length>170){if(cur2.trim())out.push(cur2.trim());cur2=p;}else cur2+=p;});if(cur2.trim())out.push(cur2.trim());return out;}
 function stopAll(){try{audioEl.pause();audioEl.removeAttribute('src');}catch(e){}ttsQ=[];if(synth)synth.cancel();}
 function synthSpeak(t){if(!synth)return;synth.cancel();var u=new SpeechSynthesisUtterance(t||'');u.lang='ko-KR';if(koVoice)u.voice=koVoice;u.rate=1;synth.speak(u);}
-function playChunk(){if(ttsIdx>=ttsQ.length)return;audioEl.src=gttsUrl(ttsQ[ttsIdx]);var pr=audioEl.play();if(pr&&pr.catch)pr.catch(function(){synthSpeak(NAR[cur]||'');});}
+var ttsTimer=null, audioWorks=false;
+function ttsFail(){clearTimeout(ttsTimer);try{audioEl.pause();}catch(e){}ttsQ=[];synthSpeak(NAR[cur]||'');}
+function playChunk(){if(ttsIdx>=ttsQ.length)return;audioWorks=false;audioEl.src=gttsUrl(ttsQ[ttsIdx]);var pr=audioEl.play();if(pr&&pr.catch)pr.catch(function(){ttsFail();});clearTimeout(ttsTimer);ttsTimer=setTimeout(function(){if(!audioWorks)ttsFail();},1800);}
+audioEl.addEventListener('playing',function(){audioWorks=true;clearTimeout(ttsTimer);});
 audioEl.addEventListener('ended',function(){ttsIdx++;playChunk();});
-audioEl.addEventListener('error',function(){synthSpeak(NAR[cur]||'');});
+audioEl.addEventListener('error',function(){ttsFail();});
 function speakCard(){ if(!autoRead)return; stopAll(); ttsQ=chunkText(NAR[cur]||''); ttsIdx=0; playChunk(); }
 var spB=document.getElementById('speak');
 spB.addEventListener('click',function(){ autoRead=!autoRead; spB.classList.toggle('on',autoRead); spB.innerHTML=autoRead?'🔊 듣는 중':'🔊 듣기'; if(autoRead)speakCard(); else stopAll(); });
