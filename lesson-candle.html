@@ -260,12 +260,20 @@ var NAR=[
 ];
 function pickVoice(){ if(!synth)return; var vs=synth.getVoices()||[]; koVoice=vs.filter(function(v){return /ko(-|_)?KR/i.test(v.lang)})[0]||vs.filter(function(v){return /korean|한국/i.test(v.name)})[0]||null; }
 if(synth){ pickVoice(); synth.onvoiceschanged=pickVoice; }
-function speakCard(){ if(!synth)return; synth.cancel(); if(!autoRead)return;
-  var u=new SpeechSynthesisUtterance(NAR[cur]||''); u.lang='ko-KR'; if(koVoice)u.voice=koVoice; u.rate=1; u.pitch=1; synth.speak(u); }
+// ---- 음성: 기기 TTS 설정 없이도 재생되는 온라인 음성(구글) 우선, 실패 시 기기 TTS 폴백 ----
+var audioEl=new Audio(); audioEl.preload='none';
+var ttsQ=[], ttsIdx=0;
+function gttsUrl(t){return 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ko&q='+encodeURIComponent(t);}
+function chunkText(t){var ps=(t||'').match(/[^.!?。]+[.!?。]?/g)||[t];var out=[],cur2='';ps.forEach(function(p){if((cur2+p).length>170){if(cur2.trim())out.push(cur2.trim());cur2=p;}else cur2+=p;});if(cur2.trim())out.push(cur2.trim());return out;}
+function stopAll(){try{audioEl.pause();audioEl.removeAttribute('src');}catch(e){}ttsQ=[];if(synth)synth.cancel();}
+function synthSpeak(t){if(!synth)return;synth.cancel();var u=new SpeechSynthesisUtterance(t||'');u.lang='ko-KR';if(koVoice)u.voice=koVoice;u.rate=1;synth.speak(u);}
+function playChunk(){if(ttsIdx>=ttsQ.length)return;audioEl.src=gttsUrl(ttsQ[ttsIdx]);var pr=audioEl.play();if(pr&&pr.catch)pr.catch(function(){synthSpeak(NAR[cur]||'');});}
+audioEl.addEventListener('ended',function(){ttsIdx++;playChunk();});
+audioEl.addEventListener('error',function(){synthSpeak(NAR[cur]||'');});
+function speakCard(){ if(!autoRead)return; stopAll(); ttsQ=chunkText(NAR[cur]||''); ttsIdx=0; playChunk(); }
 var spB=document.getElementById('speak');
-if(!synth){ spB.style.display='none'; }
-else spB.addEventListener('click',function(){ autoRead=!autoRead; spB.classList.toggle('on',autoRead); spB.innerHTML=autoRead?'🔊 듣는 중':'🔊 듣기'; if(autoRead)speakCard(); else synth.cancel(); });
-window.addEventListener('beforeunload',function(){if(synth)synth.cancel();});
+spB.addEventListener('click',function(){ autoRead=!autoRead; spB.classList.toggle('on',autoRead); spB.innerHTML=autoRead?'🔊 듣는 중':'🔊 듣기'; if(autoRead)speakCard(); else stopAll(); });
+window.addEventListener('beforeunload',function(){stopAll();});
 
 function show(n){
   n=Math.max(0,Math.min(N-1,n));
