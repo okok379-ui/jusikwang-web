@@ -47,6 +47,29 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px so
 
 .grid{display:grid;grid-template-columns:1fr 322px;gap:12px;align-items:start}
 @media (max-width:780px){.grid{grid-template-columns:1fr}}
+@media (max-width:640px){
+  .wrap{padding:8px;gap:8px}
+  .topbar{gap:6px}
+  .brand h1{font-size:16px}
+  .sess{gap:5px;width:100%}
+  .chip{padding:3px 8px;font-size:10.5px}
+  .chart-wrap{height:clamp(300px,42vh,420px)}
+  .chart-head{font-size:12px;padding:1px 2px 2px}
+  .grid{gap:8px}
+  .quote{padding:10px 12px}
+  .stats .k{font-size:10px}.stats .v{font-size:13px}
+  .order{padding:10px 12px;gap:8px}
+  .amt input{font-size:15px}
+  .btns button,.sellrow button{padding:12px 0;font-size:15px}
+  .quickrow button{padding:7px 10px;font-size:12px}
+  /* 하단 거래 조작바를 화면에 고정해 차트 보면서 매수/매도 */
+  .playbar{position:sticky;bottom:0;z-index:30;background:var(--panel);border-top:1px solid var(--border);
+    border-bottom-left-radius:14px;border-bottom-right-radius:14px;gap:6px;padding:8px 10px;flex-wrap:wrap}
+  .play{padding:10px 12px;font-size:14px}
+  .pbtn{padding:7px 9px;font-size:12px}
+  .speeds,.modes{margin-left:0}
+  .modal{max-height:88vh;overflow:auto}
+}
 .panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow)}
 
 .chartpanel{padding:10px 10px 6px}
