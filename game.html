@@ -207,6 +207,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
     <button class="pbtn" id="b-h" title="수평 지지·저항선">─ 수평선</button>
     <button class="pbtn" id="b-trend" title="추세선(저점·저점 연결)">╱ 추세선</button>
     <button class="pbtn" id="b-clearline" title="그은 선 모두 지우기">선 지우기</button>
+    <button class="pbtn" id="b-phase" title="상승·하락·지지 구간을 배경색으로 표시">📈 구간 표시</button>
     <div class="modes" role="group" aria-label="매매 모드">
       <button class="md on" data-mode="manual">수동</button>
       <button class="md" data-mode="auto">자동</button>
@@ -405,7 +406,7 @@ function syncFromServer(){
     renderStat(st); renderRecent();
   });
 }
-var userLines=[], drawMode=false, PANELS=[], lineType='h', pendingPt=null, zoom=1;
+var userLines=[], drawMode=false, PANELS=[], lineType='h', pendingPt=null, zoom=1, phaseOn=false;
 
 function startWithDay(day,seed){
  S={seed:(seed==null?-1:seed),day:day,ideal:idealStats(day.bars),rule:ruleTrade(day),i:8,maxMin:day.N*3-1,cash:START,shares:0,avg:0,realized:0,trades:[],playing:false,finished:false,mode:curMode};
@@ -671,6 +672,22 @@ function candlePanel(bars,rev,R,opts){
  function Y(p){return R.y+(hi-p)/(hi-lo)*R.h}
  ctx.fillStyle=C.panel; ctx.fillRect(R.x,R.y,R.w+GUT,R.h);
  ctx.save();ctx.beginPath();ctx.rect(R.x,R.y,R.w+GUT,R.h);ctx.clip();
+ // ----- 추세 구간 표시(phase overlay): 10이평 기울기로 상승/하락/지지 배경 -----
+ if(opts.phase && phaseOn && opts.ma){
+   var pPrev=null;
+   for(i=winStart;i<rev;i++){
+     var _mc=opts.ma[i], _mp=(i>0?opts.ma[i-1]:null);
+     if(_mc==null||_mp==null){pPrev=null;continue;}
+     var _sl=_mc-_mp, _eps=_mc*0.0006, _ph=(_sl>_eps?'up':(_sl<-_eps?'dn':'flat'));
+     var _c=(_ph==='up'?'rgba(43,179,163,.13)':(_ph==='dn'?'rgba(224,108,159,.15)':'rgba(138,151,167,.09)'));
+     ctx.fillStyle=_c; ctx.fillRect(X(i)-bw/2, R.y, bw, R.h);
+     if(opts.phaseMarks && pPrev!==null && _ph!==pPrev){
+       if(_ph==='up'){ctx.fillStyle='#2bb3a3';ctx.textAlign='center';ctx.font='bold 9px IBM Plex Sans KR,sans-serif';ctx.fillText('▲매수',X(i),R.y+R.h-6);}
+       else if(_ph==='dn'){ctx.fillStyle='#e06c9f';ctx.textAlign='center';ctx.font='bold 9px IBM Plex Sans KR,sans-serif';ctx.fillText('▼매도',X(i),R.y+10);}
+     }
+     pPrev=_ph;
+   }
+ }
  ctx.strokeStyle=C.grid; ctx.lineWidth=1; ctx.textBaseline='middle'; ctx.font='9px IBM Plex Mono,monospace';
  var gl=opts.grid||2;
  for(i=0;i<=gl;i++){var pv=lo+(hi-lo)*i/gl,yy=Y(pv);ctx.beginPath();ctx.moveTo(R.x,yy);ctx.lineTo(R.x+R.w,yy);ctx.stroke();ctx.fillStyle=C.muted;ctx.textAlign='left';ctx.fillText(fmt(pv),R.x+R.w+5,yy);}
@@ -733,12 +750,12 @@ function draw(){
  var y=2;
  // 1분봉
  var w1=winOf(mRev,60);
- candlePanel(d.min1,mRev,{x:x0,y:y,w:w,h:candleH},{label:'1분봉',grid:2,maxCW:8,winStart:w1.winStart,slots:w1.slots,levels:baseLevels(false),ma:maSeeded(d.min1,mRev,10,d.prevClose),maLabel:'10',markers:S.trades.map(function(t){return {i:t.m,side:t.side}}),prevClose:d.prevClose});
+ candlePanel(d.min1,mRev,{x:x0,y:y,w:w,h:candleH},{label:'1분봉',grid:2,maxCW:8,winStart:w1.winStart,slots:w1.slots,levels:baseLevels(false),ma:maSeeded(d.min1,mRev,10,d.prevClose),maLabel:'10',phase:true,markers:S.trades.map(function(t){return {i:t.m,side:t.side}}),prevClose:d.prevClose});
  volPanel(d.min1,mRev,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:8,winStart:w1.winStart,slots:w1.slots,perHour:60});
  y+=unitH+uGap;
  // 3분봉
  var w3=winOf(tRev,24);
- candlePanel(bars3,tRev,{x:x0,y:y,w:w,h:candleH},{label:'3분봉',grid:2,maxCW:14,winStart:w3.winStart,slots:w3.slots,levels:baseLevels(true),ma:maSeeded(bars3,tRev,10,d.prevClose),maLabel:'10',markers:S.trades.map(function(t){return {i:Math.floor(t.m/3),side:t.side,px:t.price,tag:t.tag}}),labelMk:true,ideal:true,prevClose:d.prevClose});
+ candlePanel(bars3,tRev,{x:x0,y:y,w:w,h:candleH},{label:'3분봉',grid:2,maxCW:14,winStart:w3.winStart,slots:w3.slots,levels:baseLevels(true),ma:maSeeded(bars3,tRev,10,d.prevClose),maLabel:'10',phase:true,phaseMarks:true,markers:S.trades.map(function(t){return {i:Math.floor(t.m/3),side:t.side,px:t.price,tag:t.tag}}),labelMk:true,ideal:true,prevClose:d.prevClose});
  volPanel(bars3,tRev,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:14,winStart:w3.winStart,slots:w3.slots,perHour:20});
  y+=unitH+uGap;
  // 일봉 + 오늘 형성중 봉 + 10일선
@@ -826,6 +843,7 @@ function pickType(t){ lineType=t; drawMode=true; pendingPt=null; syncLineBtns();
 bH.addEventListener('click',function(){pickType('h');});
 bTrend.addEventListener('click',function(){pickType('trend');});
 $('#b-clearline').addEventListener('click',function(){userLines=[];pendingPt=null;if(S)draw();toast('지지·저항선 전체 삭제');});
+$('#b-phase').addEventListener('click',function(){phaseOn=!phaseOn;$('#b-phase').classList.toggle('on',phaseOn);if(S)draw();toast(phaseOn?'구간 표시 ON · 🟢상승(매수) 🔴하락(매도) ⚪지지(관망) — 10이평 기울기 기준':'구간 표시 OFF');});
 $('#b-finish').addEventListener('click',finishNow);
 $('#b-log').addEventListener('click',openLog);
 $('#b-learn').addEventListener('click',function(){window.open('lesson-sr.html','_blank','noopener');});
