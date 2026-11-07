@@ -1,0 +1,590 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>레슨 5 · 눌림 단타 매수</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+:root{
+  --bg:#0e1116; --panel:#151b23; --panel2:#1b222c; --fg:#e7edf3; --muted:#8a97a7;
+  --border:#263040; --grid:#1d2733; --up:#f0433a; --down:#3b82f6; --accent:#f3a52b;
+  --accent-ink:#15110a; --sup:#2bb3a3; --res:#e06c9f; --ma:#b57be6;
+  --shadow:0 1px 0 rgba(255,255,255,.03),0 10px 28px rgba(0,0,0,.4);
+  --sans:"IBM Plex Sans KR",system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme=dark]){
+  --bg:#eef1f5;--panel:#fff;--panel2:#f2f5f9;--fg:#121820;--muted:#5a6675;--border:#d6dce5;--grid:#e6ebf1;
+  --up:#e03131;--down:#1c64f2;--accent:#b9770a;--accent-ink:#fff;--sup:#0f8f81;--res:#c03e78;--ma:#8e3fc9;
+  --shadow:0 1px 2px rgba(20,30,45,.06),0 10px 24px rgba(20,30,45,.09);color-scheme:light;
+}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.6;-webkit-text-size-adjust:100%}
+.wrap{min-height:100%;display:flex;flex-direction:column;max-width:720px;margin:0 auto;
+  padding:16px max(16px,env(safe-area-inset-left)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-right))}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.badge{background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:11px;border-radius:999px;padding:4px 10px;letter-spacing:.02em}
+.top h1{font-size:15px;margin:0;font-weight:600;letter-spacing:-.01em}
+.top .lv{font-size:11px;color:var(--muted);font-weight:600}
+.spk{margin-left:auto;background:var(--panel2);border:1px solid var(--border);color:var(--fg);border-radius:999px;padding:6px 12px;font-family:inherit;font-weight:600;font-size:12px;cursor:pointer;white-space:nowrap}
+.spk:hover{border-color:var(--sup);color:var(--sup)}
+.spk.on{background:var(--sup);color:#04201c;border-color:transparent}
+.prog{display:flex;gap:5px;margin-bottom:14px}
+.dot{flex:1;height:4px;border-radius:2px;background:var(--border);transition:background .2s}
+.dot.on{background:var(--accent)}
+.dot.done{background:var(--sup)}
+.stage{flex:1;position:relative}
+.card{display:none;animation:fade .28s ease}
+.card.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:20px}
+.kicker{font-size:11.5px;font-weight:700;color:var(--accent);letter-spacing:.06em;text-transform:uppercase}
+.card h2{font-size:21px;margin:6px 0 10px;letter-spacing:-.02em;line-height:1.3}
+.card p{margin:0 0 12px;color:var(--fg)}
+.card p.mut{color:var(--muted);font-size:13.5px}
+.card b{font-weight:600}
+.hl{color:var(--sup);font-weight:600}
+.hl-r{color:var(--res);font-weight:600}
+.hl-a{color:var(--accent);font-weight:600}
+.hl-m{color:var(--ma);font-weight:600}
+.chartbox{width:100%;height:230px;background:var(--panel2);border:1px solid var(--border);border-radius:12px;margin:4px 0 12px;position:relative;overflow:hidden}
+canvas{width:100%;height:100%;display:block}
+.cap{font-size:12px;color:var(--muted);margin:-6px 0 12px;text-align:center}
+.steps{display:flex;flex-direction:column;gap:8px;margin:4px 0 12px}
+.step{display:flex;gap:11px;align-items:flex-start;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.step .n{flex:none;width:22px;height:22px;border-radius:7px;background:var(--sup);color:#04201c;font-weight:700;font-size:12px;display:grid;place-items:center;font-family:var(--mono)}
+.step.r .n{background:var(--res);color:#fff}
+.step.a .n{background:var(--accent);color:var(--accent-ink)}
+.step .t{font-size:13.5px;line-height:1.5}
+.step .t b{font-weight:600}
+.pills{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0 10px}
+.pill{font-size:12px;font-weight:600;border-radius:999px;padding:5px 11px;border:1px solid var(--border);background:var(--panel2);color:var(--muted)}
+.pill.sup{color:var(--sup);border-color:color-mix(in srgb,var(--sup) 45%,transparent)}
+.pill.res{color:var(--res);border-color:color-mix(in srgb,var(--res) 45%,transparent)}
+.pill.ma{color:var(--ma);border-color:color-mix(in srgb,var(--ma) 45%,transparent)}
+.demo-btn{background:var(--panel2);border:1px solid var(--border);color:var(--fg);border-radius:9px;padding:9px 14px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer}
+.demo-btn:hover{border-color:var(--sup);color:var(--sup)}
+.note{background:color-mix(in srgb,var(--accent) 12%,transparent);border:1px solid color-mix(in srgb,var(--accent) 38%,transparent);border-radius:10px;padding:11px 13px;font-size:13px;line-height:1.55;margin:4px 0 2px}
+.note b{color:var(--accent)}
+.flow{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px;align-items:center}
+.flow span{font-size:12px;font-weight:600;background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:6px 9px}
+.flow i{color:var(--muted);font-style:normal}
+/* 호가창 ladder */
+.ob{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:4px 0 12px;font-family:var(--mono)}
+.ob .row{display:grid;grid-template-columns:1fr 78px 1fr;align-items:center;height:26px;font-size:12px;border-bottom:1px solid var(--grid)}
+.ob .row:last-child{border-bottom:none}
+.ob .px{text-align:center;font-weight:600;background:var(--panel2);color:var(--fg)}
+.ob .ask,.ob .bid{position:relative;height:100%}
+.ob .bar{position:absolute;top:3px;bottom:3px;opacity:.9}
+.ob .ask .bar{right:6px;background:color-mix(in srgb,var(--down) 60%,transparent);border-radius:3px 0 0 3px}
+.ob .bid .bar{left:6px;background:color-mix(in srgb,var(--up) 60%,transparent);border-radius:0 3px 3px 0}
+.ob .q{position:absolute;top:0;bottom:0;display:flex;align-items:center;font-size:11px;color:var(--fg)}
+.ob .ask .q{right:9px}
+.ob .bid .q{left:9px}
+.ob .wall{outline:2px solid var(--accent);outline-offset:-2px;border-radius:4px}
+.obcap{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin:-6px 2px 12px}
+.quiz{display:flex;flex-direction:column;gap:9px;margin:10px 0 0}
+.q{font-weight:600;margin-bottom:2px}
+.opt{text-align:left;background:var(--panel2);border:1px solid var(--border);color:var(--fg);border-radius:10px;padding:11px 13px;font-family:inherit;font-size:14px;cursor:pointer;transition:.15s}
+.opt:hover{border-color:var(--muted)}
+.opt.ok{border-color:var(--sup);background:color-mix(in srgb,var(--sup) 15%,transparent);color:var(--sup);font-weight:600}
+.opt.no{border-color:var(--up);background:color-mix(in srgb,var(--up) 13%,transparent);color:var(--up)}
+.qfb{font-size:13px;color:var(--muted);margin-top:4px;min-height:18px}
+.cta{text-align:center;padding:8px 0}
+.cta .big{font-size:40px}
+.cta h2{margin:6px 0}
+.cta .go{display:inline-block;margin-top:8px;background:var(--accent);color:var(--accent-ink);border:none;border-radius:11px;padding:13px 22px;font-family:inherit;font-weight:700;font-size:15px;cursor:pointer}
+.checklist{text-align:left;max-width:380px;margin:14px auto 0;display:flex;flex-direction:column;gap:7px}
+.checklist div{background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:9px 12px;font-size:13.5px}
+.checklist .mk{color:var(--sup);font-weight:700;margin-right:7px}
+.nav{display:flex;align-items:center;gap:10px;margin-top:14px}
+.nav button{font-family:inherit;font-weight:600;font-size:14px;border-radius:11px;padding:12px 18px;cursor:pointer;border:1px solid var(--border)}
+.nav .prev{background:transparent;color:var(--fg)}
+.nav .prev:disabled{opacity:.35;cursor:not-allowed}
+.nav .next{margin-left:auto;background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.nav .count{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.foot{font-size:11px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5}
+
+@media (max-width:560px){
+  .top{flex-wrap:wrap;gap:6px}
+  .top h1{flex:1 1 100%;order:10;font-size:13.5px;margin-top:2px}
+  .lv{display:none}
+  .spk{font-size:11px;padding:5px 9px}
+}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <span class="badge">레슨 5</span>
+    <h1>눌림 단타 매수 — 오른 종목의 쉬어가는 자리를 잡는다</h1>
+    <button class="spk" id="b-home" style="margin-left:auto">🏠 처음으로</button>
+    <button class="spk" id="speak" aria-label="음성 설명 켜기">🔊 듣기</button>
+    <span class="lv">실전 단계</span>
+  </div>
+  <div class="prog" id="prog"></div>
+  <div style="font-size:11px;color:var(--muted);text-align:center;margin:-2px 0 10px;line-height:1.4">🔊 음성이 안 들리면 <b>Chrome·Safari</b>로 열어주세요 (카톡 등 인앱 브라우저는 음성이 막힙니다)</div>
+
+  <div class="stage" id="stage">
+
+    <!-- 1 INTRO -->
+    <section class="card on"><div class="panel">
+      <div class="kicker">이 강의의 지도</div>
+      <h2>눌림 단타 매수란?</h2>
+      <p>이미 <b>오르고 있는 종목</b>이 잠깐 숨을 고르며 <span class="hl-a">눌리는 자리</span>를 사서, 다시 오를 때 <b>짧게</b> 수익을 내는 매매입니다. 바닥에서 반등을 노리는 게 아니라, <b>힘이 확인된 종목</b>의 조정만 노리는 거예요.</p>
+      <div class="flow">
+        <span>① 종목 고르기</span><i>›</i><span>② 눌림매수 타점</span><i>›</i><span>③ 호가창 확인</span><i>›</i><span>④ 분할매수·손절</span><i>›</i><span>⑤ 분할매도·익절</span><i>›</i><span>⑥ 복기</span>
+      </div>
+      <div class="note"><b>이 강의가 끝나면</b> — 거래량으로 종목을 걸러, 20일선 근처 눌림에서 지지를 확인하고, 나눠 사고, 손절선을 지키고, 종가에 정리하는 <b>한 사이클</b>을 스스로 돌릴 수 있게 됩니다.</div>
+    </div></section>
+
+    <!-- 2 거래량·거래대금 -->
+    <section class="card"><div class="panel">
+      <div class="kicker">① 종목 고르기 · 수급</div>
+      <h2>돈이 몰린 종목만 — 거래량·거래대금</h2>
+      <p>차트가 아무리 예뻐도 <b>거래가 없으면</b> 움직이지 않습니다. 가격은 결과이고, <span class="hl-a">거래량은 그 결과를 만든 에너지</span>예요. 거래량은 세력의 <b>발자국</b>, 거래대금(거래량×가격)은 그 발자국의 <b>무게</b>입니다.</p>
+      <div class="chartbox"><canvas data-demo="pickvol"></canvas></div>
+      <div class="cap">평소 바닥 거래량 → 어느 날 <b class="hl-a">거래량 급증</b> = 관심이 붙은 종목</div>
+      <div class="steps">
+        <div class="step a"><div class="n">✓</div><div class="t"><b>거래대금 상위</b> 종목 위주로 후보를 잡는다 (돈이 실제로 큰 곳).</div></div>
+        <div class="step a"><div class="n">✓</div><div class="t"><b>거래량 급증</b>이 나온 날 = 세력·관심이 들어온 신호. 눌림 단타의 <b>대상</b>이 된다.</div></div>
+      </div>
+    </div></section>
+
+    <!-- 3 이동평균선 세팅 -->
+    <section class="card"><div class="panel">
+      <div class="kicker">① 종목 고르기 · 추세</div>
+      <h2>이동평균선 세팅 — 4·15·20·120일</h2>
+      <p>이 전략은 <b>4·15·20·120일</b> 이동평균선을 봅니다. 역할이 각각 달라요.</p>
+      <div class="chartbox"><canvas data-demo="masetup"></canvas></div>
+      <div class="cap">짧은 선이 긴 선 위에 차례로 — <b>정배열</b> 상승 흐름</div>
+      <div class="pills"><span class="pill ma">4일 · 단기</span><span class="pill ma">15일 · 단기추세</span><span class="pill ma">20일 · 중심 지지</span><span class="pill ma">120일 · 대세</span></div>
+      <div class="steps">
+        <div class="step"><div class="n">●</div><div class="t"><b>4·15일선</b> — 지금의 단기 흐름. 매수 후 짧게 보는 선.</div></div>
+        <div class="step"><div class="n">●</div><div class="t"><b class="hl-m">20일선</b> — 눌림 단타의 <b>중심 지지선</b>. 여기 위에 있는지가 핵심.</div></div>
+        <div class="step"><div class="n">●</div><div class="t"><b>120일선</b> — 큰 추세. 이 위에 있으면 대세 상승권.</div></div>
+      </div>
+      <p class="mut">짧은 선이 긴 선 위에 차례로 놓인 <b>정배열</b> + 가격이 <b>20일선 위</b>일 때가 눌림 단타의 무대입니다.</p>
+    </div></section>
+
+    <!-- 4 눌림이란 -->
+    <section class="card"><div class="panel">
+      <div class="kicker">② 눌림매수 타점 · 개념</div>
+      <h2>'눌림'은 조정이지 하락이 아니다</h2>
+      <p>상승하던 가격이 잠시 <b>쉬며 내려오는 구간</b>이 눌림입니다. 중요한 건 <span class="hl">건강한 눌림</span>과 <span class="hl-r">추세 붕괴</span>를 구분하는 거예요.</p>
+      <div class="chartbox"><canvas data-demo="pullback"></canvas></div>
+      <div class="cap">상승 → 거래량 줄며 살짝 눌림(건강) → 20일선 지지 → 재상승</div>
+      <div class="steps">
+        <div class="step"><div class="n">✓</div><div class="t"><b>건강한 눌림</b> — 거래량이 <b>줄며</b> 얕게 눌리고, 20일선이 받쳐준다.</div></div>
+        <div class="step r"><div class="n">✕</div><div class="t"><b>추세 붕괴</b> — 거래량이 <b>터지며</b> 20일선을 종가로 깨고 내려간다. 사면 안 됨.</div></div>
+      </div>
+    </div></section>
+
+    <!-- 5 눌림매수 타점 (핵심) -->
+    <section class="card"><div class="panel">
+      <div class="kicker">핵심 · 여기가 제일 중요</div>
+      <h2>눌림매수 타점 — 닿았다고 바로 사지 않는다</h2>
+      <p>눌림이 왔다고 아무 데서나 사면 <b>흔들기</b>에 당합니다. 가격이 <b class="hl-m">20일선·지지 구간</b>까지 눌렸을 때, 그 자리를 <b>지키는지 확인하고</b> 삽니다.</p>
+      <div class="chartbox"><canvas data-demo="entry"></canvas></div>
+      <div class="cap" id="entry-cap">버튼을 눌러 눌림매수 확인 과정을 단계별로 보세요</div>
+      <div style="text-align:center;margin-bottom:12px"><button class="demo-btn" id="entry-step">▶ 눌림매수 단계 보기</button></div>
+      <div class="steps">
+        <div class="step"><div class="n">1</div><div class="t"><b>눌림</b> — 20일선·지지 구간까지 눌려 내려온다.</div></div>
+        <div class="step"><div class="n">2</div><div class="t"><b>종가 회복</b> — 꼬리로 잠깐 깨도 <b>종가는 지지 위로</b> 마감.</div></div>
+        <div class="step"><div class="n">3</div><div class="t"><b>저점 유지</b> — 다음 봉이 저점을 안 깬다 → <span class="hl">눌림매수 타점</span>.</div></div>
+      </div>
+      <div class="note"><b>확인하고 산다.</b> 종가가 지지 아래로 마감하면 <b>사지 않고</b> 다음 자리에서 다시 기다립니다.</div>
+    </div></section>
+
+    <!-- 6 호가창 -->
+    <section class="card"><div class="panel">
+      <div class="kicker">③ 실시간 확인 · 호가창</div>
+      <h2>호가창 — 매수·매도의 힘겨루기</h2>
+      <p>차트가 '어디서'를 알려준다면, 호가창은 <b>'지금 누가 더 센지'</b>를 보여줍니다. 위쪽은 <span class="hl-r">매도(팔자) 잔량</span>, 아래쪽은 <span class="hl">매수(사자) 잔량</span>이에요.</p>
+      <div class="ob" id="ob"></div>
+      <div class="obcap"><span>▲ 매도 잔량(저항)</span><span>▼ 매수 잔량(지지)</span></div>
+      <div class="steps">
+        <div class="step a"><div class="n">벽</div><div class="t"><b>매물벽</b> — 유난히 두꺼운 잔량. 아래 큰 <b>매수벽=지지</b>, 위 큰 <b>매도벽=저항</b>.</div></div>
+        <div class="step"><div class="n">強</div><div class="t"><b>체결강도</b> — 매수 체결이 매도보다 많으면(100↑) 사자 우위.</div></div>
+        <div class="step r"><div class="n">✕</div><div class="t"><b>허매수·허매도</b> — 큰 잔량이 갑자기 사라지는 속임수. 잔량만 믿지 말 것.</div></div>
+      </div>
+    </div></section>
+
+    <!-- 7 분할매수·비중 -->
+    <section class="card"><div class="panel">
+      <div class="kicker">④ 리스크 · 분할매수·비중</div>
+      <h2>한 번에 다 사지 않는다 — 나눠 담기</h2>
+      <p>타점이 와도 <b>한 방</b>에 들어가지 않습니다. 지지선마다 <b>나눠</b> 사면, 더 눌려도 평균 단가가 낮아지고 <b>버티기</b> 쉬워져요.</p>
+      <div class="chartbox"><canvas data-demo="splitbuy"></canvas></div>
+      <div class="cap">1차·2차·3차로 지지선마다 비중을 나눠 매수</div>
+      <div class="steps">
+        <div class="step"><div class="n">1</div><div class="t"><b>1차 · 비중 30%</b> — 1차 지지 확인에서.</div></div>
+        <div class="step"><div class="n">2</div><div class="t"><b>2차 · 비중 30%</b> — 더 눌려 2차 지지에서.</div></div>
+        <div class="step"><div class="n">3</div><div class="t"><b>3차 · 비중 40%</b> — 마지막 지지(시가권)에서.</div></div>
+      </div>
+      <div class="note"><b>비중 관리가 곧 생존.</b> 한 종목에 계좌를 몰빵하지 않습니다. 분산해야 한 번 틀려도 계좌가 안 무너져요.</div>
+    </div></section>
+
+    <!-- 8 손절 -->
+    <section class="card"><div class="panel">
+      <div class="kicker">④ 리스크 · 손절 (제일 중요)</div>
+      <h2>사기 전에 손절선을 먼저 정한다</h2>
+      <p>손절선은 보통 <b>기준봉 저가</b>나 <b class="hl-m">20일선 이탈</b>입니다. <b>종가</b>가 그 아래로 마감하면 미련 없이 끊어요.</p>
+      <div class="chartbox"><canvas data-demo="stoploss"></canvas></div>
+      <div class="cap">지지를 <b>종가로 이탈</b> → 더 기다리지 않고 손절</div>
+      <p>손실이 무서운 건 <span class="hl-r">비대칭</span>이기 때문입니다. 깊게 물리면 본전까지 더 크게 올라야 해요.</p>
+      <div class="steps">
+        <div class="step r"><div class="n">−20%</div><div class="t">손실 → 본전까지 <b>+25%</b> 필요</div></div>
+        <div class="step r"><div class="n">−50%</div><div class="t">손실 → 본전까지 <b>+100%</b> 필요</div></div>
+        <div class="step r"><div class="n">−90%</div><div class="t">손실 → 본전까지 <b>+900%</b> 필요</div></div>
+      </div>
+      <div class="note"><b>작게 잃는 습관</b>이 전부입니다. 손절은 실패가 아니라 다음 기회를 위한 비용이에요.</div>
+    </div></section>
+
+    <!-- 9 분할매도·익절 -->
+    <section class="card"><div class="panel">
+      <div class="kicker">⑤ 분할매도·익절</div>
+      <h2>살 때 나눴듯, 팔 때도 나눈다</h2>
+      <p>저항이나 목표가에 닿으면 <b>일부 먼저 익절</b>해 수익을 지키고, 나머지는 추세를 더 봅니다. 단타는 <b>길게 끌지 않아요</b>.</p>
+      <div class="chartbox"><canvas data-demo="splitsell"></canvas></div>
+      <div class="cap">1차 익절(저항) → 2차 익절(목표) → 남은 물량 <b>종가 청산</b></div>
+      <div class="steps">
+        <div class="step a"><div class="n">1</div><div class="t"><b>1차 익절</b> — 가까운 저항에서 일부 수익 확정.</div></div>
+        <div class="step a"><div class="n">2</div><div class="t"><b>2차 익절</b> — 목표가 도달 시 추가 매도.</div></div>
+        <div class="step"><div class="n">⏱</div><div class="t"><b>종가 청산</b> — 정해둔 시간·종가에는 남은 물량 정리. 단타는 다음 날로 안 넘긴다.</div></div>
+      </div>
+    </div></section>
+
+    <!-- 10 매매심리·복기 -->
+    <section class="card"><div class="panel">
+      <div class="kicker">⑥ 멘탈 · 매매심리·복기</div>
+      <h2>기법보다 멘탈 — 그리고 복기</h2>
+      <p>계좌가 깨지는 건 대개 기법이 아니라 <b>멘탈</b> 때문입니다. 가장 흔한 두 함정을 조심하세요.</p>
+      <div class="steps">
+        <div class="step r"><div class="n">✕</div><div class="t"><b>뇌동·추격매수</b> — 오르는 걸 보고 뒤늦게 꼭대기에서 사는 것(FOMO). 타점이 지났으면 <b>보낸다</b>.</div></div>
+        <div class="step r"><div class="n">✕</div><div class="t"><b>본전 심리·물타기</b> — 손절 못 하고 계속 더 사며 손실을 키우는 것. 손절선은 <b>약속</b>이다.</div></div>
+      </div>
+      <p><b>예측하려 하지 말고 대응하세요.</b> 맞히는 게 아니라, 신호가 나오면 정해둔 대로 반응하는 겁니다.</p>
+      <div class="note"><b>복기 루프</b> — 매매가 끝나면 <b>왜 샀고 왜 팔았는지</b> 기록하고 되돌아봅니다. 복기 없는 반복은 깡통계좌의 지름길. 매매일지가 실력을 만듭니다.</div>
+    </div></section>
+
+    <!-- 11 퀴즈 -->
+    <section class="card"><div class="panel">
+      <div class="kicker">확인 퀴즈</div>
+      <h2>이해했는지 체크</h2>
+      <div class="quiz" data-q="0">
+        <div class="q">Q1. 가격이 20일선 근처로 눌렸다. 언제 사야 하나?</div>
+        <button class="opt" data-ok="0">선에 닿는 순간 바로 전량 매수</button>
+        <button class="opt" data-ok="1">꼬리로 깨도 종가가 지지 위로 회복되고, 다음 봉이 저점을 지킬 때 나눠서</button>
+        <button class="opt" data-ok="0">거래량이 터지며 종가로 깨고 내려갈 때</button>
+        <div class="qfb"></div>
+      </div>
+      <div class="quiz" data-q="1" style="margin-top:16px">
+        <div class="q">Q2. 손절선(20일선·기준봉 저가)을 <b>종가로 이탈</b>했다. 어떻게?</div>
+        <button class="opt" data-ok="1">미련 없이 끊는다 — 손절은 약속이다</button>
+        <button class="opt" data-ok="0">더 사서 평단을 낮춘다(물타기)</button>
+        <button class="opt" data-ok="0">본전 올 때까지 버틴다</button>
+        <div class="qfb"></div>
+      </div>
+    </div></section>
+
+    <!-- 12 CTA -->
+    <section class="card"><div class="panel cta">
+      <div class="big">👑</div>
+      <h2>이제 직접 돌려보자</h2>
+      <p>개념은 다 봤으니 <b>주식왕</b>에서 한 사이클을 몸에 익힐 차례. 오른 종목의 눌림에서 <b>지지를 확인하고 → 나눠 사고 → 손절선을 지키고 → 종가에 청산</b>하는 흐름을 반복해 보세요.</p>
+      <div class="checklist">
+        <div><span class="mk">✓</span>20일선·지지 구간까지 눌렸는지 본다</div>
+        <div><span class="mk">✓</span>종가 회복 + 저점 유지 '지지 확인' 후 매수</div>
+        <div><span class="mk">✓</span>1·2·3차로 나눠 담고, 손절선을 정해둔다</div>
+        <div><span class="mk">✓</span>저항·목표에서 나눠 익절, 종가에 청산</div>
+      </div>
+      <button class="go" id="cta-go">주식왕으로 연습하기 ▸</button>
+      <p class="mut" style="margin-top:14px">복습: <b>지지저항 · 기준봉 매매</b> 레슨과 함께 보면 완성됩니다.</p>
+    </div></section>
+
+  </div>
+
+  <div class="nav">
+    <button class="prev" id="prev" disabled>◂ 이전</button>
+    <span class="count" id="count">1 / 12</span>
+    <button class="next" id="next">다음 ▸</button>
+  </div>
+  <div class="foot">교육용 예시 차트입니다. 실제 투자 수익을 보장하지 않습니다.</div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var cards=[].slice.call(document.querySelectorAll('.card'));
+var N=cards.length, cur=0;
+var prog=document.getElementById('prog');
+for(var i=0;i<N;i++){var d=document.createElement('div');d.className='dot'+(i===0?' on':'');prog.appendChild(d);}
+var dots=[].slice.call(prog.children);
+var prevB=document.getElementById('prev'),nextB=document.getElementById('next'),count=document.getElementById('count');
+
+/* ---------- 음성 내레이션 ---------- */
+var synth=window.speechSynthesis||null, autoRead=false, koVoice=null;
+var NAR=[
+ "눌림 단타 매수 강의입니다. 눌림 단타란, 이미 오르고 있는 종목이 잠깐 숨을 고르며 눌리는 자리를 사서, 다시 오를 때 짧게 수익을 내는 매매입니다. 바닥 반등이 아니라, 힘이 확인된 종목의 조정만 노립니다. 이 강의에서는 종목 고르기부터 눌림매수 타점, 호가창 확인, 분할매수와 손절, 익절, 복기까지 한 흐름으로 배웁니다.",
+ "첫째, 종목 고르기. 거래량과 거래대금입니다. 차트가 아무리 예뻐도 거래가 없으면 움직이지 않습니다. 가격은 결과이고, 거래량은 그 결과를 만든 에너지입니다. 거래량은 세력의 발자국, 거래대금은 그 발자국의 무게입니다. 거래대금 상위 종목 위주로, 거래량이 평소보다 확 늘어난 종목만 후보로 삼습니다.",
+ "둘째, 추세와 이동평균선 세팅입니다. 이 전략은 4일, 15일, 20일, 120일 이동평균선을 봅니다. 4일과 15일선은 단기 흐름, 20일선은 매매의 중심 지지선, 120일선은 큰 추세입니다. 짧은 선이 긴 선 위에 차례로 놓인 정배열, 그리고 가격이 20일선 위에 있을 때가 눌림 단타의 무대입니다.",
+ "눌림이 무엇인지 봅시다. 상승하던 가격이 잠시 쉬며 내려오는 구간이 눌림입니다. 건강한 눌림과 추세 붕괴를 구분해야 합니다. 거래량이 줄며 얕게 눌리고 20일선이 받쳐주면 건강한 눌림, 거래량이 터지며 20일선을 종가로 깨고 내려가면 추세가 무너진 겁니다. 그때는 사지 않습니다.",
+ "핵심, 눌림매수 타점입니다. 눌림이 왔다고 아무 데서나 사면 흔들기에 당합니다. 가격이 20일선이나 지지 구간까지 눌렸을 때, 그 자리를 지키는지 확인하고 삽니다. 꼬리로 잠깐 깨더라도 종가가 지지 위로 올라오고, 다음 봉이 저점을 지키면 그때가 눌림매수 타점입니다. 확인하고 산다, 이게 핵심입니다. 종가가 지지 아래로 마감하면 사지 않고 기다립니다.",
+ "셋째, 호가창으로 실시간 타점을 확인합니다. 위쪽은 매도 잔량, 아래쪽은 매수 잔량입니다. 바로 밑에 큰 매수벽이 있으면 단단한 지지, 위에 큰 매도벽이 있으면 그 자리가 저항입니다. 체결강도가 매수 쪽으로 기울면 사자 우위입니다. 단, 큰 잔량이 갑자기 사라지는 허매수와 허매도 속임수가 있으니 잔량만 믿지는 마세요.",
+ "넷째, 분할 매수와 비중입니다. 타점이 와도 한 방에 들어가지 않습니다. 1차 삼십 퍼센트, 2차 삼십 퍼센트, 3차 사십 퍼센트처럼 지지선마다 나눠 담으면, 더 눌려도 평균 단가가 낮아지고 버티기 쉽습니다. 그리고 한 종목에 계좌를 몰빵하지 않습니다. 비중 관리가 곧 생존입니다.",
+ "손절입니다. 가장 중요합니다. 사기 전에 손절선을 먼저 정합니다. 보통 기준봉 저가나 20일선 이탈이 손절선입니다. 종가가 그 아래로 마감하면 미련 없이 끊습니다. 손실은 비대칭이라 무섭습니다. 이십 퍼센트 잃으면 본전까지 이십오 퍼센트, 반 토막이 나면 백 퍼센트를 올려야 합니다. 그래서 작게 잃는 습관이 전부입니다.",
+ "다섯째, 분할 매도와 익절입니다. 살 때 나눠 샀듯이 팔 때도 나눠 팝니다. 저항이나 목표가에 닿으면 일부 먼저 익절해 수익을 지키고, 나머지는 추세를 더 봅니다. 단타는 길게 끌지 않습니다. 정해둔 시간이나 종가에는 남은 물량을 청산하고, 다음 날로 넘기지 않습니다.",
+ "마지막은 매매심리와 복기입니다. 계좌가 깨지는 건 대개 기법이 아니라 멘탈 때문입니다. 오르는 걸 보고 뒤늦게 사는 추격매수, 손절 못 하고 물타기하는 본전 심리를 조심하세요. 예측하려 하지 말고 대응하세요. 매매가 끝나면 왜 샀고 왜 팔았는지 반드시 기록하고 복기합니다. 복기 없는 반복은 깡통계좌로 가는 지름길입니다.",
+ "확인 퀴즈입니다. 두 문제로 점검해 봅시다.",
+ "이제 주식왕에서 직접 연습할 차례입니다. 오른 종목의 눌림에서 지지를 확인하고, 나눠 사고, 손절선을 지키고, 종가에 청산하는 흐름을 몸에 익혀 보세요. 확인하고, 나눠 사고, 틀리면 끊는다. 수고했습니다."
+];
+function pickVoice(){ if(!synth)return; var vs=synth.getVoices()||[]; koVoice=vs.filter(function(v){return /ko(-|_)?KR/i.test(v.lang)})[0]||vs.filter(function(v){return /korean|한국/i.test(v.name)})[0]||null; }
+if(synth){ pickVoice(); synth.onvoiceschanged=pickVoice; }
+var audioEl=new Audio(); audioEl.preload='none';
+var AUDIO_PREFIX=(function(){var p=location.pathname;if(/nulim/.test(p))return'nulim';if(/candle/.test(p))return'candle';if(/jun/.test(p))return'jun';if(/ma/.test(p))return'ma';if(/sr/.test(p))return'sr';return'';})();
+var ttsQ=[], ttsIdx=0, mp3Mode=false, ttsTimer=null, audioWorks=false;
+function gttsUrl(t){return 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ko&q='+encodeURIComponent(t);}
+function chunkText(t){var ps=(t||'').match(/[^.!?。]+[.!?。]?/g)||[t];var out=[],cur2='';ps.forEach(function(p){if((cur2+p).length>170){if(cur2.trim())out.push(cur2.trim());cur2=p;}else cur2+=p;});if(cur2.trim())out.push(cur2.trim());return out;}
+function stopAll(){try{audioEl.pause();audioEl.removeAttribute('src');}catch(e){}ttsQ=[];mp3Mode=false;clearTimeout(ttsTimer);if(synth)synth.cancel();}
+function synthSpeak(t){if(!synth)return;synth.cancel();var u=new SpeechSynthesisUtterance(t||'');u.lang='ko-KR';if(koVoice)u.voice=koVoice;u.rate=1;synth.speak(u);}
+function onlineTTS(){mp3Mode=false;ttsQ=chunkText(NAR[cur]||'');ttsIdx=0;playChunk();}
+function playChunk(){if(ttsIdx>=ttsQ.length)return;audioWorks=false;audioEl.src=gttsUrl(ttsQ[ttsIdx]);var pr=audioEl.play();if(pr&&pr.catch)pr.catch(function(){synthSpeak(NAR[cur]||'');});clearTimeout(ttsTimer);ttsTimer=setTimeout(function(){if(!audioWorks)synthSpeak(NAR[cur]||'');},1800);}
+audioEl.addEventListener('playing',function(){audioWorks=true;clearTimeout(ttsTimer);});
+audioEl.addEventListener('ended',function(){if(mp3Mode)return;ttsIdx++;playChunk();});
+audioEl.addEventListener('error',function(){if(mp3Mode)onlineTTS();else synthSpeak(NAR[cur]||'');});
+function speakCard(){ if(!autoRead)return; stopAll();
+  if(AUDIO_PREFIX){ mp3Mode=true; audioWorks=false; audioEl.src='audio/'+AUDIO_PREFIX+'_'+(cur+1)+'.mp3';
+    var pr=audioEl.play(); if(pr&&pr.catch)pr.catch(function(){onlineTTS();});
+    clearTimeout(ttsTimer); ttsTimer=setTimeout(function(){if(!audioWorks)onlineTTS();},2000); }
+  else { onlineTTS(); } }
+var spB=document.getElementById('speak');
+spB.addEventListener('click',function(){ autoRead=!autoRead; spB.classList.toggle('on',autoRead); spB.innerHTML=autoRead?'🔊 듣는 중':'🔊 듣기'; if(autoRead)speakCard(); else stopAll(); });
+window.addEventListener('beforeunload',function(){stopAll();});
+
+function show(n){
+  n=Math.max(0,Math.min(N-1,n));
+  cards[cur].classList.remove('on'); dots[cur].classList.remove('on');
+  cur=n;
+  cards[cur].classList.add('on');
+  dots.forEach(function(dd,idx){dd.classList.toggle('on',idx===cur);dd.classList.toggle('done',idx<cur);});
+  prevB.disabled=cur===0;
+  nextB.textContent=cur===N-1?'처음으로 ↻':'다음 ▸';
+  count.textContent=(cur+1)+' / '+N;
+  drawIn(cards[cur]);
+  speakCard();
+  window.scrollTo(0,0);
+}
+prevB.addEventListener('click',function(){show(cur-1)});
+nextB.addEventListener('click',function(){cur===N-1?show(0):show(cur+1)});
+document.addEventListener('keydown',function(e){if(e.key==='ArrowRight')show(cur+1);else if(e.key==='ArrowLeft')show(cur-1);});
+
+/* ---------- candle chart engine ---------- */
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function drawCandles(cv,candles,levels,opts){
+  opts=opts||{};
+  var ctx=cv.getContext('2d'),r=cv.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);
+  var W=Math.max(60,r.width),H=Math.max(60,r.height);
+  cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+  var UP=css('--up'),DOWN=css('--down'),MUT=css('--muted');
+  ctx.clearRect(0,0,W,H);
+  var lo=Infinity,hi=-Infinity,k;
+  for(k=0;k<candles.length;k++){if(candles[k].l<lo)lo=candles[k].l;if(candles[k].h>hi)hi=candles[k].h;}
+  (levels||[]).forEach(function(L){if(L.p<lo)lo=L.p;if(L.p>hi)hi=L.p;});
+  if(opts.polys)opts.polys.forEach(function(P){P.pts.forEach(function(pt){if(pt.p<lo)lo=pt.p;if(pt.p>hi)hi=pt.p;});});
+  var pad=(hi-lo)*0.12||1; lo-=pad; hi+=pad;
+  var padR=opts.padR||52, padT=10, padB=10, plotW=W-padR-8, plotH=H-padT-padB;
+  function X(i){return 8+ (i+0.5)*(plotW/candles.length)}
+  function Y(p){return padT+(hi-p)/(hi-lo)*plotH}
+  var cw=Math.max(2,(plotW/candles.length)*0.56);
+  (levels||[]).forEach(function(L){
+    var y=Y(L.p);ctx.save();ctx.setLineDash(L.dash||[5,4]);ctx.strokeStyle=L.color;ctx.lineWidth=1.4;
+    ctx.beginPath();ctx.moveTo(8,y);ctx.lineTo(8+plotW,y);ctx.stroke();ctx.restore();
+    if(L.label){ctx.fillStyle=L.color;ctx.font='600 10px IBM Plex Sans KR,sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(L.label,8+plotW+5,y);}
+  });
+  if(opts.polys)opts.polys.forEach(function(P){
+    ctx.save();ctx.strokeStyle=P.color;ctx.lineWidth=P.w||1.5;if(P.dash)ctx.setLineDash(P.dash);
+    ctx.beginPath();P.pts.forEach(function(pt,ii){var x=X(pt.i),y=Y(pt.p);ii?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();ctx.restore();
+    if(P.label){var last=P.pts[P.pts.length-1];ctx.fillStyle=P.color;ctx.font='600 9.5px IBM Plex Sans KR,sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(P.label,X(last.i)+3,Y(last.p));}
+  });
+  for(k=0;k<candles.length;k++){
+    var b=candles[k],up=b.c>=b.o,col=up?UP:DOWN,xc=X(k);
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.moveTo(xc,Y(b.h));ctx.lineTo(xc,Y(b.l));ctx.stroke();
+    var yo=Y(b.o),yc=Y(b.c),top=Math.min(yo,yc),bh=Math.max(1.5,Math.abs(yc-yo));
+    ctx.fillRect(xc-cw/2,top,cw,bh);
+    if(opts.annot&&opts.annot[k]){
+      var a=opts.annot[k];ctx.fillStyle=a.color||MUT;ctx.font='700 10px IBM Plex Sans KR,sans-serif';ctx.textAlign='center';
+      var ay=a.below?Y(b.l)+13:Y(b.h)-7;ctx.fillText(a.t,xc,ay);
+    }
+  }
+}
+function series(closes,opts){
+  opts=opts||{};var pins=opts.pins||{},out=[];
+  for(var i=0;i<closes.length;i++){
+    var o=i===0?(opts.o0||closes[0]*0.995):out[i-1].c, c=closes[i];
+    var hi=Math.max(o,c),loo=Math.min(o,c);
+    var wu=opts.wu!=null?opts.wu:0.6, wd=opts.wd!=null?opts.wd:0.6;
+    var span=Math.abs(c-o)+ (opts.base||1.2);
+    var b={o:o,c:c,h:hi+span*wu*0.5,l:loo-span*wd*0.5};
+    if(pins[i]){if(pins[i].l!=null)b.l=pins[i].l;if(pins[i].h!=null)b.h=pins[i].h;if(pins[i].c!=null)b.c=pins[i].c;if(pins[i].o!=null)b.o=pins[i].o;}
+    b.h=Math.max(b.h,b.o,b.c);b.l=Math.min(b.l,b.o,b.c);
+    out.push(b);
+  }
+  return out;
+}
+function poly(arr,color,w,dash,label){return {pts:arr.map(function(p,i){return{i:i,p:p}}),color:color,w:w,dash:dash,label:label};}
+
+function drawVolBars(cv,vols,hiSet){
+  var ctx=cv.getContext('2d'),r=cv.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);
+  var W=Math.max(60,r.width),H=Math.max(60,r.height);
+  cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+  var ACC=css('--accent'),BORD=css('--border'),MUT=css('--muted');
+  var mx=0;vols.forEach(function(v){if(v>mx)mx=v;});
+  var padB=22,padT=10,plotH=H-padB-padT,plotW=W-16;
+  var bw=plotW/vols.length, cw=Math.max(3,bw*0.6);
+  for(var i=0;i<vols.length;i++){
+    var x=8+(i+0.5)*bw, h=Math.max(2,vols[i]/mx*plotH), y=padT+plotH-h;
+    var isHi=hiSet&&hiSet.indexOf(i)>=0;
+    ctx.fillStyle=isHi?ACC:BORD;
+    ctx.fillRect(x-cw/2,y,cw,h);
+    if(isHi){ctx.fillStyle=ACC;ctx.font='700 10px IBM Plex Sans KR,sans-serif';ctx.textAlign='center';ctx.fillText('급증',x,y-4);}
+  }
+  ctx.strokeStyle=BORD;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(8,padT+plotH);ctx.lineTo(8+plotW,padT+plotH);ctx.stroke();
+  ctx.fillStyle=MUT;ctx.font='600 10px IBM Plex Sans KR,sans-serif';ctx.textAlign='left';ctx.fillText('거래량',10,H-7);
+}
+
+var SUP=function(){return css('--sup')},RES=function(){return css('--res')},ACC=function(){return css('--accent')},DN=function(){return css('--down')},MA=function(){return css('--ma')};
+
+/* 눌림매수 확인 단계 데모 */
+var entryState=0;
+function demoEntry(cv){
+  var lvl=106;
+  var full=[
+    {o:116,h:118,l:113,c:114},{o:114,h:115,l:109,c:110},
+    {o:110,h:111,l:104.2,c:107},{o:107,h:110,l:106,c:109},
+    {o:109,h:114,l:108,c:113},{o:113,h:119,l:112,c:118}
+  ];
+  var ma20full=[112,110,108,106.8,106.4,106.5];
+  var n= entryState===0?3 : entryState===1?4 : 6;
+  var sub=full.slice(0,n), mp=ma20full.slice(0,n);
+  var annot={};
+  if(entryState>=1)annot[2]={t:'흔들기',color:RES(),below:true};
+  if(entryState>=2){annot[3]={t:'저점유지',color:SUP()};annot[4]={t:'눌림매수',color:SUP()};}
+  drawCandles(cv,sub,[{p:lvl,color:SUP(),label:'지지',dash:[4,3]}],
+    {annot:annot,polys:[poly(mp,MA(),1.6,null,'20일')]});
+  var cap=document.getElementById('entry-cap');
+  if(cap)cap.textContent=['① 20일선·지지까지 눌림','② 꼬리로 지지를 깨지만 종가는 위로(흔들기)','③ 다음 봉 저점 유지 → 지지 확인 → 눌림매수'][entryState];
+}
+
+function demoFor(name,cv){
+  if(name==='pickvol'){
+    drawVolBars(cv,[6,5,7,5,6,4,7,22,18,9,7,8,6,7],[7,8]);
+  } else if(name==='masetup'){
+    var cl=[100,103,101,105,108,106,110,113,111,115,118,116,120];
+    var c=series(cl,{base:1.8});
+    var ma4=[99,100,101,102,104,105,106,108,110,111,113,115,117];
+    var ma15=[96,97,98,99,100,101,103,104,106,107,109,110,112];
+    var ma20=[94,95,95,96,97,98,99,101,102,104,105,107,108];
+    var ma120=[89,89,90,90,91,92,92,93,94,95,96,97,98];
+    drawCandles(cv,c,[],{padR:40,polys:[
+      poly(ma4,ACC(),1.4,null,'4'),
+      poly(ma15,DN(),1.4,null,'15'),
+      poly(ma20,MA(),1.7,null,'20'),
+      poly(ma120,css('--muted'),1.4,null,'120')
+    ]});
+  } else if(name==='pullback'){
+    var cl2=[100,105,110,116,113,109,107,108,112,118,124];
+    var c2=series(cl2,{pins:{6:{l:105.5}},base:1.8});
+    var ma20b=[101,102,103,104,105,105.5,105.8,106,107,108.5,110];
+    drawCandles(cv,c2,[],{padR:40,polys:[poly(ma20b,MA(),1.7,null,'20일')],
+      annot:{3:{t:'상승',color:ACC()},6:{t:'눌림',color:SUP(),below:true},10:{t:'재상승',color:ACC()}}});
+  } else if(name==='entry'){
+    demoEntry(cv);
+  } else if(name==='splitbuy'){
+    var jun=[{o:100,h:126,l:98,c:125}];
+    var body=25, p1=125-body*0.5, p2=125-body*0.75, p3=101;
+    var pb=series([120,114,112.6,108,106.2,104,103,107,113],{o0:124,pins:{2:{l:p1-0.3},4:{l:p2-0.2},6:{l:p3-0.2}},base:1.5});
+    drawCandles(cv,jun.concat(pb),[
+      {p:p1,color:SUP(),label:'1차 1/2',dash:[3,3]},
+      {p:p2,color:SUP(),label:'2차 3/4',dash:[3,3]},
+      {p:p3,color:SUP(),label:'3차 시가',dash:[3,3]}
+    ],{padR:64,annot:{0:{t:'기준봉',color:ACC()},3:{t:'1차',color:SUP()},5:{t:'2차',color:SUP()},7:{t:'3차',color:SUP(),below:true}}});
+  } else if(name==='stoploss'){
+    var c3=series([118,113,109,104,100.6,97,95],{pins:{3:{l:100.3},5:{l:96.4,c:96.7}},base:1.7});
+    drawCandles(cv,c3,[
+      {p:100,color:SUP(),label:'지지',dash:[4,3]},
+      {p:96,color:DN(),label:'손절선',dash:[4,2]}
+    ],{padR:52,annot:{5:{t:'종가이탈→손절',color:DN(),below:true}}});
+  } else if(name==='splitsell'){
+    var c4=series([101,106,111,116,120,118,123,127,124,121],{pins:{4:{h:120.4},7:{h:127.3}},base:1.7});
+    drawCandles(cv,c4,[
+      {p:120,color:RES(),label:'저항',dash:[4,3]},
+      {p:127,color:ACC(),label:'목표가',dash:[4,3]}
+    ],{padR:52,annot:{4:{t:'1차익절',color:ACC()},7:{t:'2차익절',color:ACC()},9:{t:'종가청산',color:css('--muted'),below:true}}});
+  }
+}
+
+/* 호가창(ladder) 렌더 */
+function renderOB(){
+  var el=document.getElementById('ob');if(!el||el.dataset.done)return;el.dataset.done='1';
+  var asks=[{p:'10,250',q:1200},{p:'10,200',q:3800,wall:true},{p:'10,150',q:900},{p:'10,100',q:1500}];
+  var bids=[{p:'10,050',q:2100},{p:'10,000',q:5200,wall:true},{p:'9,950',q:1400},{p:'9,900',q:1100}];
+  var mx=5200;
+  function row(side,r){
+    var pct=Math.round(r.q/mx*100);
+    var bar='<div class="bar'+(r.wall?' wall':'')+'" style="width:'+pct+'%"></div><div class="q">'+r.q.toLocaleString()+'</div>';
+    if(side==='ask')return '<div class="row"><div class="ask">'+bar+'</div><div class="px">'+r.p+'</div><div></div></div>';
+    return '<div class="row"><div></div><div class="px">'+r.p+'</div><div class="bid">'+bar+'</div></div>';
+  }
+  var html='';asks.forEach(function(r){html+=row('ask',r)});bids.forEach(function(r){html+=row('bid',r)});
+  el.innerHTML=html;
+}
+
+function drawIn(card){
+  renderOB();
+  var cvs=card.querySelectorAll('canvas');
+  requestAnimationFrame(function(){
+    cvs.forEach(function(cv){demoFor(cv.getAttribute('data-demo'),cv);});
+  });
+}
+window.NodeList.prototype.forEach=window.NodeList.prototype.forEach||Array.prototype.forEach;
+
+var esb=document.getElementById('entry-step');
+if(esb)esb.addEventListener('click',function(){
+  entryState=(entryState+1)%3;
+  this.textContent=entryState===2?'↻ 처음부터':'▶ 다음 단계';
+  var cv=document.querySelector('[data-demo="entry"]');if(cv)demoEntry(cv);
+});
+
+/* quiz */
+[].slice.call(document.querySelectorAll('.quiz')).forEach(function(q){
+  var opts=[].slice.call(q.querySelectorAll('.opt')),fb=q.querySelector('.qfb'),answered=false;
+  opts.forEach(function(op){op.addEventListener('click',function(){
+    if(answered)return;answered=true;
+    var ok=op.getAttribute('data-ok')==='1';
+    op.classList.add(ok?'ok':'no');
+    if(!ok){opts.forEach(function(o2){if(o2.getAttribute('data-ok')==='1')o2.classList.add('ok');});}
+    fb.textContent=ok?'정확해요 — 확인하고, 나눠 사고, 틀리면 끊는다.':'다시 생각해보기 — 정답은 초록색으로 표시했어요.';
+    fb.style.color=ok?SUP():'';
+  });});
+});
+
+var GAME_URL='game.html';
+document.getElementById('cta-go').addEventListener('click',function(){
+  if(synth)synth.cancel();
+  var w=window.open(GAME_URL,'_blank','noopener');
+  if(!w){
+    var t=document.createElement('div');
+    t.innerHTML='주식왕이 자동으로 열리지 않으면 <a href="'+GAME_URL+'" target="_blank" rel="noopener" style="color:var(--accent);font-weight:700">여기</a>를 눌러 열어주세요 👑';
+    t.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--border);box-shadow:var(--shadow);border-radius:10px;padding:11px 16px;font-size:13px;font-weight:600;z-index:9;max-width:90%;text-align:center';
+    document.body.appendChild(t);setTimeout(function(){t.remove()},6000);
+  }
+});
+
+var bh=document.getElementById('b-home');if(bh)bh.addEventListener('click',function(){if(synth)synth.cancel();window.open('index.html','_blank','noopener');});
+var rt;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(function(){drawIn(cards[cur])},120)});
+if(window.matchMedia)window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',function(){drawIn(cards[cur])});
+
+drawIn(cards[0]);
+})();
+</script>
+</body></html>
