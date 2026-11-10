@@ -366,7 +366,7 @@ function renderLessons(){
      +action;
    box.appendChild(el);
  });
- box.querySelectorAll('[data-url]').forEach(function(b){b.addEventListener('click',function(){var u=b.getAttribute('data-url');if(!u)return;if(!S.user){toast('레슨도 로그인이 필요합니다');openLogin();return;}window.open(u,'_blank','noopener');});});
+ box.querySelectorAll('[data-url]').forEach(function(b){b.addEventListener('click',function(){var u=b.getAttribute('data-url');if(!u)return;if(!S.user){toast('레슨도 로그인이 필요합니다');openLogin();return;}location.href=u;});});
  box.querySelectorAll('[data-up]').forEach(function(b){b.addEventListener('click',function(){toast('프로 레슨입니다 — 아래 요금제에서 프로를 시작해보세요');location.hash='#pricing';});});
 }
 function esc(s){return(s||'').replace(/[<>&]/g,function(c){return{'<':'&lt;','>':'&gt;','&':'&amp;'}[c]});}
@@ -460,7 +460,7 @@ function startPractice(){
  S.play={date:today(),n:n}; S.total=(S.total||0)+1; save(S);
  render();
  var url=GAME+(GAME.indexOf('?')<0?'?':'&')+'lic='+encodeURIComponent(S.lic||'')+'&plan='+(isPro()?'pro':'free');
- window.open(url,'_blank','noopener');
+ location.href=url;
 }
 /* 프로 결제 신청 */
 function openPro(){

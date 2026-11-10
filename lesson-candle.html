@@ -468,9 +468,9 @@ function drawIn(card){
 
 /* links (같은 사이트 내 상대경로) */
 document.getElementById('cta-go').addEventListener('click',function(){
-  if(synth)synth.cancel(); window.open('game.html','_blank','noopener');
+  if(synth)synth.cancel(); location.href='game.html';
 });
-var bh=document.getElementById('b-home');if(bh)bh.addEventListener('click',function(){if(synth)synth.cancel();window.open('index.html','_self');});
+var bh=document.getElementById('b-home');if(bh)bh.addEventListener('click',function(){if(synth)synth.cancel();location.href='index.html';});
 
 var rt;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(function(){drawIn(cards[cur])},120)});
 if(window.matchMedia)window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',function(){drawIn(cards[cur])});
