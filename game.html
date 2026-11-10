@@ -839,22 +839,24 @@ function draw(){
  // 기준봉(전일 상한가 일봉) 몸통 지지선
  var gj=d.daily[d.daily.length-1], body=gj.c-gj.o;
  var supDefs=[['1차·1/2·30%',roundTick(gj.c-body*0.5)],['2차·3/4·30%',roundTick(gj.c-body*0.75)],['3차·시가·40%',roundTick(gj.o)]];
- function baseLevels(txt){
+ function baseLevels(txt,noJun){
    var a=[{p:d.prevClose,color:C.accent,dash:[4,3],text:txt?('전일종가'+(d.direct?'':'(상한가)')):null}];
    if(S.shares)a.push({p:S.avg,color:C.fg,dash:[5,4],text:txt?('평단 '+fmt(S.avg)):null});
-   supDefs.forEach(function(s){a.push({p:s[1],color:C.sup,dash:[2,2],text:txt?('기준봉 '+s[0]):null,noRange:true});});
-   a.push({p:roundTick(gj.l),color:C.down,dash:[4,2],text:txt?('손절·기준봉저가 '+fmt(gj.l)):null,noRange:true});
+   if(!noJun){
+     supDefs.forEach(function(s){a.push({p:s[1],color:C.sup,dash:[2,2],text:txt?('기준봉 '+s[0]):null,noRange:true});});
+     a.push({p:roundTick(gj.l),color:C.down,dash:[4,2],text:txt?('손절·기준봉저가 '+fmt(gj.l)):null,noRange:true});
+   }
    return a;
  }
  var y=2;
  // 1분봉
  var w1=winOf(mRev,120,zoom1);
- candlePanel(d.min1,mRev,{x:x0,y:y,w:w,h:candleH},{label:'1분봉',grid:2,maxCW:8,winStart:w1.winStart,slots:w1.slots,levels:baseLevels(false),ma:maSeeded(d.min1,mRev,10,d.prevClose),maLabel:'10',phase:true,markers:S.trades.map(function(t){return {i:t.m,side:t.side}}),prevClose:d.prevClose});
+ candlePanel(d.min1,mRev,{x:x0,y:y,w:w,h:candleH},{label:'1분봉',grid:2,maxCW:8,winStart:w1.winStart,slots:w1.slots,levels:baseLevels(false,true),ma:maSeeded(d.min1,mRev,10,d.prevClose),maLabel:'10',phase:true,markers:S.trades.map(function(t){return {i:t.m,side:t.side}}),prevClose:d.prevClose});
  volPanel(d.min1,mRev,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:8,winStart:w1.winStart,slots:w1.slots,perHour:60});
  y+=unitH+uGap;
  // 3분봉
  var w3=winOf(tRev,60,zoom3);
- candlePanel(bars3,tRev,{x:x0,y:y,w:w,h:candleH},{label:'3분봉',grid:2,maxCW:14,winStart:w3.winStart,slots:w3.slots,levels:baseLevels(true),ma:maSeeded(bars3,tRev,10,d.prevClose),maLabel:'10',phase:true,phaseMarks:true,autosr:true,markers:S.trades.map(function(t){return {i:Math.floor(t.m/3),side:t.side,px:t.price,tag:t.tag}}),labelMk:true,ideal:true,prevClose:d.prevClose});
+ candlePanel(bars3,tRev,{x:x0,y:y,w:w,h:candleH},{label:'3분봉',grid:2,maxCW:14,winStart:w3.winStart,slots:w3.slots,levels:baseLevels(true,true),ma:maSeeded(bars3,tRev,10,d.prevClose),maLabel:'10',phase:true,phaseMarks:true,autosr:true,markers:S.trades.map(function(t){return {i:Math.floor(t.m/3),side:t.side,px:t.price,tag:t.tag}}),labelMk:true,ideal:true,prevClose:d.prevClose});
  volPanel(bars3,tRev,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:14,winStart:w3.winStart,slots:w3.slots,perHour:20});
  y+=unitH+uGap;
  // 일봉 + 오늘 형성중 봉 + 10일선
