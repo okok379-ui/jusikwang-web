@@ -731,7 +731,7 @@ function drawUserLines(label,R,lo,hi,X,Y,winStart,rev){
  if(!label)return;
  userLines.forEach(function(ul){
   if(ul.label!==label)return;
-  ctx.save();ctx.strokeStyle='#e4b53c';ctx.fillStyle='#e4b53c';
+  ctx.save();ctx.strokeStyle='#111827';ctx.fillStyle='#111827';
   if(ul.t==='trend'){
     var m=(ul.p2-ul.p1)/((ul.i2-ul.i1)||1),ia=Math.min(ul.i1,ul.i2),ib=Math.max(ul.i2,rev-1);
     ctx.setLineDash([]);ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(X(ia),Y(ul.p1+m*(ia-ul.i1)));ctx.lineTo(X(ib),Y(ul.p1+m*(ib-ul.i1)));ctx.stroke();
@@ -748,13 +748,13 @@ function drawUserLines(label,R,lo,hi,X,Y,winStart,rev){
   ctx.restore();
  });
  if(pendingPt&&pendingPt.label===label){
-  ctx.save();ctx.fillStyle='#e4b53c';ctx.strokeStyle='#e4b53c';
+  ctx.save();ctx.fillStyle='#111827';ctx.strokeStyle='#111827';
   ctx.beginPath();ctx.arc(X(pendingPt.i),Y(pendingPt.p),4,0,7);ctx.fill();
   ctx.setLineDash([3,3]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(X(pendingPt.i),R.y);ctx.lineTo(X(pendingPt.i),R.y+R.h);ctx.stroke();ctx.restore();
  }
  if(freeDraw&&freeDraw.label===label&&freeDraw.pts.length){
   ctx.save();ctx.beginPath();ctx.rect(R.x,R.y,R.w,R.h);ctx.clip();
-  ctx.strokeStyle='#e4b53c';ctx.lineWidth=1.9;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();
+  ctx.strokeStyle='#111827';ctx.lineWidth=1.9;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();
   freeDraw.pts.forEach(function(pt,ii){var xx=X(pt.i),yy=Y(pt.p);ii?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy);});
   ctx.stroke();ctx.restore();
  }
