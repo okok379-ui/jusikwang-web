@@ -109,6 +109,19 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
 .buy{background:var(--up)} .sell{background:var(--down)}
 .btn.ghost{background:transparent;border-color:var(--border);color:var(--fg);font-weight:600}
 .sellrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sellplan{margin:10px 14px 14px;padding:11px 12px;border:1px solid var(--border);border-radius:12px;background:var(--panel2)}
+.sellplan .sp-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.sellplan .sp-ttl{font-size:13px;font-weight:800}
+.sellplan .sp-use{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;cursor:pointer}
+.sellplan .sp-use input{width:15px;height:15px}
+.sellplan .sp-cols{display:grid;grid-template-columns:30px 1fr 1fr;gap:6px;font-size:10.5px;color:var(--muted);margin-bottom:4px}
+.sellplan .sp-row{display:grid;grid-template-columns:30px 1fr 1fr;gap:6px;align-items:center;margin-bottom:6px}
+.sellplan .sp-row .lab{font-weight:800;font-size:12px}
+.sellplan input.sp-roi,.sellplan input.sp-pct{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--fg);font-family:inherit;font-size:13px;padding:7px 8px;text-align:right}
+.sellplan .sp-foot{display:flex;align-items:center;gap:8px;margin-top:4px}
+.sellplan #sp-save{background:var(--accent);color:var(--accent-ink);border:none;border-radius:8px;font-weight:800;font-size:12.5px;padding:7px 14px;cursor:pointer}
+.sellplan #sp-msg{font-size:11px;color:#2bb3a3;flex:1;min-height:14px}
+.sellplan .sp-hint{font-size:10.5px;color:var(--muted);line-height:1.45;margin-top:8px}
 
 .playbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px}
 .play{background:var(--accent);color:var(--accent-ink);border:none;border-radius:10px;font-weight:700;padding:10px 16px;font-size:14px;display:flex;align-items:center;gap:7px}
@@ -217,6 +230,19 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
             <button class="btn sell" id="b-sell-all">전량 매도 <span style="opacity:.6;font-weight:600">S</span></button>
           </div>
         </div>
+        <div class="sellplan" id="sellplan">
+          <div class="sp-top">
+            <span class="sp-ttl">🎯 분할 매도 목표</span>
+            <label class="sp-use"><input type="checkbox" id="sp-on"> 사용</label>
+          </div>
+          <div class="sp-cols"><span></span><span>목표 수익률(%)</span><span>매도 비중(%)</span></div>
+          <div id="sp-rows"></div>
+          <div class="sp-foot">
+            <button id="sp-save">저장</button>
+            <span id="sp-msg"></span>
+          </div>
+          <div class="sp-hint">평단 대비 수익률이 목표에 닿으면 설정 비중만큼 자동 매도(수동 모드). 비우면 그 차수 건너뜀.</div>
+        </div>
       </div>
     </div>
   </div>
@@ -232,7 +258,6 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
     <button class="pbtn" id="b-clearline" title="그은 선 모두 지우기">선 지우기</button>
     <button class="pbtn" id="b-phase" title="상승·하락·지지 구간을 배경색으로 표시">📈 구간 표시</button>
     <button class="pbtn" id="b-autosr" title="고점·저점이 반복된 가격대를 자동으로 지지·저항선 표시">🤖 자동 지지저항</button>
-    <button class="pbtn" id="b-sellplan" title="목표 수익률·비중으로 분할 매도">🎯 매도목표</button>
     <div class="modes" role="group" aria-label="매매 모드">
       <button class="md on" data-mode="manual">수동</button>
       <button class="md" data-mode="auto">자동</button>
@@ -349,18 +374,6 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
   </div>
 </div>
 
-<div class="overlay" id="sp-overlay" hidden>
-  <div class="modal" style="max-width:420px">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><h3 style="margin:0;font-size:17px">🎯 분할 매도 목표</h3><button id="sp-close" class="play" style="margin-left:auto;justify-content:center">닫기</button></div>
-    <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px;line-height:1.5">보유 중 <b>평단 대비 수익률</b>이 목표에 도달하면 설정한 비중만큼 <b>자동으로 매도</b>돼요. (수동 모드 기준)</div>
-    <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:14px;font-weight:700"><input type="checkbox" id="sp-on" style="width:17px;height:17px"> 사용</label>
-    <div style="display:grid;grid-template-columns:36px 1fr 1fr;gap:8px;align-items:center;font-size:11.5px;color:var(--muted);margin-bottom:5px"><div></div><div>목표 수익률(%)</div><div>매도 비중(%)</div></div>
-    <div id="sp-rows"></div>
-    <div style="font-size:11px;color:var(--muted);margin:8px 0 12px">예) 1차 1%→50%, 2차 2%→30%, 3차 3%→20% (비중 합 100%면 전량 청산). 비워두면 그 차수는 건너뜀.</div>
-    <button id="sp-save" class="btn" style="width:100%;background:var(--accent);color:var(--accent-ink);border:none;font-weight:700">저장</button>
-    <div id="sp-msg" style="font-size:12px;margin-top:9px;min-height:15px"></div>
-  </div>
-</div>
 
 <div class="toast" id="toast"></div>
 <script src="caselib.js"></script>
@@ -600,25 +613,25 @@ function checkSellPlan(){
 function spRows(){
   var box=$('#sp-rows'); if(!box)return; var html='';
   for(var k=0;k<3;k++){var r=sellPlan.rows[k]||{};
-    html+='<div style="display:grid;grid-template-columns:36px 1fr 1fr;gap:8px;align-items:center;margin-bottom:7px">'
-    +'<div style="font-weight:700">'+(k+1)+'차</div>'
-    +'<input class="sp-roi" type="number" step="0.1" value="'+(r.roi!=null?r.roi:'')+'" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--fg);font-family:inherit;font-size:14px;padding:9px">'
-    +'<input class="sp-pct" type="number" step="1" value="'+(r.pct!=null?r.pct:'')+'" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--fg);font-family:inherit;font-size:14px;padding:9px">'
+    html+='<div class="sp-row">'
+    +'<span class="lab">'+(k+1)+'차</span>'
+    +'<input class="sp-roi" type="number" step="0.1" value="'+(r.roi!=null?r.roi:'')+'">'
+    +'<input class="sp-pct" type="number" step="1" value="'+(r.pct!=null?r.pct:'')+'">'
     +'</div>';
   }
   box.innerHTML=html;
 }
-function openSellPlan(){ spRows(); $('#sp-on').checked=!!sellPlan.on; $('#sp-msg').textContent=''; $('#sp-overlay').hidden=false; }
-$('#b-sellplan').addEventListener('click',openSellPlan);
-$('#sp-close').addEventListener('click',function(){$('#sp-overlay').hidden=true;});
-$('#sp-save').addEventListener('click',function(){
+function initSellPlan(){ var c=$('#sp-on'); if(!c)return; spRows(); c.checked=!!sellPlan.on; }
+var _spSave=$('#sp-save');
+if(_spSave)_spSave.addEventListener('click',function(){
   var rois=document.querySelectorAll('.sp-roi'),pcts=document.querySelectorAll('.sp-pct'),rows=[];
   for(var k=0;k<3;k++){var roi=parseFloat(rois[k].value),pct=parseFloat(pcts[k].value);rows.push({roi:isFinite(roi)?roi:null,pct:isFinite(pct)?pct:null});}
   sellPlan.on=$('#sp-on').checked; sellPlan.rows=rows;
   try{localStorage.setItem(SP_LS,JSON.stringify(sellPlan));}catch(e){}
   if(S)S.spDone=[false,false,false];
-  var mg=$('#sp-msg');mg.style.color='#2bb3a3';mg.textContent='저장됐어요'+(sellPlan.on?' · 사용 ON — 수동 모드에서 목표 도달 시 자동 매도':' · 사용 OFF');
+  var mg=$('#sp-msg');if(mg)mg.textContent='저장됨'+(sellPlan.on?' · 사용 ON':' · 사용 OFF');
 });
+initSellPlan();
 
 /* ---------- playback ---------- */
 function play(){if(S.finished)return;S.playing=true;$('#b-play').innerHTML='❚❚ 일시정지';clearInterval(timer);timer=setInterval(tick,speed);}
