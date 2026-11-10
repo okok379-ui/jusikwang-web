@@ -1528,7 +1528,7 @@ async function rollDay(resume){          // 선반입 미완 시 비동기 폴�
   if(!found){ try{ found=await fetchNextDay(); }catch(e){ found=null; } }
   rolling=false;
   var ok=found?applyNextDay(found):false;
-  if(!ok){ endRound(); return; }
+  if(!ok){ stop(); toast('다음 거래일 데이터가 없어 여기서 멈춰요 (보유·평단 유지). 마감하려면 🏁 매매 마무리.'); return; }   // 청산하지 않음
   if(resume) play();
 }
 async function continueNextDay(){ stop(); var found=null; try{ found=await fetchNextDay(); }catch(e){ found=null; } if(found&&applyNextDay(found)){ play(); } else { $('#overlay').hidden=true; openCases(); } }
