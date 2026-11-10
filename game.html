@@ -301,11 +301,39 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
     <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px">종목명과 날짜를 입력하면 그 종목을 바로 매매할 수 있어요 · 날짜는 비워두면 전체</div>
     <div style="display:flex;gap:6px;margin-bottom:8px">
       <input id="case-search" placeholder="🔎 종목명 또는 코드" style="flex:1;min-width:0;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:inherit;font-size:14px;padding:10px">
-      <input id="case-date" inputmode="numeric" placeholder="날짜 예:1104" style="width:104px;flex:none;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:inherit;font-size:14px;padding:10px">
+      <input id="case-date" inputmode="numeric" placeholder="날짜 YYYYMMDD" style="width:124px;flex:none;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:inherit;font-size:14px;padding:10px">
     </div>
     <button id="case-play" class="btn" style="width:100%;margin-bottom:8px">▶ 입력한 종목·날짜로 매매 시작</button>
-    <button id="case-random" class="btn ghost" style="width:100%;margin-bottom:10px">🎲 랜덤 종목으로 연습</button>
+    <button id="case-random" class="btn ghost" style="width:100%;margin-bottom:8px">🎲 랜덤 종목으로 연습</button>
+    <button id="case-settings" class="btn ghost" style="width:100%;margin-bottom:10px;font-size:12.5px">⚙️ 키움 API 설정 — 목록에 없는 종목·날짜 받아오기</button>
     <div id="case-list" style="max-height:52vh;overflow:auto"></div>
+  </div>
+</div>
+
+<div class="overlay" id="kw-overlay" hidden>
+  <div class="modal" style="max-width:440px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <h3 style="margin:0;font-size:17px">⚙️ 키움 API 설정</h3>
+      <button id="kw-close" class="play" style="margin-left:auto;justify-content:center">닫기</button>
+    </div>
+    <div style="font-size:11.5px;color:var(--muted);margin-bottom:12px;line-height:1.6">
+      키움 REST <b>앱키·시크릿키</b>를 넣으면, 목록에 없는 종목·날짜도 키움에서 직접 받아와 매매할 수 있어요.<br>
+      · 키는 <b>이 브라우저에만</b> 저장돼요(서버로 전송하지 않음).<br>· 키움증권 <b>실전 계좌 REST API</b> 신청이 필요해요(모의는 과거 분봉이 없을 수 있어요).
+    </div>
+    <label style="font-size:12px;color:var(--muted);font-weight:600">앱키 (App Key)</label>
+    <input id="kw-ak" autocomplete="off" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:var(--mono);font-size:13px;padding:10px;margin:4px 0 10px">
+    <label style="font-size:12px;color:var(--muted);font-weight:600">시크릿키 (Secret Key)</label>
+    <input id="kw-sk" type="password" autocomplete="off" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:var(--mono);font-size:13px;padding:10px;margin:4px 0 10px">
+    <label style="font-size:12px;color:var(--muted);font-weight:600">모드</label>
+    <select id="kw-mode" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:inherit;font-size:14px;padding:10px;margin:4px 0 12px">
+      <option value="real">실전 (api.kiwoom.com)</option>
+      <option value="mock">모의 (mockapi.kiwoom.com)</option>
+    </select>
+    <div style="display:flex;gap:8px">
+      <button id="kw-test" class="btn ghost" style="flex:1">🔌 연결 테스트</button>
+      <button id="kw-save" class="btn" style="flex:1">저장</button>
+    </div>
+    <div id="kw-msg" style="font-size:12px;margin-top:10px;min-height:16px;line-height:1.5"></div>
   </div>
 </div>
 
@@ -815,6 +843,105 @@ function draw(){
 var toTimer=null;
 function toast(msg){var t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toTimer);toTimer=setTimeout(function(){t.classList.remove('show')},1400);}
 
+/* ---------- 키움 REST 직접 조회 (설정탭 앱키/시크릿키 사용, 브라우저에서 직접 호출) ---------- */
+var KW_LS={ak:'jusikwang_kw_appkey',sk:'jusikwang_kw_secret',mode:'jusikwang_kw_mode',codes:'jusikwang_kw_codes'};
+function kwCfg(){return {ak:(localStorage.getItem(KW_LS.ak)||'').trim(),sk:(localStorage.getItem(KW_LS.sk)||'').trim(),mode:localStorage.getItem(KW_LS.mode)||'real'};}
+function kwBase(mode){return (mode==='mock')?'https://mockapi.kiwoom.com':'https://api.kiwoom.com';}
+var _kwTok={t:'',exp:0};
+async function kwToken(){
+  var c=kwCfg(); if(!c.ak||!c.sk) throw new Error('키움 앱키/시크릿키가 설정되지 않았습니다 (⚙️ 설정)');
+  if(_kwTok.t && Date.now()<_kwTok.exp) return _kwTok.t;
+  var r=await fetch(kwBase(c.mode)+'/oauth2/token',{method:'POST',headers:{'Content-Type':'application/json;charset=UTF-8'},body:JSON.stringify({grant_type:'client_credentials',appkey:c.ak,secretkey:c.sk})});
+  var d=await r.json();
+  if(d.return_code!=null && d.return_code!==0) throw new Error('토큰 발급 실패: '+(d.return_msg||d.return_code));
+  var tok=d.token||d.access_token; if(!tok) throw new Error('토큰 응답 오류');
+  _kwTok={t:tok,exp:Date.now()+5*3600*1000};
+  return tok;
+}
+async function kwPost(path,apiId,body,cont,nextKey){
+  var c=kwCfg(), tok=await kwToken();
+  var r=await fetch(kwBase(c.mode)+path,{method:'POST',headers:{'Content-Type':'application/json;charset=UTF-8','authorization':'Bearer '+tok,'api-id':apiId,'cont-yn':cont||'N','next-key':nextKey||''},body:JSON.stringify(body)});
+  var d; try{d=await r.json();}catch(e){throw new Error(apiId+' 응답 파싱 실패');}
+  var rc=d.return_code; if(rc!=null && rc!==0) throw new Error(apiId+' 실패: '+(d.return_msg||rc));
+  d._cont=r.headers.get('cont-yn')||'N'; d._next=r.headers.get('next-key')||'';
+  return d;
+}
+function kwNum(v){var s=(''+(v==null?'':v)).replace(/[,+]/g,'').trim();if(s===''||s==='-')return 0;var n=parseFloat(s);return isFinite(n)?Math.abs(Math.trunc(n)):0;}
+function kwRows(d){var best=null;for(var k in d){var v=d[k];if(Array.isArray(v)&&v.length&&typeof v[0]==='object'){if(!best||v.length>best.length)best=v;}}return best||[];}
+function kwCandle(r){
+  var c=kwNum(r.cur_prc||r['종가']||r.close||0); if(c<=0)return null;
+  var o=kwNum(r.open_pric||r['시가']||r.open||0)||c, h=kwNum(r.high_pric||r['고가']||r.high||0)||c, l=kwNum(r.low_pric||r['저가']||r.low||0)||c, v=kwNum(r.trde_qty||r['거래량']||r.volume||0);
+  var t=(''+(r.cntr_tm||r.dt||r.date||r['체결시간']||r['일자']||''));
+  return {t:t,o:o,h:h,l:l,c:c,v:v};
+}
+async function kwChartRange(path,apiId,body,startDt,endDt,maxPages){
+  var all=[],cont='N',nkey='';maxPages=maxPages||60;
+  for(var p=0;p<maxPages;p++){
+    var d=await kwPost(path,apiId,Object.assign({},body),cont,nkey);
+    var rows=kwRows(d); all=all.concat(rows);
+    var oldest='';rows.forEach(function(r){var t=(''+(r.cntr_tm||r.dt||r.date||'')).slice(0,8);if(t&&(!oldest||t<oldest))oldest=t;});
+    cont=(''+(d._cont||'N'));nkey=(''+(d._next||''));
+    if(startDt&&oldest&&oldest<=startDt)break;
+    if(cont!=='Y'||!nkey)break;
+    await new Promise(function(res){setTimeout(res,180);});
+  }
+  var out=[];all.forEach(function(r){var c=kwCandle(r);if(c)out.push(c);});
+  out.sort(function(a,b){return a.t<b.t?-1:a.t>b.t?1:0;});
+  if(startDt)out=out.filter(function(x){return x.t.slice(0,8)>=startDt;});
+  if(endDt)out=out.filter(function(x){return x.t.slice(0,8)<=endDt;});
+  var seen={},dd=[];out.forEach(function(x){if(!seen[x.t]){seen[x.t]=1;dd.push(x);}});
+  return dd;
+}
+function kwDateMinus(dateStr,days){var y=+dateStr.slice(0,4),m=+dateStr.slice(4,6)-1,dd=+dateStr.slice(6,8);var d=new Date(y,m,dd);d.setDate(d.getDate()-days);return ''+(d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate());}
+async function kwCodeMap(force){
+  if(!force){var cached=localStorage.getItem(KW_LS.codes);if(cached){try{var mm=JSON.parse(cached);if(mm&&mm.list&&mm.list.length)return mm;}catch(e){}}}
+  var list=[], mks=['0','10'];
+  for(var mi=0;mi<mks.length;mi++){
+    var cont='N',nkey='';
+    for(var p=0;p<80;p++){
+      var d=await kwPost('/api/dostk/stkinfo','ka10099',{mrkt_tp:mks[mi]},cont,nkey);
+      var rows=null;['list','output','data','stk_list','stkinfo'].forEach(function(k){if(!rows&&Array.isArray(d[k]))rows=d[k];});
+      if(!rows)rows=kwRows(d);
+      (rows||[]).forEach(function(r){var code=(''+(r.code||r.stk_cd||r['종목코드']||'')).replace(/^[A_]/,'');var nm=(''+(r.name||r.stk_nm||r['종목명']||'')).trim();if(code&&nm)list.push([code,nm]);});
+      cont=(''+(d._cont||'N'));nkey=(''+(d._next||''));
+      if(cont!=='Y'||!nkey)break;
+      await new Promise(function(res){setTimeout(res,120);});
+    }
+  }
+  var m={list:list,ts:Date.now()};
+  try{localStorage.setItem(KW_LS.codes,JSON.stringify(m));}catch(e){}
+  return m;
+}
+async function kwResolveCode(q){
+  q=(q||'').trim(); if(/^\d{6}$/.test(q))return {code:q,name:''};
+  if(!q)return null;
+  var m=await kwCodeMap(false), ql=q.toLowerCase();
+  var f=m.list.find(function(x){return x[1].toLowerCase()===ql;})
+     ||m.list.find(function(x){return x[1].toLowerCase().indexOf(ql)===0;})
+     ||m.list.find(function(x){return x[1].toLowerCase().indexOf(ql)>=0;});
+  return f?{code:f[0],name:f[1]}:null;
+}
+async function kwBuildCase(nameOrCode,dateStr){
+  var date=(''+dateStr).replace(/[^0-9]/g,'');
+  if(!/^\d{8}$/.test(date))throw new Error('날짜를 YYYYMMDD로 입력하세요 (예: 20260315)');
+  var rc=await kwResolveCode(nameOrCode);
+  if(!rc)throw new Error('종목을 찾지 못했어요: '+nameOrCode+' (종목명 또는 6자리 코드)');
+  var code=rc.code;
+  var min1=await kwChartRange('/api/dostk/chart','ka10080',{stk_cd:code,tic_scope:'1',upd_stkpc_tp:'1'},date,date,200);
+  min1=min1.filter(function(x){return x.t.slice(0,8)===date;});
+  if(min1.length<30)throw new Error(date+' 1분봉이 부족해요('+min1.length+'개). 과거 분봉 제공 한도이거나 휴장일일 수 있어요');
+  var daily=await kwChartRange('/api/dostk/chart','ka10081',{stk_cd:code,base_dt:date,upd_stkpc_tp:'1'},kwDateMinus(date,45),date,30);
+  var dPrev=daily.filter(function(x){return x.t.slice(0,8)<date;});
+  if(dPrev.length<10)throw new Error('일봉 데이터가 부족해요('+dPrev.length+'개)');
+  var d15=dPrev.slice(-15), toArr=function(a){return a.map(function(x){return [x.o,x.h,x.l,x.c,x.v];});};
+  var prevClose=d15[d15.length-1].c, prev2=d15.length>=2?d15[d15.length-2].c:prevClose;
+  var limitPct=prev2?Math.round((prevClose/prev2-1)*1000)/10:0;
+  return {name:rc.name||code,code:code,date:date,limitDate:d15[d15.length-1].t.slice(0,8),
+    prevClose:prevClose,open:min1[0].o,limitPct:limitPct,mktcapEok:0,reason:'키움 직접 조회',
+    min1Start:min1[0].t.slice(8,12),min1:toArr(min1),daily:toArr(d15)};
+}
+function openKwSettings(){var c=kwCfg();$('#kw-ak').value=c.ak;$('#kw-sk').value=c.sk;$('#kw-mode').value=c.mode;$('#kw-msg').textContent='';$('#kw-overlay').hidden=false;}
+
 /* ---------- 기준봉 케이스 라이브러리 ---------- */
 /* ---- Supabase 케이스 자동 로드 (관리자가 올린 실데이터 종목) ---- */
 function buildLib(arr){
@@ -861,14 +988,27 @@ function findCases(name,dateStr){
   });
   return out;
 }
-function tryDirectPlay(){
+async function tryDirectPlay(){
   if(!window.CASE_LIB||!window.CASE_LIB.manifest){ loadCasesFromServer().then(tryDirectPlay); return; }
   var nm=$('#case-search')?$('#case-search').value:'', dt=$('#case-date')?$('#case-date').value:'';
   if(!nm.trim() && !digits(dt)){ toast('종목명이나 날짜를 입력하세요'); return; }
   var m=findCases(nm,dt);
-  if(m.length===1){ playCaseByKey(m[0].key); }
-  else if(m.length===0){ toast('해당 종목·날짜의 케이스가 없어요 (수집된 종목만 매매 가능)'); }
-  else { renderCases(nm,dt); toast(m.length+'개가 있어요 — 아래 목록에서 골라주세요'); }
+  if(m.length===1){ playCaseByKey(m[0].key); return; }
+  if(m.length>1){ renderCases(nm,dt); toast(m.length+'개가 있어요 — 아래 목록에서 골라주세요'); return; }
+  // DB에 없음 → 키움 직접 조회
+  var c=kwCfg();
+  if(!c.ak||!c.sk){ toast('목록에 없어요. ⚙️ 설정에서 키움 앱키·시크릿키를 넣으면 직접 받아올 수 있어요'); openKwSettings(); return; }
+  if(!/^\d{8}$/.test(digits(dt))){ toast('직접 받아오려면 날짜를 YYYYMMDD로 입력하세요 (예: 20260315)'); return; }
+  if(!nm.trim()){ toast('종목명(또는 6자리 코드)도 입력하세요'); return; }
+  var btn=$('#case-play'), old=btn?btn.textContent:'';
+  if(btn){btn.disabled=true;btn.textContent='키움에서 받는 중…';}
+  try{
+    toast('키움에서 '+nm.trim()+' '+digits(dt)+' 데이터 받는 중…');
+    var cs=await kwBuildCase(nm,dt);
+    $('#case-overlay').hidden=true;
+    loadRealCase(cs);
+  }catch(e){ toast(e&&e.message?e.message:'조회 실패'); }
+  finally{ if(btn){btn.disabled=false;btn.textContent=old;} }
 }
 function renderCases(filter,dateFilter){
  var lib=window.CASE_LIB,box=$('#case-list');
@@ -926,6 +1066,23 @@ $('#case-date').addEventListener('input',function(){renderCases($('#case-search'
 $('#case-play').addEventListener('click',tryDirectPlay);
 $('#case-search').addEventListener('keydown',function(e){if(e.key==='Enter')tryDirectPlay();});
 $('#case-date').addEventListener('keydown',function(e){if(e.key==='Enter')tryDirectPlay();});
+$('#case-settings').addEventListener('click',openKwSettings);
+$('#kw-close').addEventListener('click',function(){$('#kw-overlay').hidden=true;});
+$('#kw-save').addEventListener('click',function(){
+  localStorage.setItem(KW_LS.ak,($('#kw-ak').value||'').trim());
+  localStorage.setItem(KW_LS.sk,($('#kw-sk').value||'').trim());
+  localStorage.setItem(KW_LS.mode,$('#kw-mode').value);
+  _kwTok={t:'',exp:0};
+  var mg=$('#kw-msg');mg.style.color='#2bb3a3';mg.textContent='저장됐어요. 이제 종목명+날짜로 "매매 시작"을 누르면 직접 받아와요.';
+});
+$('#kw-test').addEventListener('click',async function(){
+  var mg=$('#kw-msg');mg.style.color='var(--muted)';mg.textContent='연결 확인 중…';
+  localStorage.setItem(KW_LS.ak,($('#kw-ak').value||'').trim());
+  localStorage.setItem(KW_LS.sk,($('#kw-sk').value||'').trim());
+  localStorage.setItem(KW_LS.mode,$('#kw-mode').value);_kwTok={t:'',exp:0};
+  try{ await kwToken(); mg.style.color='#2bb3a3'; mg.textContent='✅ 연결 성공 — 토큰 발급 완료. 종목명+날짜로 바로 받아올 수 있어요.'; }
+  catch(e){ mg.style.color='#e0533a'; mg.textContent='❌ '+(e&&e.message?e.message:'연결 실패'); }
+});
 $('#b-home').addEventListener('click',function(){window.open('index.html','_blank','noopener');});
 $('#log-close').addEventListener('click',function(){$('#log-overlay').hidden=true;});
 $('#log-clear').addEventListener('click',function(){try{localStorage.removeItem('jusikwang_log')}catch(e){}renderLog();toast('연습기록 전체 삭제');});
