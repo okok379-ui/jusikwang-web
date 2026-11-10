@@ -867,6 +867,10 @@ function draw(){
  var VIEW=Math.max(5,Math.min(dBars.length,Math.round(dBars.length/zoomD))), stt=Math.max(0,dBars.length-VIEW);
  candlePanel(dBars.slice(stt),dBars.length-stt,{x:x0,y:y,w:w,h:candleH},{label:'일봉',grid:2,maxCW:16,minSlots:VIEW,ma:dma.slice(stt),maLabel:'10일',autosr:true,prevClose:d.prevClose});
  volPanel(dBars.slice(stt),dBars.length-stt,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:16,minSlots:VIEW});
+ // 패널 구분선(검은색)
+ ctx.save();ctx.strokeStyle='#111827';ctx.lineWidth=1.2;ctx.setLineDash([]);
+ [2+unitH+uGap/2, 2+2*unitH+uGap*1.5].forEach(function(yy){ctx.beginPath();ctx.moveTo(x0,yy);ctx.lineTo(x0+w,yy);ctx.stroke();});
+ ctx.restore();
 }
 
 /* ---------- toast ---------- */
@@ -1218,7 +1222,20 @@ function setZoom(z){var v=clampZ(z);zoom1=zoom3=zoomD=v;$('#z-reset').textConten
 $('#z-in').addEventListener('click',function(){setZoom(Math.max(zoom1,zoom3,zoomD)*1.4);});
 $('#z-out').addEventListener('click',function(){setZoom(Math.max(zoom1,zoom3,zoomD)/1.4);});
 $('#z-reset').addEventListener('click',function(){setZoom(1);});
-cv.addEventListener('wheel',function(e){e.preventDefault();var r=cv.getBoundingClientRect();var y=(e.clientY-r.top)/Math.max(1,r.height);var f=(e.deltaY<0?1.2:1/1.2);if(y<0.34)zoom1=clampZ(zoom1*f);else if(y<0.67)zoom3=clampZ(zoom3*f);else zoomD=clampZ(zoomD*f);if(S)draw();},{passive:false});
+cv.addEventListener('wheel',function(e){
+  e.preventDefault();
+  var r=cv.getBoundingClientRect(), yy=(e.clientY-r.top)/Math.max(1,r.height)*CH;
+  var f=(e.deltaY<0?1.2:1/1.2);
+  function py(l){for(var i=0;i<PANELS.length;i++)if(PANELS[i].label===l)return PANELS[i].y;return null;}
+  var y1=py('1분봉'), y3=py('3분봉'), yd=py('일봉'), target='일봉';
+  if(y3!=null && yy<y3) target='1분봉';
+  else if(yd!=null && yy<yd) target='3분봉';
+  else target='일봉';
+  if(target==='1분봉')zoom1=clampZ(zoom1*f);
+  else if(target==='3분봉')zoom3=clampZ(zoom3*f);
+  else zoomD=clampZ(zoomD*f);
+  if(S)draw();
+},{passive:false});
 $('#b-buy').addEventListener('click',function(){buy(parseAmt())});
 $('#b-add').addEventListener('click',function(){buy(parseAmt())});
 $('#b-sell-half').addEventListener('click',function(){sell(0.5)});
