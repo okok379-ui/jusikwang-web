@@ -812,7 +812,7 @@ function volPanel(bars,rev,R,opts){
  ctx.globalAlpha=1;ctx.restore();
  ctx.fillStyle=C.muted;ctx.textAlign='left';ctx.font='9px IBM Plex Sans KR,sans-serif';ctx.textBaseline='middle';ctx.fillText('거래량',R.x+5,R.y+8);
  ctx.font='8px IBM Plex Mono,monospace';ctx.fillText(fmt(maxV),R.x+R.w+5,R.y+7);
- if(opts.perHour){var st=(S&&S.day&&S.day.startMin!=null)?S.day.startMin:540;ctx.fillStyle=C.muted;ctx.textAlign='center';ctx.font='8.5px IBM Plex Mono,monospace';for(i=winStart;i<rev;i++){if(i%opts.perHour===0){var tot=st+i*(60/opts.perHour),hh=Math.floor(tot/60),mn=tot%60,xx=R.x+(i-winStart+0.5)*bw;if(xx>=R.x&&xx<=R.x+R.w)ctx.fillText((hh<10?'0':'')+hh+':'+(mn<10?'0':'')+mn,xx,R.y+R.h+7);}}}
+ if(opts.perHour){var st=(S&&S.day&&S.day.startMin!=null)?S.day.startMin:540;ctx.fillStyle=C.fg;ctx.textAlign='center';ctx.font='600 10px IBM Plex Mono,monospace';for(i=winStart;i<rev;i++){if(i%opts.perHour===0){var tot=st+i*(60/opts.perHour),hh=Math.floor(tot/60),mn=tot%60,xx=R.x+(i-winStart+0.5)*bw;if(xx>=R.x&&xx<=R.x+R.w)ctx.fillText((hh<10?'0':'')+hh+':'+(mn<10?'0':'')+mn,xx,R.y+R.h+7);}}}
 }
 function draw(){
  if(!S||!S.day.min1)return;
