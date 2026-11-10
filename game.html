@@ -573,9 +573,8 @@ function buy(amount){
  var cost=qty*p,fee=Math.round(cost*BUYFEE);
  if(cost+fee>S.cash){qty=Math.floor(S.cash/(p*(1+BUYFEE)));cost=qty*p;fee=Math.round(cost*BUYFEE);}
  if(qty<1){toast('현금이 부족합니다');return}
- var fresh=(S.shares<1);   // 잔량 0에서 새로 진입 = 재매수
  var ns=S.shares+qty; S.avg=Math.round((S.avg*S.shares+p*qty)/ns); S.shares=ns; S.cash-=(cost+fee); S.peakShares=Math.max(S.peakShares||0,S.shares);
- if(fresh)S.spDone=[false,false,false];   // 재매수 시 분할매도 1·2·3차 룰 재적용
+ S.spDone=[false,false,false];   // 매수(재매수·추가매수)마다 분할매도 1·2·3차 룰 재적용(새 평단 기준)
  S.trades.push({m:S.i,side:'B',price:p,qty:qty});
  toast('매수 '+fmt(qty)+'주 @ '+won(p)); render(); draw();
 }
