@@ -180,6 +180,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
       <div class="chip">최고 <b id="s-best">—</b></div>
       <button class="chip" id="b-log" style="cursor:pointer;color:var(--fg)">📒 연습기록</button>
       <button class="chip" id="b-learn" style="cursor:pointer;color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,transparent)">📚 지지저항 배우기</button>
+      <button class="chip" id="b-manual" style="cursor:pointer;color:var(--fg)">📖 메뉴얼</button>
       <button class="chip" id="b-home" style="cursor:pointer;color:var(--fg)">🏠 처음으로</button>
     </div>
   </div>
@@ -1435,6 +1436,7 @@ $('#kw-test').addEventListener('click',async function(){
   catch(e){ mg.style.color='#e0533a'; mg.textContent='❌ '+(e&&e.message?e.message:'연결 실패'); }
 });
 $('#b-home').addEventListener('click',function(){location.href='index.html';});
+$('#b-manual').addEventListener('click',function(){location.href='manual.html';});
 $('#log-close').addEventListener('click',function(){$('#log-overlay').hidden=true;});
 $('#log-clear').addEventListener('click',function(){try{localStorage.removeItem('jusikwang_log')}catch(e){}renderLog();toast('연습기록 전체 삭제');});
 cv.addEventListener('click',function(e){
