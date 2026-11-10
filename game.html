@@ -82,7 +82,8 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px so
 .chart-wrap{position:relative;width:100%;height:clamp(540px,78vh,720px)}
 canvas{width:100%;height:100%;display:block;border-radius:8px}
 
-.side{display:flex;flex-direction:column;gap:12px}
+.side{display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.side::-webkit-scrollbar{width:7px}.side::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
 .quote{padding:14px 14px 12px}
 .quote .px{font-family:var(--mono);font-weight:600;font-size:30px;line-height:1}
 .quote .chg{font-family:var(--mono);font-size:13px;font-weight:600;margin-top:4px}
@@ -869,7 +870,8 @@ function render(){
 
 /* ---------- chart ---------- */
 var cv=$('#cv'),ctx=cv.getContext('2d'),CW=0,CH=0,DPR=1,C={};
-function fit(){var r=cv.getBoundingClientRect();DPR=Math.min(2,window.devicePixelRatio||1);CW=Math.max(100,r.width);CH=Math.max(100,r.height);cv.width=Math.round(CW*DPR);cv.height=Math.round(CH*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);if(S)draw();}
+function fit(){var r=cv.getBoundingClientRect();DPR=Math.min(2,window.devicePixelRatio||1);CW=Math.max(100,r.width);CH=Math.max(100,r.height);cv.width=Math.round(CW*DPR);cv.height=Math.round(CH*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);syncSideHeight();if(S)draw();}
+function syncSideHeight(){var cp=document.querySelector('.chartpanel'),sd=document.querySelector('.side');if(!cp||!sd)return;if(window.innerWidth>780){sd.style.maxHeight=cp.offsetHeight+'px';}else{sd.style.maxHeight='';}}
 function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
 function roundRect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 var GUT=46;
