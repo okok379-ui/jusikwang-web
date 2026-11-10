@@ -271,6 +271,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
     </div>
     <div id="r-recent"></div>
     <button class="btn ghost" id="r-ideal-view" style="width:100%;margin-bottom:9px">📖 교과서 매매 보기</button>
+    <button class="play" id="r-continue" hidden style="width:100%;margin-bottom:9px;justify-content:center;background:var(--sup);color:#fff">▶ 다음 날 계속 ▸</button>
     <div class="modal-btns">
       <button class="btn ghost" id="r-retry">같은 종목 재도전</button>
       <button class="play" id="r-next" style="justify-content:center">새 종목 선택 ▸</button>
@@ -300,9 +301,19 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
     </div>
     <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px">종목명과 날짜를 입력하면 그 종목을 바로 매매할 수 있어요 · 날짜는 비워두면 전체</div>
     <div style="display:flex;gap:6px;margin-bottom:8px">
-      <input id="case-search" placeholder="🔎 종목명 또는 코드" style="flex:1;min-width:0;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:inherit;font-size:14px;padding:10px">
-      <input id="case-date" inputmode="numeric" placeholder="날짜 YYYYMMDD" style="width:124px;flex:none;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:inherit;font-size:14px;padding:10px">
+      <input id="case-search" autocomplete="off" placeholder="🔎 종목명 또는 코드" style="flex:1;min-width:0;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:inherit;font-size:14px;padding:10px">
+      <input id="case-date" type="date" style="width:158px;flex:none;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:inherit;font-size:14px;padding:9px 10px;color-scheme:light">
     </div>
+    <div id="case-suggest" hidden></div>
+    <style>
+      #case-suggest{display:flex;flex-direction:column;margin:-4px 0 8px;max-height:220px;overflow:auto;border:1px solid var(--border);border-radius:9px;background:var(--panel)}
+      #case-suggest[hidden]{display:none}
+      #case-suggest .sug{display:flex;justify-content:space-between;align-items:center;gap:10px;background:none;border:none;border-bottom:1px solid var(--grid);padding:9px 12px;font-family:inherit;font-size:13.5px;color:var(--fg);cursor:pointer;text-align:left;width:100%}
+      #case-suggest .sug:last-child{border-bottom:none}
+      #case-suggest .sug:hover{background:var(--panel2)}
+      #case-suggest .sug .sc{font-family:var(--mono);font-size:11.5px;color:var(--muted);flex:none}
+      #case-suggest .hint{padding:9px 12px;font-size:12px;color:var(--muted)}
+    </style>
     <button id="case-play" class="btn" style="width:100%;margin-bottom:8px">▶ 입력한 종목·날짜로 매매 시작</button>
     <button id="case-random" class="btn ghost" style="width:100%;margin-bottom:8px">🎲 랜덤 종목으로 연습</button>
     <button id="case-settings" class="btn ghost" style="width:100%;margin-bottom:10px;font-size:12.5px">⚙️ 키움 API 설정 — 목록에 없는 종목·날짜 받아오기</button>
@@ -619,6 +630,8 @@ function showResult(ret){
  $('#r-pat').textContent=arch.name;
  S.result={ret:ret,grade:grade,buyVwap:buyVwap,ideal:id.maxProfit};
  renderRecent();
+ var _kc=kwCfg(); var canCont=!!(S.day&&S.day.direct&&S.day.code&&_kc.ak&&_kc.sk);
+ var rc=$('#r-continue'); if(rc)rc.hidden=!canCont;
  $('#overlay').hidden=false;
 }
 
@@ -959,6 +972,36 @@ function kwFillMinutes(bars){
 }
 function openKwSettings(){var c=kwCfg();$('#kw-ak').value=c.ak;$('#kw-sk').value=c.sk;$('#kw-mode').value=c.mode;$('#kw-msg').textContent='';$('#kw-overlay').hidden=false;}
 
+/* 종목 자동완성(이름→코드, 동명 선택) */
+var caseSel=null, _sugTimer=null;
+function hideSuggest(){var b=$('#case-suggest');if(b){b.hidden=true;b.innerHTML='';}}
+async function renderSuggest(q){
+  var box=$('#case-suggest'); if(!box)return;
+  q=(q||'').trim();
+  var kc=kwCfg();
+  if(q.length<1){ hideSuggest(); return; }
+  if(!kc.ak||!kc.sk){ box.innerHTML='<div class="hint">⚙️ 키움 키를 설정하면 종목명으로 코드까지 자동검색돼요</div>'; box.hidden=false; return; }
+  var m;
+  try{ box.innerHTML='<div class="hint">종목 검색 중…</div>'; box.hidden=false; m=await kwCodeMap(false); }
+  catch(e){ box.innerHTML='<div class="hint">종목 목록을 불러오지 못했어요</div>'; return; }
+  if(($('#case-search').value||'').trim()!==q) return;   // 입력이 바뀌었으면 취소
+  var ql=q.toLowerCase();
+  var starts=[], contains=[];
+  for(var i=0;i<m.list.length;i++){var x=m.list[i],nl=x[1].toLowerCase();
+    if(nl===ql||nl.indexOf(ql)===0||(''+x[0]).indexOf(q)===0) starts.push(x);
+    else if(nl.indexOf(ql)>=0) contains.push(x);
+    if(starts.length>=12) break;
+  }
+  var hits=starts.concat(contains).slice(0,10);
+  if(!hits.length){ box.innerHTML='<div class="hint">일치하는 종목이 없어요</div>'; box.hidden=false; return; }
+  box.innerHTML=hits.map(function(x){return '<button type="button" class="sug" data-code="'+x[0]+'" data-name="'+(''+x[1]).replace(/"/g,'&quot;')+'"><span>'+x[1]+'</span><span class="sc">'+x[0]+'</span></button>';}).join('');
+  box.hidden=false;
+  box.querySelectorAll('.sug').forEach(function(b){b.addEventListener('click',function(){
+    caseSel={code:b.getAttribute('data-code'),name:b.getAttribute('data-name')};
+    $('#case-search').value=caseSel.name; hideSuggest();
+  });});
+}
+
 /* ---------- 기준봉 케이스 라이브러리 ---------- */
 /* ---- Supabase 케이스 자동 로드 (관리자가 올린 실데이터 종목) ---- */
 function buildLib(arr){
@@ -978,7 +1021,7 @@ function loadCasesFromServer(){
     if(Array.isArray(res)&&res.length){ window.CASE_LIB=buildLib(res); window.CASE_SERVER=true; }
   }).catch(function(){});
 }
-function openCases(){ renderCases('',''); $('#case-overlay').hidden=false;
+function openCases(){ caseSel=null; hideSuggest(); renderCases('',''); $('#case-overlay').hidden=false;
   var si=$('#case-search'); if(si){si.value='';} var di=$('#case-date'); if(di){di.value='';} if(si)si.focus();
   if(!window.CASE_SERVER){ loadCasesFromServer().then(function(){ renderCases($('#case-search')?$('#case-search').value:'',$('#case-date')?$('#case-date').value:''); }); } }
 function digits(s){return (''+(s==null?'':s)).replace(/\D/g,'');}
@@ -1017,11 +1060,13 @@ async function tryDirectPlay(){
   if(!c.ak||!c.sk){ toast('목록에 없어요. ⚙️ 설정에서 키움 앱키·시크릿키를 넣으면 직접 받아올 수 있어요'); openKwSettings(); return; }
   if(!/^\d{8}$/.test(digits(dt))){ toast('직접 받아오려면 날짜를 YYYYMMDD로 입력하세요 (예: 20260315)'); return; }
   if(!nm.trim()){ toast('종목명(또는 6자리 코드)도 입력하세요'); return; }
+  hideSuggest();
+  var stockArg=(caseSel&&caseSel.name===nm.trim())?caseSel.code:nm;
   var btn=$('#case-play'), old=btn?btn.textContent:'';
   if(btn){btn.disabled=true;btn.textContent='키움에서 받는 중…';}
   try{
     toast('키움에서 '+nm.trim()+' '+digits(dt)+' 데이터 받는 중…');
-    var cs=await kwBuildCase(nm,dt);
+    var cs=await kwBuildCase(stockArg,dt);
     $('#case-overlay').hidden=true;
     loadRealCase(cs);
   }catch(e){ toast(e&&e.message?e.message:'조회 실패'); }
@@ -1078,8 +1123,13 @@ $('#b-log').addEventListener('click',openLog);
 $('#b-learn').addEventListener('click',function(){window.open('lesson-sr.html','_blank','noopener');});
 $('#b-cases').addEventListener('click',openCases);
 $('#case-close').addEventListener('click',function(){$('#case-overlay').hidden=true;});
-$('#case-search').addEventListener('input',function(){renderCases(this.value,$('#case-date')?$('#case-date').value:'');});
+$('#case-search').addEventListener('input',function(){
+  caseSel=null; var v=this.value;
+  renderCases(v,$('#case-date')?$('#case-date').value:'');
+  clearTimeout(_sugTimer); _sugTimer=setTimeout(function(){renderSuggest(v);},220);
+});
 $('#case-date').addEventListener('input',function(){renderCases($('#case-search')?$('#case-search').value:'',this.value);});
+$('#case-date').addEventListener('focus',hideSuggest);
 $('#case-play').addEventListener('click',tryDirectPlay);
 $('#case-search').addEventListener('keydown',function(e){if(e.key==='Enter')tryDirectPlay();});
 $('#case-date').addEventListener('keydown',function(e){if(e.key==='Enter')tryDirectPlay();});
@@ -1129,6 +1179,20 @@ $('#b-add').addEventListener('click',function(){buy(parseAmt())});
 $('#b-sell-half').addEventListener('click',function(){sell(0.5)});
 $('#b-sell-all').addEventListener('click',function(){sell(1)});
 $('#r-next').addEventListener('click',function(){ $('#overlay').hidden=true; openCases(); });
+async function continueNextDay(){
+  var d=S&&S.day; if(!d||!d.direct||!d.code){ $('#overlay').hidden=true; openCases(); return; }
+  var btn=$('#r-continue'); var old=btn?btn.textContent:'';
+  if(btn){btn.disabled=true;btn.textContent='다음 거래일 불러오는 중…';}
+  var found=null, cur=d.date;
+  for(var k=0;k<8 && !found;k++){
+    cur=kwDateMinus(cur,-1);   // +1일
+    try{ found=await kwBuildCase(d.code,cur); }catch(e){ found=null; }
+  }
+  if(btn){btn.disabled=false;btn.textContent=old;}
+  if(found){ $('#overlay').hidden=true; loadRealCase(found); toast(found.date+' 로 이어서 연습'); }
+  else toast('다음 거래일 데이터를 찾지 못했어요 (최근 분봉 제공 한도일 수 있어요)');
+}
+$('#r-continue').addEventListener('click',continueNextDay);
 $('#r-retry').addEventListener('click',function(){newRound(S.seed);});
 $('#case-random').addEventListener('click',function(){ $('#case-overlay').hidden=true; newRound(); });
 $('#r-ideal-view').addEventListener('click',function(){
