@@ -1281,19 +1281,12 @@ function loadCasesFromServer(){
   }).catch(function(){});
 }
 function openCases(){ caseSel=null; hideSuggest(); renderCases('',''); $('#case-overlay').hidden=false;
-  var si=$('#case-search'); if(si){si.value='';} var di=$('#case-date'); if(di){di.value='';} if(si)si.focus();
-  if(!window.CASE_SERVER){ loadCasesFromServer().then(function(){ renderCases($('#case-search')?$('#case-search').value:'',$('#case-date')?$('#case-date').value:''); }); } }
+  var si=$('#case-search'); if(si){si.value='';} var di=$('#case-date'); if(di){di.value='';} if(si)si.focus(); }
 function digits(s){return (''+(s==null?'':s)).replace(/\D/g,'');}
 function playCaseByKey(key,btn){
   var c=window.CASE_LIB&&window.CASE_LIB.cases[key];
-  if(!c){toast('케이스를 찾을 수 없습니다');return;}
-  if(c.min1&&c.min1.length){ loadRealCase(c); $('#case-overlay').hidden=true; return; }
-  if(btn){btn.disabled=true;var old=btn.style.opacity;btn.style.opacity='0.5';}
-  sbrpc('jusikwang_get_case',{p_id:key}).then(function(full){
-    if(btn){btn.disabled=false;btn.style.opacity=old;}
-    if(full&&full.code&&full.min1){ window.CASE_LIB.cases[key]=full; loadRealCase(full); $('#case-overlay').hidden=true; }
-    else toast('케이스 데이터를 불러오지 못했습니다');
-  });
+  if(c&&c.min1&&c.min1.length){ loadRealCase(c); $('#case-overlay').hidden=true; }
+  else toast('케이스 데이터를 찾을 수 없습니다');
 }
 function findCases(name,dateStr){
   name=(name||'').trim().toLowerCase(); var df=digits(dateStr);
