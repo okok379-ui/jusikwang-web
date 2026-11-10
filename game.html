@@ -602,7 +602,7 @@ function equity(){return S.cash+S.shares*price()}
 /* ---------- actions ---------- */
 function parseAmt(){var v=parseInt(($('#amt').value||'').replace(/[^0-9]/g,''),10);return isFinite(v)?v:0}
 function setAmt(v){$('#amt').value=fmt(v)}
-function buy(amount){
+function buy(amount,reason){
  if(S.finished)return;
  var p=price(),qty=Math.floor(amount/(p*(1+BUYFEE)));
  if(qty<1){toast('금액이 부족합니다');return}
@@ -613,15 +613,15 @@ function buy(amount){
  var ns=S.shares+qty; S.avg=Math.round((S.avg*S.shares+p*qty)/ns); S.shares=ns; S.cash-=(cost+fee); S.peakShares=Math.max(S.peakShares||0,S.shares);
  S.spDone=[false,false,false];   // 매수(재매수·추가매수)마다 분할매도 1·2·3차 룰 재적용(새 평단 기준)
  if(fresh){ S.bpBase=p; S.bpDone=[]; }   // 최초 매수가 기준점 설정 → 물타기 2~9차 무장
- S.trades.push({m:S.i,side:'B',price:p,qty:qty});
+ S.trades.push({m:S.i,side:'B',price:p,qty:qty,tag:reason||(fresh?'직접 매수(1차)':'추가 매수')});
  toast('매수 '+fmt(qty)+'주 @ '+won(p)); render(); draw();
 }
-function sell(frac){
+function sell(frac,reason){
  if(S.finished||S.shares<1){if(S.shares<1)toast('보유 수량이 없습니다');return}
  var qty=frac>=1?S.shares:Math.max(1,Math.floor(S.shares*frac));
  var p=price(),proceeds=qty*p,fee=Math.round(proceeds*SELLFEE);
  S.realized+=Math.round((p-S.avg)*qty)-fee; S.cash+=(proceeds-fee); S.shares-=qty; if(S.shares<1)S.avg=0;
- S.trades.push({m:S.i,side:'S',price:p,qty:qty});
+ S.trades.push({m:S.i,side:'S',price:p,qty:qty,tag:reason||(frac>=1?'직접 매도(전량)':'직접 매도(절반)')});
  toast('매도 '+fmt(qty)+'주 @ '+won(p)); render(); draw();
 }
 
@@ -683,7 +683,7 @@ function checkReentry(){
   if(S.shares>0)return;
   var lastT=S.trades[S.trades.length-1]; if(lastT&&lastT.m===S.i)return;   // 전량 매도한 그 봉에선 재진입 안함(다음 봉부터)
   var amt=buyPlan.amount||1000000; if(S.cash<amt)return;
-  buy(amt);   // 1차 재진입(균등 매수금) → bpBase 재설정, 분할매수·분할매도 재무장
+  buy(amt,'전량매도 후 재진입(1차)');   // bpBase 재설정, 분할매수·분할매도 재무장
 }
 function checkBuyPlan(){
   if(!buyPlan.on||!S||S.finished||curMode!=='manual')return;
@@ -694,7 +694,7 @@ function checkBuyPlan(){
     var row=buyPlan.rows[k]; if(!row||S.bpDone[k])continue;
     if(row.drop>0&&px<=base*(1-row.drop/100)){
       var before=S.shares;
-      buy(amt);                                      // 최초 금액에서 균등(1회 매수금)만큼 매수
+      buy(amt,'물타기 '+(k+2)+'차 (-'+row.drop+'%)');   // 최초 매수가 대비 하락 → 균등 매수
       S.bpDone[k]=true;
       if(S.shares<=before){ if(++guard>0)break; }    // 현금 부족 등으로 체결 안되면 중단
     }
@@ -761,7 +761,7 @@ function renderHistory(){
     +'<thead><tr style="position:sticky;top:0;background:var(--panel);text-align:left;color:var(--muted);font-size:11px;border-bottom:1px solid var(--border)">'
     +'<th style="padding:6px 8px;font-weight:600">#</th><th style="padding:6px 8px;font-weight:600">구분</th><th style="padding:6px 8px;font-weight:600">날짜</th><th style="padding:6px 8px;font-weight:600">시각</th>'
     +'<th style="padding:6px 8px;font-weight:600;text-align:right">가격</th><th style="padding:6px 8px;font-weight:600;text-align:right">수량</th>'
-    +'<th style="padding:6px 8px;font-weight:600;text-align:right">금액</th><th style="padding:6px 8px;font-weight:600;text-align:right">실현손익</th><th style="padding:6px 8px;font-weight:600">비고</th></tr></thead>'
+    +'<th style="padding:6px 8px;font-weight:600;text-align:right">금액</th><th style="padding:6px 8px;font-weight:600;text-align:right">실현손익</th><th style="padding:6px 8px;font-weight:600">이유</th></tr></thead>'
     +'<tbody>'+rows+'</tbody></table>';
   var rc=realized>=0?'var(--up)':'var(--down)';
   $('#hist-sum').innerHTML='매수 '+buyN+'회 · 매도 '+sellN+'회 · 실현손익 <b style="color:'+rc+'">'+(realized>=0?'+':'')+won(realized)+'</b>';
@@ -787,28 +787,28 @@ function engineStep(g){
    if(e.bought[k])continue;
    var Lk=e.lines[k];
    if(e.shake[k]==null){ if(bar.l<=Lk&&bar.c>=Lk)e.shake[k]=bar.l; }
-   else { if(bar.l>=e.shake[k]){ buy(START*e.ratios[k]); if(S.trades.length)S.trades[S.trades.length-1].tag=['1차','2차','3차'][k]; e.bought[k]=true; e.shake[k]=null; if(e.peak===0)e.peak=p; setEng('기준봉 '+['1차(1/2)','2차(3/4)','3차(시가)'][k]+' 지지확인 → '+Math.round(e.ratios[k]*100)+'% 분할매수'); } else e.shake[k]=null; }
+   else { if(bar.l>=e.shake[k]){ buy(START*e.ratios[k]); if(S.trades.length)S.trades[S.trades.length-1].tag='자동 '+['1차(1/2 지지)','2차(3/4 지지)','3차(시가 지지)'][k]; e.bought[k]=true; e.shake[k]=null; if(e.peak===0)e.peak=p; setEng('기준봉 '+['1차(1/2)','2차(3/4)','3차(시가)'][k]+' 지지확인 → '+Math.round(e.ratios[k]*100)+'% 분할매수'); } else e.shake[k]=null; }
   }
  }
  if(S.shares<1)return;
  e.peak=Math.max(e.peak,p);
- if(e.stop&&d.min1[S.i].l<=e.stop){ sell(1); e.done=true; setEng('기준봉 저가('+fmt(e.stop)+') 이탈 → 전량 손절'); return; }
+ if(e.stop&&d.min1[S.i].l<=e.stop){ sell(1,'자동 손절(기준봉 저가 이탈)'); e.done=true; setEng('기준봉 저가('+fmt(e.stop)+') 이탈 → 전량 손절'); return; }
  var cons=0;
  for(i=S.i;i>=0;i--){ if(d.min1[i].c<d.min1[i].o)cons++; else break; }
  if(!e.armed&&cons>=4)e.armed=true;
- if(e.armed){ if(p>=S.avg){ sell(1); e.done=true; setEng('1분봉 음봉 4개 · 추세이탈 → '+(p>S.avg?'수익':'본전')+' 익절'); return; } else setEng('익절 신호 발생 · 본전('+fmt(S.avg)+') 회복 대기'); }
+ if(e.armed){ if(p>=S.avg){ sell(1,'자동 익절(음봉4·추세이탈)'); e.done=true; setEng('1분봉 음봉 4개 · 추세이탈 → '+(p>S.avg?'수익':'본전')+' 익절'); return; } else setEng('익절 신호 발생 · 본전('+fmt(S.avg)+') 회복 대기'); }
 }
 
 function endRound(){
  stop(); S.finished=true;
  var pf=S.day.min1[S.maxMin].c;
- if(S.shares>0){var proceeds=S.shares*pf,fee=Math.round(proceeds*SELLFEE);S.realized+=Math.round((pf-S.avg)*S.shares)-fee;S.cash+=(proceeds-fee);S.trades.push({m:S.maxMin,side:'S',price:pf,qty:S.shares,liq:true});S.shares=0;S.avg=0;}
+ if(S.shares>0){var proceeds=S.shares*pf,fee=Math.round(proceeds*SELLFEE);S.realized+=Math.round((pf-S.avg)*S.shares)-fee;S.cash+=(proceeds-fee);S.trades.push({m:S.maxMin,side:'S',price:pf,qty:S.shares,liq:true,tag:'장 마감 청산'});S.shares=0;S.avg=0;}
  var ret=(S.cash-START)/START*100; showResult(ret); saveStat(ret); saveRecord(); draw();
 }
 function finishNow(){
  if(!S||S.finished)return; stop(); S.finished=true;
  var pf=price();
- if(S.shares>0){var proceeds=S.shares*pf,fee=Math.round(proceeds*SELLFEE);S.realized+=Math.round((pf-S.avg)*S.shares)-fee;S.cash+=(proceeds-fee);S.trades.push({m:S.i,side:'S',price:pf,qty:S.shares,liq:true});S.shares=0;S.avg=0;}
+ if(S.shares>0){var proceeds=S.shares*pf,fee=Math.round(proceeds*SELLFEE);S.realized+=Math.round((pf-S.avg)*S.shares)-fee;S.cash+=(proceeds-fee);S.trades.push({m:S.i,side:'S',price:pf,qty:S.shares,liq:true,tag:'매매 마무리 청산'});S.shares=0;S.avg=0;}
  var ret=(S.cash-START)/START*100; showResult(ret); saveStat(ret); saveRecord(); draw();
 }
 
@@ -1472,10 +1472,10 @@ cv.addEventListener('wheel',function(e){
   else zoomD=clampZ(zoomD*f);
   if(S)draw();
 },{passive:false});
-$('#b-buy').addEventListener('click',function(){buy(parseAmt())});
-$('#b-add').addEventListener('click',function(){buy(parseAmt())});
-$('#b-sell-half').addEventListener('click',function(){sell(0.5)});
-$('#b-sell-all').addEventListener('click',function(){sell(1)});
+$('#b-buy').addEventListener('click',function(){buy(parseAmt(),(S&&S.shares>0)?'직접 추가매수':'직접 매수(1차)')});
+$('#b-add').addEventListener('click',function(){buy(parseAmt(),'직접 추가매수')});
+$('#b-sell-half').addEventListener('click',function(){sell(0.5,'직접 매도(절반)')});
+$('#b-sell-all').addEventListener('click',function(){sell(1,'직접 매도(전량)')});
 $('#r-next').addEventListener('click',function(){ $('#overlay').hidden=true; openCases(); });
 var rolling=false, _pfKey=null, _pfData=null, _pfReadyKey=null;
 function _dayKey(){ return (S&&S.day)?(S.day.code+'@'+digits(S.day.date)):''; }
@@ -1550,7 +1550,7 @@ document.querySelectorAll('.quick').forEach(function(q){q.addEventListener('clic
 document.querySelectorAll('.sp').forEach(function(s){s.addEventListener('click',function(){document.querySelectorAll('.sp').forEach(function(x){x.classList.remove('on')});s.classList.add('on');speed=parseInt(s.getAttribute('data-sp'),10);if(S&&S.playing){clearInterval(timer);timer=setInterval(tick,speed);}});});
 document.querySelectorAll('.md').forEach(function(m){m.addEventListener('click',function(){curMode=m.getAttribute('data-mode');document.querySelectorAll('.md').forEach(function(x){x.classList.toggle('on',x===m)});if(S)S.mode=curMode;updateModeUI();});});
 $('#amt').addEventListener('input',function(){var v=$('#amt').value.replace(/[^0-9]/g,'');$('#amt').value=v?parseInt(v,10).toLocaleString('en-US'):'';});
-document.addEventListener('keydown',function(e){if(e.target.tagName==='INPUT')return;var auto=S&&S.mode==='auto';if(e.code==='Space'){e.preventDefault();toggle();}else if((e.key==='b'||e.key==='B')&&!auto){buy(parseAmt());}else if((e.key==='s'||e.key==='S')&&!auto){sell(1);}else if(e.key==='ArrowRight'){step();}else if(e.key==='n'||e.key==='N'){newRound();}});
+document.addEventListener('keydown',function(e){if(e.target.tagName==='INPUT')return;var auto=S&&S.mode==='auto';if(e.code==='Space'){e.preventDefault();toggle();}else if((e.key==='b'||e.key==='B')&&!auto){buy(parseAmt(),(S&&S.shares>0)?'직접 추가매수':'직접 매수(1차)');}else if((e.key==='s'||e.key==='S')&&!auto){sell(1,'직접 매도(전량)');}else if(e.key==='ArrowRight'){step();}else if(e.key==='n'||e.key==='N'){newRound();}});
 window.addEventListener('resize',fit);
 if(window.ResizeObserver){new ResizeObserver(fit).observe($('.chart-wrap'));}
 new MutationObserver(function(){draw()}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
