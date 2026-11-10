@@ -1116,6 +1116,23 @@ async function kwPost(path,apiId,body,cont,nextKey){
   return d;
 }
 function kwNum(v){var s=(''+(v==null?'':v)).replace(/[,+]/g,'').trim();if(s===''||s==='-')return 0;var n=parseFloat(s);return isFinite(n)?Math.abs(Math.trunc(n)):0;}
+var _capCache={};
+async function kwMktcapEok(code){   // ka10001 주식기본정보 → 시가총액(억원)
+  if(_capCache[code]!=null)return _capCache[code];
+  var eok=0;
+  try{
+    var d=await kwPost('/api/dostk/stkinfo','ka10001',{stk_cd:code});
+    var fields=['시가총액','mac','mrkt_cap','cap','stk_cap'],i;
+    for(i=0;i<fields.length;i++){
+      var raw=d[fields[i]]; if(raw==null||raw===''||raw==='0')continue;
+      var num=parseInt((''+raw).replace(/,/g,'').replace(/^[+\-]/,''),10);
+      if(!isFinite(num)||num<=0)continue;
+      eok=(num<1e7)?num:Math.round(num/1e8);   // 키움 시총 필드는 보통 억원 단위
+      break;
+    }
+  }catch(e){}
+  _capCache[code]=eok; return eok;
+}
 function kwRows(d){var best=null;for(var k in d){var v=d[k];if(Array.isArray(v)&&v.length&&typeof v[0]==='object'){if(!best||v.length>best.length)best=v;}}return best||[];}
 function kwCandle(r){
   var c=kwNum(r.cur_prc||r['종가']||r.close||0); if(c<=0)return null;
@@ -1189,8 +1206,9 @@ async function kwBuildCase(nameOrCode,dateStr){
   var d15=dPrev.slice(-15), toArr=function(a){return a.map(function(x){return [x.o,x.h,x.l,x.c,x.v];});};
   var prevClose=d15[d15.length-1].c, prev2=d15.length>=2?d15[d15.length-2].c:prevClose;
   var limitPct=prev2?Math.round((prevClose/prev2-1)*1000)/10:0;
+  var mcap=await kwMktcapEok(code);
   return {name:rc.name||code,code:code,date:date,limitDate:d15[d15.length-1].t.slice(0,8),
-    prevClose:prevClose,open:min1[0].o,limitPct:limitPct,mktcapEok:0,reason:'키움 직접 조회',direct:true,
+    prevClose:prevClose,open:min1[0].o,limitPct:limitPct,mktcapEok:mcap,reason:'키움 직접 조회',direct:true,
     min1Start:min1[0].t.slice(8,12),min1:toArr(min1),daily:toArr(d15)};
 }
 function kwFillMinutes(bars){
