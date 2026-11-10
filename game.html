@@ -122,6 +122,9 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
 .sellplan #sp-save{background:var(--accent);color:var(--accent-ink);border:none;border-radius:8px;font-weight:800;font-size:12.5px;padding:7px 14px;cursor:pointer}
 .sellplan #sp-msg{font-size:11px;color:#2bb3a3;flex:1;min-height:14px}
 .sellplan .sp-hint{font-size:10.5px;color:var(--muted);line-height:1.45;margin-top:8px}
+.sellplan .bp-reentry{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;font-weight:700;margin:4px 0 2px}
+.sellplan .bp-reentry input[type=checkbox]{width:15px;height:15px}
+.sellplan .bp-reentry input[type=number]{width:96px;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--fg);font-family:inherit;font-size:12.5px;padding:6px 8px;text-align:right}
 
 .playbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px}
 .play{background:var(--accent);color:var(--accent-ink);border:none;border-radius:10px;font-weight:700;padding:10px 16px;font-size:14px;display:flex;align-items:center;gap:7px}
@@ -242,6 +245,21 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
             <span id="sp-msg"></span>
           </div>
           <div class="sp-hint">평단 대비 수익률이 목표에 닿으면 <b>그때 남은 잔량</b>의 설정 비중만큼 자동 매도(수동 모드). 100%면 전량. 비우면 그 차수 건너뜀.</div>
+        </div>
+        <div class="sellplan" id="buyplan">
+          <div class="sp-top">
+            <span class="sp-ttl">🔻 분할 매수(물타기)</span>
+            <label class="sp-use"><input type="checkbox" id="bp-on"> 사용</label>
+          </div>
+          <div class="sp-cols"><span></span><span>하락률(%)</span><span>매수(시드%)</span></div>
+          <div id="bp-rows"></div>
+          <label class="bp-reentry"><input type="checkbox" id="bp-reenter"> 전량 매도 후 1차 자동 재진입 ·
+            <input type="number" id="bp-entry" step="100000"> 원</label>
+          <div class="sp-foot">
+            <button id="bp-save">저장</button>
+            <span id="bp-msg"></span>
+          </div>
+          <div class="sp-hint"><b>최초 매수가</b> 기준 설정 하락률에 닿을 때마다 시드의 설정%만큼 자동 매수(수동 모드). 1차는 직접 매수. 재진입 켜면 전량 매도 후 다음 봉에서 1차 진입금으로 자동 재매수.</div>
         </div>
       </div>
     </div>
@@ -519,7 +537,7 @@ function autoSR(bars,rev){
 }
 
 function startWithDay(day,seed){
- S={seed:(seed==null?-1:seed),day:day,ideal:idealStats(day.bars),rule:ruleTrade(day),i:0,maxMin:day.N*3-1,cash:START,shares:0,avg:0,realized:0,trades:[],playing:false,finished:false,mode:curMode,peakShares:0,spDone:[false,false,false]};
+ S={seed:(seed==null?-1:seed),day:day,ideal:idealStats(day.bars),rule:ruleTrade(day),i:0,maxMin:day.N*3-1,cash:START,shares:0,avg:0,realized:0,trades:[],playing:false,finished:false,mode:curMode,peakShares:0,spDone:[false,false,false],bpBase:null,bpDone:[false,false,false]};
  var gj=day.daily[day.daily.length-1],body=gj.c-gj.o;
  S.eng={ratios:[.3,.3,.4],bought:[false,false,false],shake:[null,null,null],peak:0,armed:false,done:false,lines:[roundTick(gj.c-body*0.5),roundTick(gj.c-body*0.75),roundTick(gj.o)],stop:roundTick(gj.l)};
  stop(); $('#overlay').hidden=true; var br=$('#back-result');if(br)br.hidden=true; updateModeUI(); userLines=[]; pendingPt=null;
@@ -575,8 +593,10 @@ function buy(amount){
  var cost=qty*p,fee=Math.round(cost*BUYFEE);
  if(cost+fee>S.cash){qty=Math.floor(S.cash/(p*(1+BUYFEE)));cost=qty*p;fee=Math.round(cost*BUYFEE);}
  if(qty<1){toast('현금이 부족합니다');return}
+ var fresh=(S.shares<1);   // 잔량 0에서 새로 진입 = 1차(최초) 매수
  var ns=S.shares+qty; S.avg=Math.round((S.avg*S.shares+p*qty)/ns); S.shares=ns; S.cash-=(cost+fee); S.peakShares=Math.max(S.peakShares||0,S.shares);
  S.spDone=[false,false,false];   // 매수(재매수·추가매수)마다 분할매도 1·2·3차 룰 재적용(새 평단 기준)
+ if(fresh){ S.bpBase=p; S.bpDone=[false,false,false]; }   // 최초 매수가 기준점 설정 → 물타기 2·3·4차 무장
  S.trades.push({m:S.i,side:'B',price:p,qty:qty});
  toast('매수 '+fmt(qty)+'주 @ '+won(p)); render(); draw();
 }
@@ -637,14 +657,64 @@ if(_spSave)_spSave.addEventListener('click',function(){
 });
 initSellPlan();
 
+/* ---------- 분할 매수(물타기) : 최초 매수가 기준 -N% 도달 시 시드의 M% 매수 ---------- */
+var BP_LS='jusikwang_buyplan';
+var buyPlan={on:false,rows:[{drop:3,pct:10},{drop:6,pct:10},{drop:9,pct:10}],reenter:false,entry:1000000};
+(function(){try{var s=JSON.parse(localStorage.getItem(BP_LS));if(s&&s.rows&&s.rows.length)buyPlan={on:!!s.on,rows:s.rows.slice(0,3),reenter:!!s.reenter,entry:(s.entry>0?s.entry:1000000)};}catch(e){}})();
+function checkReentry(){
+  if(!buyPlan.reenter||!S||S.finished||curMode!=='manual')return;
+  if(S.shares>0)return;
+  var lastT=S.trades[S.trades.length-1]; if(lastT&&lastT.m===S.i)return;   // 전량 매도한 그 봉에선 재진입 안함(다음 봉부터)
+  var amt=buyPlan.entry||1000000; if(S.cash<amt)return;
+  buy(amt);   // 1차 재진입 → bpBase 재설정, 분할매수·분할매도 재무장
+}
+function checkBuyPlan(){
+  if(!buyPlan.on||!S||S.finished||curMode!=='manual')return;
+  if(S.shares<1||S.bpBase==null)return;              // 최초 매수가 기준이 있어야 동작(1차는 직접 매수)
+  if(!S.bpDone)S.bpDone=[false,false,false];
+  var base=S.bpBase, px=price(), guard=0;
+  for(var k=0;k<buyPlan.rows.length;k++){
+    var row=buyPlan.rows[k]; if(!row||S.bpDone[k])continue;
+    if(row.drop>0&&row.pct>0&&px<=base*(1-row.drop/100)){
+      var before=S.shares;
+      buy(START*row.pct/100);                        // 시드의 pct% 매수(현금 부족 시 buy()가 자동 조정)
+      S.bpDone[k]=true;
+      if(S.shares<=before){ if(++guard>0)break; }    // 현금 부족 등으로 체결 안되면 중단
+    }
+  }
+}
+function bpRows(){
+  var box=$('#bp-rows'); if(!box)return; var html='';
+  for(var k=0;k<3;k++){var r=buyPlan.rows[k]||{};
+    html+='<div class="sp-row">'
+    +'<span class="lab">'+(k+2)+'차</span>'
+    +'<input class="bp-drop" type="number" step="0.1" value="'+(r.drop!=null?r.drop:'')+'">'
+    +'<input class="bp-pct" type="number" step="1" value="'+(r.pct!=null?r.pct:'')+'">'
+    +'</div>';
+  }
+  box.innerHTML=html;
+}
+function initBuyPlan(){ var c=$('#bp-on'); if(!c)return; bpRows(); c.checked=!!buyPlan.on; var re=$('#bp-reenter');if(re)re.checked=!!buyPlan.reenter; var en=$('#bp-entry');if(en)en.value=buyPlan.entry||1000000; }
+var _bpSave=$('#bp-save');
+if(_bpSave)_bpSave.addEventListener('click',function(){
+  var drops=document.querySelectorAll('.bp-drop'),pcts=document.querySelectorAll('.bp-pct'),rows=[];
+  for(var k=0;k<3;k++){var dp=parseFloat(drops[k].value),pc=parseFloat(pcts[k].value);rows.push({drop:isFinite(dp)?dp:null,pct:isFinite(pc)?pc:null});}
+  buyPlan.on=$('#bp-on').checked; buyPlan.rows=rows;
+  buyPlan.reenter=$('#bp-reenter').checked; var ev=parseFloat($('#bp-entry').value); buyPlan.entry=(isFinite(ev)&&ev>0)?Math.round(ev):1000000;
+  try{localStorage.setItem(BP_LS,JSON.stringify(buyPlan));}catch(e){}
+  if(S)S.bpDone=[false,false,false];
+  var mg=$('#bp-msg');if(mg)mg.textContent='저장됨'+(buyPlan.on?' · 매수 ON':' · 매수 OFF')+(buyPlan.reenter?' · 재진입 ON':'');
+});
+initBuyPlan();
+
 /* ---------- playback ---------- */
 function play(){if(S.finished)return;S.playing=true;$('#b-play').innerHTML='❚❚ 일시정지';clearInterval(timer);timer=setInterval(tick,speed);}
 function stop(){if(!S)return;S.playing=false;clearInterval(timer);timer=null;$('#b-play').innerHTML=(S.i>8?'▶ 계속':'▶ 시작');}
 function toggle(){if(!S)return;S.playing?stop():play();}
 function adv(){ if(S.i>=S.maxMin)return false; S.i++; var g=(S.i%3===2)?Math.floor(S.i/3):-1; engineStep(g); return true; }
-function tick(){if(S.i<S.maxMin){var before=S.trades.length;adv();checkSellPlan();render();draw();if(S.trades.length>before)pauseBriefly();}else rollDay(true);}
+function tick(){if(S.i<S.maxMin){var before=S.trades.length;adv();checkBuyPlan();checkSellPlan();checkReentry();render();draw();if(S.maxMin-S.i<=30)prefetchNext();if(S.trades.length>before)pauseBriefly();}else rollDay(true);}
 function pauseBriefly(){ if(!S||!S.playing)return; clearInterval(timer); timer=null; setTimeout(function(){ if(S&&S.playing&&!S.finished&&!timer){ timer=setInterval(tick,speed); } }, 1200); }
-function step(){if(S.finished)return;stop();if(S.i<S.maxMin){adv();checkSellPlan();render();draw();}else rollDay(false);}
+function step(){if(S.finished)return;stop();if(S.i<S.maxMin){adv();checkBuyPlan();checkSellPlan();checkReentry();render();draw();if(S.maxMin-S.i<=30)prefetchNext();}else rollDay(false);}
 function setEng(msg){var el=$('#eng-status');if(el)el.textContent=msg;}
 function updateModeUI(){var auto=curMode==='auto';var el=$('#eng-status');if(el){el.hidden=!auto;if(auto&&S&&S.trades.length===0)el.textContent='자동 매매 대기 — ▶ 시작을 누르면 기준봉 룰대로 분할매수·익절합니다';}if(S)render();}
 function engineStep(g){
@@ -1321,13 +1391,23 @@ $('#b-add').addEventListener('click',function(){buy(parseAmt())});
 $('#b-sell-half').addEventListener('click',function(){sell(0.5)});
 $('#b-sell-all').addEventListener('click',function(){sell(1)});
 $('#r-next').addEventListener('click',function(){ $('#overlay').hidden=true; openCases(); });
-var rolling=false;
+var rolling=false, _pfKey=null, _pfPromise=null;
+function prefetchNext(){                 // 다음 거래일을 미리 받아놓아 롤오버 끊김 최소화
+  var d=S&&S.day, kc=kwCfg();
+  if(!d||!d.code||!kc.ak||!kc.sk||!d.direct) return;
+  var base=digits(d.date); if(base.length!==8) return;
+  var key=d.code+'@'+base; if(_pfKey===key) return;
+  _pfKey=key;
+  _pfPromise=(async function(){ var found=null,cur=base; for(var k=0;k<8&&!found;k++){ cur=kwDateMinus(cur,-1); try{ found=await kwBuildCase(d.code,cur); }catch(e){ found=null; } } return found; })();
+}
 async function advanceDay(){
   var d=S&&S.day, kc=kwCfg();
   if(!d||!d.code||!kc.ak||!kc.sk||!d.direct) return false;
   var base=digits(d.date); if(base.length!==8) return false;
-  var found=null, cur=base;
-  for(var k=0;k<8 && !found;k++){ cur=kwDateMinus(cur,-1); try{ found=await kwBuildCase(d.code,cur); }catch(e){ found=null; } }
+  var found=null, key=d.code+'@'+base;
+  if(_pfKey===key && _pfPromise){ try{ found=await _pfPromise; }catch(e){ found=null; } }   // 선반입 결과 사용
+  _pfKey=null; _pfPromise=null;
+  if(!found){ var cur=base; for(var k=0;k<8 && !found;k++){ cur=kwDateMinus(cur,-1); try{ found=await kwBuildCase(d.code,cur); }catch(e){ found=null; } } }
   if(!found) return false;
   // === 다음 날 분봉을 기존 차트 뒤에 이어붙임(연속). S(보유·평단·현금·선·분할매도)는 그대로 유지 ===
   var nmin1=(found.min1||[]).map(normBar); if(nmin1.length<5) return false;
