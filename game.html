@@ -298,8 +298,12 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
       <h3 style="margin:0;font-size:17px">📅 기준봉 케이스</h3>
       <button id="case-close" class="play" style="margin-left:auto;justify-content:center">닫기</button>
     </div>
-    <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px">날짜별 기준봉 조건 충족 종목 · 종목명/코드로 직접 검색해 바로 플레이</div>
-    <input id="case-search" placeholder="🔎 종목명 또는 코드 검색" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:inherit;font-size:14px;padding:10px;margin-bottom:10px">
+    <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px">종목명과 날짜를 입력하면 그 종목을 바로 매매할 수 있어요 · 날짜는 비워두면 전체</div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <input id="case-search" placeholder="🔎 종목명 또는 코드" style="flex:1;min-width:0;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:inherit;font-size:14px;padding:10px">
+      <input id="case-date" inputmode="numeric" placeholder="날짜 예:1104" style="width:104px;flex:none;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:inherit;font-size:14px;padding:10px">
+    </div>
+    <button id="case-play" class="btn" style="width:100%;margin-bottom:8px">▶ 입력한 종목·날짜로 매매 시작</button>
     <button id="case-random" class="btn ghost" style="width:100%;margin-bottom:10px">🎲 랜덤 종목으로 연습</button>
     <div id="case-list" style="max-height:52vh;overflow:auto"></div>
   </div>
@@ -830,13 +834,50 @@ function loadCasesFromServer(){
     if(Array.isArray(res)&&res.length){ window.CASE_LIB=buildLib(res); window.CASE_SERVER=true; }
   }).catch(function(){});
 }
-function openCases(){ renderCases(''); $('#case-overlay').hidden=false; var si=$('#case-search'); if(si){si.value='';si.focus();}
-  if(!window.CASE_SERVER){ loadCasesFromServer().then(function(){ renderCases($('#case-search')?$('#case-search').value:''); }); } }
-function renderCases(filter){
+function openCases(){ renderCases('',''); $('#case-overlay').hidden=false;
+  var si=$('#case-search'); if(si){si.value='';} var di=$('#case-date'); if(di){di.value='';} if(si)si.focus();
+  if(!window.CASE_SERVER){ loadCasesFromServer().then(function(){ renderCases($('#case-search')?$('#case-search').value:'',$('#case-date')?$('#case-date').value:''); }); } }
+function digits(s){return (''+(s==null?'':s)).replace(/\D/g,'');}
+function playCaseByKey(key,btn){
+  var c=window.CASE_LIB&&window.CASE_LIB.cases[key];
+  if(!c){toast('케이스를 찾을 수 없습니다');return;}
+  if(c.min1&&c.min1.length){ loadRealCase(c); $('#case-overlay').hidden=true; return; }
+  if(btn){btn.disabled=true;var old=btn.style.opacity;btn.style.opacity='0.5';}
+  sbrpc('jusikwang_get_case',{p_id:key}).then(function(full){
+    if(btn){btn.disabled=false;btn.style.opacity=old;}
+    if(full&&full.code&&full.min1){ window.CASE_LIB.cases[key]=full; loadRealCase(full); $('#case-overlay').hidden=true; }
+    else toast('케이스 데이터를 불러오지 못했습니다');
+  });
+}
+function findCases(name,dateStr){
+  name=(name||'').trim().toLowerCase(); var df=digits(dateStr);
+  var out=[]; var lib=window.CASE_LIB;
+  if(!lib||!lib.manifest)return out;
+  lib.manifest.forEach(function(day){
+    if(df && digits(day.date).indexOf(df)<0) return;
+    day.items.forEach(function(it){
+      if(!name || it.name.toLowerCase().indexOf(name)>=0 || (''+it.code).indexOf(name)>=0) out.push(it);
+    });
+  });
+  return out;
+}
+function tryDirectPlay(){
+  if(!window.CASE_LIB||!window.CASE_LIB.manifest){ loadCasesFromServer().then(tryDirectPlay); return; }
+  var nm=$('#case-search')?$('#case-search').value:'', dt=$('#case-date')?$('#case-date').value:'';
+  if(!nm.trim() && !digits(dt)){ toast('종목명이나 날짜를 입력하세요'); return; }
+  var m=findCases(nm,dt);
+  if(m.length===1){ playCaseByKey(m[0].key); }
+  else if(m.length===0){ toast('해당 종목·날짜의 케이스가 없어요 (수집된 종목만 매매 가능)'); }
+  else { renderCases(nm,dt); toast(m.length+'개가 있어요 — 아래 목록에서 골라주세요'); }
+}
+function renderCases(filter,dateFilter){
  var lib=window.CASE_LIB,box=$('#case-list');
  if(!lib||!lib.manifest){box.innerHTML='<div style="color:var(--muted);padding:20px;text-align:center">케이스 데이터를 불러오지 못했습니다.</div>';return;}
- filter=(filter||'').trim().toLowerCase();var html='';
+ filter=(filter||'').trim().toLowerCase();
+ var df=digits(dateFilter==null?($('#case-date')?$('#case-date').value:''):dateFilter);
+ var html='';
  lib.manifest.forEach(function(day){
+   if(df && digits(day.date).indexOf(df)<0) return;
    var items=day.items.filter(function(it){return !filter||it.name.toLowerCase().indexOf(filter)>=0||(''+it.code).indexOf(filter)>=0;});
    if(!items.length)return;
    html+='<div style="font-size:12px;font-weight:700;color:var(--muted);margin:12px 2px 6px">📅 '+day.date+' · 기준봉 종목 '+items.length+'개</div>';
@@ -850,16 +891,7 @@ function renderCases(filter){
  if(!html)html='<div style="color:var(--muted);padding:20px;text-align:center">검색 결과가 없습니다.</div>';
  box.innerHTML=html;
  box.querySelectorAll('.case-row').forEach(function(b){b.addEventListener('click',function(){
-   var key=b.getAttribute('data-key'), c=window.CASE_LIB.cases[key];
-   if(!c)return;
-   if(c.min1&&c.min1.length){ loadRealCase(c); $('#case-overlay').hidden=true; return; }
-   // 메타만 있는 경우(서버) → 전체 데이터 조회
-   b.disabled=true; var old=b.style.opacity; b.style.opacity='0.5';
-   sbrpc('jusikwang_get_case',{p_id:key}).then(function(full){
-     b.disabled=false; b.style.opacity=old;
-     if(full&&full.code&&full.min1){ window.CASE_LIB.cases[key]=full; loadRealCase(full); $('#case-overlay').hidden=true; }
-     else toast('케이스 데이터를 불러오지 못했습니다');
-   });
+   playCaseByKey(b.getAttribute('data-key'),b);
  });});
 }
 
@@ -889,7 +921,11 @@ $('#b-log').addEventListener('click',openLog);
 $('#b-learn').addEventListener('click',function(){window.open('lesson-sr.html','_blank','noopener');});
 $('#b-cases').addEventListener('click',openCases);
 $('#case-close').addEventListener('click',function(){$('#case-overlay').hidden=true;});
-$('#case-search').addEventListener('input',function(){renderCases(this.value);});
+$('#case-search').addEventListener('input',function(){renderCases(this.value,$('#case-date')?$('#case-date').value:'');});
+$('#case-date').addEventListener('input',function(){renderCases($('#case-search')?$('#case-search').value:'',this.value);});
+$('#case-play').addEventListener('click',tryDirectPlay);
+$('#case-search').addEventListener('keydown',function(e){if(e.key==='Enter')tryDirectPlay();});
+$('#case-date').addEventListener('keydown',function(e){if(e.key==='Enter')tryDirectPlay();});
 $('#b-home').addEventListener('click',function(){window.open('index.html','_blank','noopener');});
 $('#log-close').addEventListener('click',function(){$('#log-overlay').hidden=true;});
 $('#log-clear').addEventListener('click',function(){try{localStorage.removeItem('jusikwang_log')}catch(e){}renderLog();toast('연습기록 전체 삭제');});
