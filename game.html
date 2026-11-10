@@ -551,7 +551,9 @@ function loadRealCase(json){
   var ms=(j.min1Start||'').toString().replace(/[^0-9]/g,'');
   var sh=ms.length>=4?parseInt(ms.slice(0,2),10):9, sm=ms.length>=4?parseInt(ms.slice(2,4),10):0;
   var startMin=(isFinite(sh)?sh:9)*60+(isFinite(sm)?sm:0);
+  var clockMin=[]; for(var ci=0;ci<min1.length;ci++)clockMin[ci]=startMin+ci;   // 연속 차트용 분단위 시계(날별 09:00 재시작)
   var day={bars:bars,min1:min1,daily:daily,prevClose:prevClose,open:open,N:bars.length,real:true,startMin:startMin,
+    clockMin:clockMin,curStart:0,curOpen:open,dayStarts:[0],
     arch:{name:(j.name||'실데이터')+' ('+(j.date||'')+')'},
     name:j.name||j.code||'실데이터 종목',code:(j.code||'').toString(),date:j.date||'',
     mktcapEok:+(j.mktcapEok||j.marketcap||0),reason:j.reason||'',limitPct:+(j.limitPct||j.changePct||0),direct:!!j.direct};
@@ -901,7 +903,7 @@ function volPanel(bars,rev,R,opts){
  ctx.globalAlpha=1;ctx.restore();
  ctx.fillStyle=C.muted;ctx.textAlign='left';ctx.font='9px IBM Plex Sans KR,sans-serif';ctx.textBaseline='middle';ctx.fillText('거래량',R.x+5,R.y+8);
  ctx.font='8px IBM Plex Mono,monospace';ctx.fillText(fmt(maxV),R.x+R.w+5,R.y+7);
- if(opts.perHour){var st=(S&&S.day&&S.day.startMin!=null)?S.day.startMin:540;ctx.fillStyle=C.fg;ctx.textAlign='center';ctx.font='600 10px IBM Plex Mono,monospace';for(i=winStart;i<rev;i++){if(i%opts.perHour===0){var tot=st+i*(60/opts.perHour),hh=Math.floor(tot/60),mn=tot%60,xx=R.x+(i-winStart+0.5)*bw;if(xx>=R.x&&xx<=R.x+R.w)ctx.fillText((hh<10?'0':'')+hh+':'+(mn<10?'0':'')+mn,xx,R.y+R.h+7);}}}
+ if(opts.perHour){var cm=S&&S.day&&S.day.clockMin,per=60/opts.perHour,st=(S&&S.day&&S.day.startMin!=null)?S.day.startMin:540;ctx.fillStyle=C.fg;ctx.textAlign='center';ctx.font='600 10px IBM Plex Mono,monospace';for(i=winStart;i<rev;i++){var mnv=cm?cm[(per===1)?i:i*3]:(st+i*per);if(mnv==null)continue;if(mnv%60===0){var hh=Math.floor(mnv/60)%24,mn=mnv%60,xx=R.x+(i-winStart+0.5)*bw;if(xx>=R.x&&xx<=R.x+R.w)ctx.fillText((hh<10?'0':'')+hh+':'+(mn<10?'0':'')+mn,xx,R.y+R.h+7);}}}
 }
 function draw(){
  if(!S||!S.day.min1)return;
@@ -937,9 +939,10 @@ function draw(){
  volPanel(bars3,tRev,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:14,winStart:w3.winStart,slots:w3.slots,perHour:20});
  y+=unitH+uGap;
  // 일봉 + 오늘 형성중 봉 + 10일선
+ var cs=(d.curStart!=null?d.curStart:0); if(cs>mRev-1)cs=0;   // 현재 날 구간만 형성봉으로 집계
  var th=-Infinity,tl=Infinity,tv=0,tc=d.min1[mRev-1].c;
- for(i=0;i<mRev;i++){var m=d.min1[i];if(m.h>th)th=m.h;if(m.l<tl)tl=m.l;tv+=m.v;}
- var dBars=d.daily.concat([{o:d.open,h:th,l:tl,c:tc,v:tv}]);
+ for(i=cs;i<mRev;i++){var m=d.min1[i];if(m.h>th)th=m.h;if(m.l<tl)tl=m.l;tv+=m.v;}
+ var dBars=d.daily.concat([{o:(d.curOpen!=null?d.curOpen:d.open),h:th,l:tl,c:tc,v:tv}]);
  var dma=maArray(dBars,dBars.length,10);
  var VIEW=Math.max(5,Math.min(dBars.length,Math.round(dBars.length/zoomD))), stt=Math.max(0,dBars.length-VIEW);
  candlePanel(dBars.slice(stt),dBars.length-stt,{x:x0,y:y,w:w,h:candleH},{label:'일봉',grid:2,maxCW:16,minSlots:VIEW,ma:dma.slice(stt),maLabel:'10일',autosr:true,prevClose:d.prevClose});
@@ -1323,19 +1326,28 @@ async function advanceDay(){
   var d=S&&S.day, kc=kwCfg();
   if(!d||!d.code||!kc.ak||!kc.sk||!d.direct) return false;
   var base=digits(d.date); if(base.length!==8) return false;
-  // 보유·평단·현금·실현손익·분할매도 상태·선을 그대로 승계
-  var carry={cash:S.cash,shares:S.shares,avg:S.avg,realized:S.realized,peakShares:S.peakShares||0,spDone:(S.spDone||[false,false,false]).slice(),mode:S.mode};
-  var keepLines=userLines.slice();
   var found=null, cur=base;
   for(var k=0;k<8 && !found;k++){ cur=kwDateMinus(cur,-1); try{ found=await kwBuildCase(d.code,cur); }catch(e){ found=null; } }
   if(!found) return false;
+  // === 다음 날 분봉을 기존 차트 뒤에 이어붙임(연속). S(보유·평단·현금·선·분할매도)는 그대로 유지 ===
+  var nmin1=(found.min1||[]).map(normBar); if(nmin1.length<5) return false;
+  var ms=(found.min1Start||'').toString().replace(/[^0-9]/g,'');
+  var nStart=(ms.length>=4?parseInt(ms.slice(0,2),10)*60+parseInt(ms.slice(2,4),10):540);
+  var start=d.min1.length;
+  d.min1=d.min1.concat(nmin1);
+  d.clockMin=(d.clockMin||[]).slice();
+  for(var q=0;q<nmin1.length;q++) d.clockMin[start+q]=nStart+q;
+  d.bars=bar3from(d.min1); d.N=d.bars.length;
+  d.daily=(found.daily||[]).map(normBar);        // 직전 날이 포함된 일봉 히스토리로 갱신
+  d.dayStarts=(d.dayStarts||[0]).concat([start]);
+  d.curStart=start; d.curOpen=+(found.open||nmin1[0].o);
+  d.date=found.date||d.date; d.prevClose=+(found.prevClose||d.prevClose); d.limitPct=+(found.limitPct||0);
+  S.maxMin=d.min1.length-1;                        // 더 진행할 수 있도록 끝 확장(S.i는 그대로 → 다음 틱부터 새 날)
+  S.finished=false;
   $('#overlay').hidden=true;
-  loadRealCase(found);              // startWithDay → S 새로 생성(i:0)
-  if(!S) return false;
-  S.cash=carry.cash; S.shares=carry.shares; S.avg=carry.avg; S.realized=carry.realized;
-  S.peakShares=carry.peakShares; S.spDone=carry.spDone; S.mode=carry.mode;
-  userLines=keepLines; render(); draw();
-  toast(found.date+' 이어서 계속 · 보유·평단·선 유지');
+  $('#h-reason').innerHTML='<b style="color:var(--sup)">실데이터</b> · '+(d.date||'')+' · 연속 진행';
+  render(); draw();
+  toast((found.date||'')+' 이어서 연속 진행 · 보유·평단·선 유지');
   return true;
 }
 async function rollDay(resume){
