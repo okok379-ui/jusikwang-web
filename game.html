@@ -95,7 +95,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
 .stat .k{font-size:10.5px;color:var(--muted);letter-spacing:.02em}
 .stat .v{font-family:var(--mono);font-weight:600;font-size:15px;margin-top:2px}
 
-.order{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.order{padding:10px 14px;display:flex;flex-direction:column;gap:7px}
 .amt{display:flex;align-items:center;gap:8px}
 .amt label{font-size:11px;color:var(--muted);width:46px}
 .amt input{flex:1;min-width:0;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:var(--mono);font-weight:600;font-size:15px;padding:9px 11px;text-align:right}
@@ -109,22 +109,22 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
 .buy{background:var(--up)} .sell{background:var(--down)}
 .btn.ghost{background:transparent;border-color:var(--border);color:var(--fg);font-weight:600}
 .sellrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.sellplan{margin:10px 14px 14px;padding:11px 12px;border:1px solid var(--border);border-radius:12px;background:var(--panel2)}
-.sellplan .sp-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
-.sellplan .sp-ttl{font-size:13px;font-weight:800}
-.sellplan .sp-use{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;cursor:pointer}
-.sellplan .sp-use input{width:15px;height:15px}
-.sellplan .sp-cols{display:grid;grid-template-columns:30px 1fr 1fr;gap:6px;font-size:10.5px;color:var(--muted);margin-bottom:4px}
-.sellplan .sp-row{display:grid;grid-template-columns:30px 1fr 1fr;gap:6px;align-items:center;margin-bottom:6px}
-.sellplan .sp-row .lab{font-weight:800;font-size:12px}
-.sellplan input.sp-roi,.sellplan input.sp-pct{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--fg);font-family:inherit;font-size:13px;padding:7px 8px;text-align:right}
-.sellplan .sp-foot{display:flex;align-items:center;gap:8px;margin-top:4px}
-.sellplan #sp-save{background:var(--accent);color:var(--accent-ink);border:none;border-radius:8px;font-weight:800;font-size:12.5px;padding:7px 14px;cursor:pointer}
-.sellplan #sp-msg{font-size:11px;color:#2bb3a3;flex:1;min-height:14px}
-.sellplan .sp-hint{font-size:10.5px;color:var(--muted);line-height:1.45;margin-top:8px}
-.sellplan .bp-reentry{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;font-weight:700;margin:4px 0 2px}
-.sellplan .bp-reentry input[type=checkbox]{width:15px;height:15px}
-.sellplan .bp-reentry input[type=number]{width:96px;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--fg);font-family:inherit;font-size:12.5px;padding:6px 8px;text-align:right}
+.sellplan{margin:6px 12px;padding:7px 9px;border:1px solid var(--border);border-radius:9px;background:var(--panel2)}
+.sellplan .sp-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.sellplan .sp-ttl{font-size:11.5px;font-weight:800}
+.sellplan .sp-use{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;cursor:pointer}
+.sellplan .sp-use input{width:14px;height:14px}
+.sellplan .sp-cols{display:grid;grid-template-columns:26px 1fr 1fr;gap:5px;font-size:9.5px;color:var(--muted);margin-bottom:2px}
+.sellplan .sp-row{display:grid;grid-template-columns:26px 1fr 1fr;gap:5px;align-items:center;margin-bottom:3px}
+.sellplan .sp-row .lab{font-weight:800;font-size:11px}
+.sellplan input.sp-roi,.sellplan input.sp-pct{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:7px;color:var(--fg);font-family:inherit;font-size:12px;padding:3px 7px;text-align:right}
+.sellplan .sp-foot{display:flex;align-items:center;gap:7px;margin-top:3px}
+.sellplan #sp-save,.sellplan #bp-save{background:var(--accent);color:var(--accent-ink);border:none;border-radius:7px;font-weight:800;font-size:11.5px;padding:4px 13px;cursor:pointer}
+.sellplan #sp-msg,.sellplan #bp-msg{font-size:10px;color:#2bb3a3;flex:1;min-height:12px}
+.sellplan .sp-hint{font-size:9.5px;color:var(--muted);line-height:1.3;margin-top:5px}
+.sellplan .bp-reentry{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:10.5px;font-weight:700;margin:4px 0 2px}
+.sellplan .bp-reentry input[type=checkbox]{width:14px;height:14px}
+.sellplan .bp-reentry input[type=number]{width:88px;background:var(--panel);border:1px solid var(--border);border-radius:7px;color:var(--fg);font-family:inherit;font-size:11.5px;padding:3px 7px;text-align:right}
 
 .playbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px}
 .play{background:var(--accent);color:var(--accent-ink);border:none;border-radius:10px;font-weight:700;padding:10px 16px;font-size:14px;display:flex;align-items:center;gap:7px}
@@ -244,7 +244,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
             <button id="sp-save">저장</button>
             <span id="sp-msg"></span>
           </div>
-          <div class="sp-hint">평단 대비 수익률이 목표에 닿으면 <b>그때 남은 잔량</b>의 설정 비중만큼 자동 매도(수동 모드). 100%면 전량. 비우면 그 차수 건너뜀.</div>
+          <div class="sp-hint">수익률 목표 도달 시 <b>남은 잔량</b>의 비중만큼 자동 매도(수동). 100%=전량.</div>
         </div>
         <div class="sellplan" id="buyplan">
           <div class="sp-top">
@@ -259,7 +259,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
             <button id="bp-save">저장</button>
             <span id="bp-msg"></span>
           </div>
-          <div class="sp-hint"><b>최초 매수가</b> 기준 설정 하락률에 닿을 때마다 시드의 설정%만큼 자동 매수(수동 모드). 1차는 직접 매수. 재진입 켜면 전량 매도 후 다음 봉에서 1차 진입금으로 자동 재매수.</div>
+          <div class="sp-hint"><b>최초 매수가</b> 기준 하락률마다 시드%만큼 자동 매수(수동). 재진입 시 전량매도 후 1차 진입금으로 자동 재매수.</div>
         </div>
       </div>
     </div>
