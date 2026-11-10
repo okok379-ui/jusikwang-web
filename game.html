@@ -537,7 +537,7 @@ function autoSR(bars,rev){
 }
 
 function startWithDay(day,seed){
- S={seed:(seed==null?-1:seed),day:day,ideal:idealStats(day.bars),rule:ruleTrade(day),i:0,maxMin:day.N*3-1,cash:START,shares:0,avg:0,realized:0,trades:[],playing:false,finished:false,mode:curMode,peakShares:0,spDone:[false,false,false],bpBase:null,bpDone:[false,false,false]};
+ S={seed:(seed==null?-1:seed),day:day,ideal:idealStats(day.bars),rule:ruleTrade(day),i:0,maxMin:day.N*3-1,cash:START,shares:0,avg:0,realized:0,trades:[],playing:false,finished:false,mode:curMode,peakShares:0,spDone:[false,false,false],bpBase:null,bpDone:[]};
  var gj=day.daily[day.daily.length-1],body=gj.c-gj.o;
  S.eng={ratios:[.3,.3,.4],bought:[false,false,false],shake:[null,null,null],peak:0,armed:false,done:false,lines:[roundTick(gj.c-body*0.5),roundTick(gj.c-body*0.75),roundTick(gj.o)],stop:roundTick(gj.l)};
  stop(); $('#overlay').hidden=true; var br=$('#back-result');if(br)br.hidden=true; updateModeUI(); userLines=[]; pendingPt=null;
@@ -596,7 +596,7 @@ function buy(amount){
  var fresh=(S.shares<1);   // 잔량 0에서 새로 진입 = 1차(최초) 매수
  var ns=S.shares+qty; S.avg=Math.round((S.avg*S.shares+p*qty)/ns); S.shares=ns; S.cash-=(cost+fee); S.peakShares=Math.max(S.peakShares||0,S.shares);
  S.spDone=[false,false,false];   // 매수(재매수·추가매수)마다 분할매도 1·2·3차 룰 재적용(새 평단 기준)
- if(fresh){ S.bpBase=p; S.bpDone=[false,false,false]; }   // 최초 매수가 기준점 설정 → 물타기 2·3·4차 무장
+ if(fresh){ S.bpBase=p; S.bpDone=[]; }   // 최초 매수가 기준점 설정 → 물타기 2~9차 무장
  S.trades.push({m:S.i,side:'B',price:p,qty:qty});
  toast('매수 '+fmt(qty)+'주 @ '+won(p)); render(); draw();
 }
@@ -659,8 +659,9 @@ initSellPlan();
 
 /* ---------- 분할 매수(물타기) : 최초 매수가 기준 -N% 도달 시 시드의 M% 매수 ---------- */
 var BP_LS='jusikwang_buyplan';
-var buyPlan={on:false,rows:[{drop:3,pct:10},{drop:6,pct:10},{drop:9,pct:10}],reenter:false,entry:1000000};
-(function(){try{var s=JSON.parse(localStorage.getItem(BP_LS));if(s&&s.rows&&s.rows.length)buyPlan={on:!!s.on,rows:s.rows.slice(0,3),reenter:!!s.reenter,entry:(s.entry>0?s.entry:1000000)};}catch(e){}})();
+var BP_N=8;   // 물타기 차수(2차~9차 = 8단계)
+var buyPlan={on:false,rows:[{drop:3,pct:10},{drop:6,pct:10},{drop:9,pct:10},{drop:12,pct:10},{drop:15,pct:10},{drop:18,pct:10},{drop:21,pct:10},{drop:24,pct:10}],reenter:false,entry:1000000};
+(function(){try{var s=JSON.parse(localStorage.getItem(BP_LS));if(s&&s.rows&&s.rows.length)buyPlan={on:!!s.on,rows:s.rows.slice(0,BP_N),reenter:!!s.reenter,entry:(s.entry>0?s.entry:1000000)};}catch(e){}})();
 function checkReentry(){
   if(!buyPlan.reenter||!S||S.finished||curMode!=='manual')return;
   if(S.shares>0)return;
@@ -671,7 +672,7 @@ function checkReentry(){
 function checkBuyPlan(){
   if(!buyPlan.on||!S||S.finished||curMode!=='manual')return;
   if(S.shares<1||S.bpBase==null)return;              // 최초 매수가 기준이 있어야 동작(1차는 직접 매수)
-  if(!S.bpDone)S.bpDone=[false,false,false];
+  if(!S.bpDone)S.bpDone=[];
   var base=S.bpBase, px=price(), guard=0;
   for(var k=0;k<buyPlan.rows.length;k++){
     var row=buyPlan.rows[k]; if(!row||S.bpDone[k])continue;
@@ -685,7 +686,7 @@ function checkBuyPlan(){
 }
 function bpRows(){
   var box=$('#bp-rows'); if(!box)return; var html='';
-  for(var k=0;k<3;k++){var r=buyPlan.rows[k]||{};
+  for(var k=0;k<BP_N;k++){var r=buyPlan.rows[k]||{};
     html+='<div class="sp-row">'
     +'<span class="lab">'+(k+2)+'차</span>'
     +'<input class="bp-drop" type="number" step="0.1" value="'+(r.drop!=null?r.drop:'')+'">'
@@ -698,11 +699,11 @@ function initBuyPlan(){ var c=$('#bp-on'); if(!c)return; bpRows(); c.checked=!!b
 var _bpSave=$('#bp-save');
 if(_bpSave)_bpSave.addEventListener('click',function(){
   var drops=document.querySelectorAll('.bp-drop'),pcts=document.querySelectorAll('.bp-pct'),rows=[];
-  for(var k=0;k<3;k++){var dp=parseFloat(drops[k].value),pc=parseFloat(pcts[k].value);rows.push({drop:isFinite(dp)?dp:null,pct:isFinite(pc)?pc:null});}
+  for(var k=0;k<drops.length;k++){var dp=parseFloat(drops[k].value),pc=parseFloat(pcts[k].value);rows.push({drop:isFinite(dp)?dp:null,pct:isFinite(pc)?pc:null});}
   buyPlan.on=$('#bp-on').checked; buyPlan.rows=rows;
   buyPlan.reenter=$('#bp-reenter').checked; var ev=parseFloat($('#bp-entry').value); buyPlan.entry=(isFinite(ev)&&ev>0)?Math.round(ev):1000000;
   try{localStorage.setItem(BP_LS,JSON.stringify(buyPlan));}catch(e){}
-  if(S)S.bpDone=[false,false,false];
+  if(S)S.bpDone=[];
   var mg=$('#bp-msg');if(mg)mg.textContent='저장됨'+(buyPlan.on?' · 매수 ON':' · 매수 OFF')+(buyPlan.reenter?' · 재진입 ON':'');
 });
 initBuyPlan();
