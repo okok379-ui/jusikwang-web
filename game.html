@@ -771,9 +771,9 @@ function play(){if(S.finished)return;S.playing=true;$('#b-play').innerHTML='❚�
 function stop(){if(!S)return;S.playing=false;clearInterval(timer);timer=null;$('#b-play').innerHTML=(S.i>8?'▶ 계속':'▶ 시작');}
 function toggle(){if(!S)return;S.playing?stop():play();}
 function adv(){ if(S.i>=S.maxMin)return false; S.i++; var g=(S.i%3===2)?Math.floor(S.i/3):-1; engineStep(g); return true; }
-function tick(){if(S.i<S.maxMin){var before=S.trades.length;adv();checkBuyPlan();checkSellPlan();checkReentry();render();draw();if(S.maxMin-S.i<=30)prefetchNext();if(S.trades.length>before)pauseBriefly();}else rollDay(true);}
+function tick(){if(S.i<S.maxMin){var before=S.trades.length;adv();checkBuyPlan();checkSellPlan();checkReentry();render();draw();if(S.maxMin-S.i<=60)prefetchNext();if(S.trades.length>before)pauseBriefly();}else{if(rollInline())return;rollDay(true);}}
 function pauseBriefly(){ if(!S||!S.playing)return; clearInterval(timer); timer=null; setTimeout(function(){ if(S&&S.playing&&!S.finished&&!timer){ timer=setInterval(tick,speed); } }, 1200); }
-function step(){if(S.finished)return;stop();if(S.i<S.maxMin){adv();checkBuyPlan();checkSellPlan();checkReentry();render();draw();if(S.maxMin-S.i<=30)prefetchNext();}else rollDay(false);}
+function step(){if(S.finished)return;stop();if(S.i<S.maxMin){adv();checkBuyPlan();checkSellPlan();checkReentry();render();draw();if(S.maxMin-S.i<=60)prefetchNext();}else{if(!rollInline())rollDay(false);}}
 function setEng(msg){var el=$('#eng-status');if(el)el.textContent=msg;}
 function updateModeUI(){var auto=curMode==='auto';var el=$('#eng-status');if(el){el.hidden=!auto;if(auto&&S&&S.trades.length===0)el.textContent='자동 매매 대기 — ▶ 시작을 누르면 기준봉 룰대로 분할매수·익절합니다';}if(S)render();}
 function engineStep(g){
@@ -1474,25 +1474,23 @@ $('#b-add').addEventListener('click',function(){buy(parseAmt())});
 $('#b-sell-half').addEventListener('click',function(){sell(0.5)});
 $('#b-sell-all').addEventListener('click',function(){sell(1)});
 $('#r-next').addEventListener('click',function(){ $('#overlay').hidden=true; openCases(); });
-var rolling=false, _pfKey=null, _pfPromise=null;
-function prefetchNext(){                 // 다음 거래일을 미리 받아놓아 롤오버 끊김 최소화
+var rolling=false, _pfKey=null, _pfData=null, _pfReadyKey=null;
+function _dayKey(){ return (S&&S.day)?(S.day.code+'@'+digits(S.day.date)):''; }
+async function fetchNextDay(){   // 현재 S.day 기준 다음 거래일 케이스 조회
   var d=S&&S.day, kc=kwCfg();
-  if(!d||!d.code||!kc.ak||!kc.sk||!d.direct) return;
-  var base=digits(d.date); if(base.length!==8) return;
-  var key=d.code+'@'+base; if(_pfKey===key) return;
-  _pfKey=key;
-  _pfPromise=(async function(){ var found=null,cur=base; for(var k=0;k<8&&!found;k++){ cur=kwDateMinus(cur,-1); try{ found=await kwBuildCase(d.code,cur); }catch(e){ found=null; } } return found; })();
+  if(!d||!d.code||!kc.ak||!kc.sk||!d.direct) return null;
+  var base=digits(d.date); if(base.length!==8) return null;
+  var found=null,cur=base; for(var k=0;k<8&&!found;k++){ cur=kwDateMinus(cur,-1); try{ found=await kwBuildCase(d.code,cur); }catch(e){ found=null; } }
+  return found;
 }
-async function advanceDay(){
-  var d=S&&S.day, kc=kwCfg();
-  if(!d||!d.code||!kc.ak||!kc.sk||!d.direct) return false;
-  var base=digits(d.date); if(base.length!==8) return false;
-  var found=null, key=d.code+'@'+base;
-  if(_pfKey===key && _pfPromise){ try{ found=await _pfPromise; }catch(e){ found=null; } }   // 선반입 결과 사용
-  _pfKey=null; _pfPromise=null;
-  if(!found){ var cur=base; for(var k=0;k<8 && !found;k++){ cur=kwDateMinus(cur,-1); try{ found=await kwBuildCase(d.code,cur); }catch(e){ found=null; } } }
-  if(!found) return false;
-  // === 다음 날 분봉을 기존 차트 뒤에 이어붙임(연속). S(보유·평단·현금·선·분할매도)는 그대로 유지 ===
+function prefetchNext(){                 // 다음 거래일을 미리 받아둔다(끊김 없는 롤오버)
+  var key=_dayKey(); if(!key||_pfKey===key) return;
+  _pfKey=key; _pfData=null; _pfReadyKey=null;
+  fetchNextDay().then(function(found){ if(_pfKey===key){ _pfData=found; _pfReadyKey=key; } });
+}
+function applyNextDay(found){            // 동기: 다음 날 분봉을 기존 차트 뒤에 이어붙임(S는 그대로 유지)
+  if(!S||!found) return false;
+  var d=S.day;
   var nmin1=(found.min1||[]).map(normBar); if(nmin1.length<5) return false;
   var ms=(found.min1Start||'').toString().replace(/[^0-9]/g,'');
   var nStart=(ms.length>=4?parseInt(ms.slice(0,2),10)*60+parseInt(ms.slice(2,4),10):540);
@@ -1501,26 +1499,35 @@ async function advanceDay(){
   d.clockMin=(d.clockMin||[]).slice();
   for(var q=0;q<nmin1.length;q++) d.clockMin[start+q]=nStart+q;
   d.bars=bar3from(d.min1); d.N=d.bars.length;
-  d.daily=(found.daily||[]).map(normBar);        // 직전 날이 포함된 일봉 히스토리로 갱신
+  d.daily=(found.daily||[]).map(normBar);
   d.dayStarts=(d.dayStarts||[0]).concat([start]);
   d.curStart=start; d.curOpen=+(found.open||nmin1[0].o);
   d.date=found.date||d.date; d.prevClose=+(found.prevClose||d.prevClose); d.limitPct=+(found.limitPct||0);
-  S.maxMin=d.min1.length-1;                        // 더 진행할 수 있도록 끝 확장(S.i는 그대로 → 다음 틱부터 새 날)
-  S.finished=false;
+  if(found.mktcapEok)d.mktcapEok=found.mktcapEok;
+  S.maxMin=d.min1.length-1; S.finished=false;
+  _pfKey=null; _pfData=null; _pfReadyKey=null;
   $('#overlay').hidden=true;
   $('#h-reason').innerHTML='<b style="color:var(--sup)">실데이터</b> · '+(d.date||'')+' · 연속 진행';
-  render(); draw();
-  toast((found.date||'')+' 이어서 연속 진행 · 보유·평단·선 유지');
+  $('#h-cap').textContent='시총 '+capText(d.mktcapEok||0);
+  render(); draw(); toast((found.date||'')+' 이어서 연속 진행');
   return true;
 }
-async function rollDay(resume){
-  if(rolling)return; rolling=true; stop();
-  var ok=false; try{ ok=await advanceDay(); }catch(e){ ok=false; }
-  rolling=false;
-  if(!ok){ endRound(); return; }   // 승계 불가(키 없음/합성 케이스/데이터 끝) → 결과 표시
-  if(resume) play();               // 자동재생 중이었으면 새 날로 이어서 재생
+// 틱 안에서 호출: 선반입이 준비됐으면 await 없이 즉시 이어붙여 재생 흐름을 끊지 않음
+function rollInline(){
+  if(_pfData && _pfReadyKey===_dayKey()){ return applyNextDay(_pfData); }
+  return false;
 }
-async function continueNextDay(){ stop(); var ok=await advanceDay(); if(!ok){ $('#overlay').hidden=true; openCases(); } }
+async function rollDay(resume){          // 선반입 미완 시 비동기 폴백
+  if(rolling)return; rolling=true; stop();
+  var found=null;
+  if(_pfData && _pfReadyKey===_dayKey()) found=_pfData;
+  if(!found){ try{ found=await fetchNextDay(); }catch(e){ found=null; } }
+  rolling=false;
+  var ok=found?applyNextDay(found):false;
+  if(!ok){ endRound(); return; }
+  if(resume) play();
+}
+async function continueNextDay(){ stop(); var found=null; try{ found=await fetchNextDay(); }catch(e){ found=null; } if(found&&applyNextDay(found)){ play(); } else { $('#overlay').hidden=true; openCases(); } }
 $('#r-continue').addEventListener('click',continueNextDay);
 $('#r-retry').addEventListener('click',function(){newRound(S.seed);});
 $('#case-random').addEventListener('click',function(){ $('#case-overlay').hidden=true; newRound(); });
