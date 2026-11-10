@@ -632,7 +632,7 @@ function showResult(ret){
  $('#r-pat').textContent=arch.name;
  S.result={ret:ret,grade:grade,buyVwap:buyVwap,ideal:id.maxProfit};
  renderRecent();
- var _kc=kwCfg(); var canCont=!!(S.day&&S.day.direct&&S.day.code&&_kc.ak&&_kc.sk);
+ var _kc=kwCfg(); var canCont=!!(S.day&&S.day.code&&digits(S.day.date).length===8&&_kc.ak&&_kc.sk);
  var rc=$('#r-continue'); if(rc)rc.hidden=!canCont;
  $('#overlay').hidden=false;
 }
@@ -1225,10 +1225,12 @@ $('#b-sell-half').addEventListener('click',function(){sell(0.5)});
 $('#b-sell-all').addEventListener('click',function(){sell(1)});
 $('#r-next').addEventListener('click',function(){ $('#overlay').hidden=true; openCases(); });
 async function continueNextDay(){
-  var d=S&&S.day; if(!d||!d.direct||!d.code){ $('#overlay').hidden=true; openCases(); return; }
+  var d=S&&S.day, kc=kwCfg();
+  if(!d||!d.code||!kc.ak||!kc.sk){ $('#overlay').hidden=true; openCases(); return; }
+  var base=digits(d.date); if(base.length!==8){ toast('이 종목은 날짜 정보가 없어 다음 날을 받을 수 없어요'); return; }
   var btn=$('#r-continue'); var old=btn?btn.textContent:'';
   if(btn){btn.disabled=true;btn.textContent='다음 거래일 불러오는 중…';}
-  var found=null, cur=d.date;
+  var found=null, cur=base;
   for(var k=0;k<8 && !found;k++){
     cur=kwDateMinus(cur,-1);   // +1일
     try{ found=await kwBuildCase(d.code,cur); }catch(e){ found=null; }
