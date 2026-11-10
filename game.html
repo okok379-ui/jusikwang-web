@@ -1234,7 +1234,7 @@ async function continueNextDay(){
     try{ found=await kwBuildCase(d.code,cur); }catch(e){ found=null; }
   }
   if(btn){btn.disabled=false;btn.textContent=old;}
-  if(found){ $('#overlay').hidden=true; loadRealCase(found); toast(found.date+' 로 이어서 연습'); }
+  if(found){ var keepLines=userLines.slice(); $('#overlay').hidden=true; loadRealCase(found); userLines=keepLines; draw(); toast(found.date+' 로 이어서 연습 (선 유지)'); }
   else toast('다음 거래일 데이터를 찾지 못했어요 (최근 분봉 제공 한도일 수 있어요)');
 }
 $('#r-continue').addEventListener('click',continueNextDay);
