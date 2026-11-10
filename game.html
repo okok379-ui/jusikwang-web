@@ -490,7 +490,7 @@ function autoSR(bars,rev){
 }
 
 function startWithDay(day,seed){
- S={seed:(seed==null?-1:seed),day:day,ideal:idealStats(day.bars),rule:ruleTrade(day),i:8,maxMin:day.N*3-1,cash:START,shares:0,avg:0,realized:0,trades:[],playing:false,finished:false,mode:curMode};
+ S={seed:(seed==null?-1:seed),day:day,ideal:idealStats(day.bars),rule:ruleTrade(day),i:0,maxMin:day.N*3-1,cash:START,shares:0,avg:0,realized:0,trades:[],playing:false,finished:false,mode:curMode};
  var gj=day.daily[day.daily.length-1],body=gj.c-gj.o;
  S.eng={ratios:[.3,.3,.4],bought:[false,false,false],shake:[null,null,null],peak:0,armed:false,done:false,lines:[roundTick(gj.c-body*0.5),roundTick(gj.c-body*0.75),roundTick(gj.o)],stop:roundTick(gj.l)};
  stop(); $('#overlay').hidden=true; var br=$('#back-result');if(br)br.hidden=true; updateModeUI(); userLines=[]; pendingPt=null;
@@ -896,7 +896,7 @@ async function kwChartRange(path,apiId,body,startDt,endDt,maxPages){
     var rows=kwRows(d); all=all.concat(rows);
     var oldest='';rows.forEach(function(r){var t=(''+(r.cntr_tm||r.dt||r.date||'')).slice(0,8);if(t&&(!oldest||t<oldest))oldest=t;});
     cont=(''+(d._cont||'N'));nkey=(''+(d._next||''));
-    if(startDt&&oldest&&oldest<=startDt)break;
+    if(startDt&&oldest&&oldest<startDt)break;   // 하루치 분봉은 전날 봉이 나올 때까지(=그 날 09:00까지) 페이징
     if(cont!=='Y'||!nkey)break;
     await new Promise(function(res){setTimeout(res,180);});
   }
@@ -928,8 +928,11 @@ async function kwCodeMap(force){
   return m;
 }
 async function kwResolveCode(q){
-  q=(q||'').trim(); if(/^\d{6}$/.test(q))return {code:q,name:''};
-  if(!q)return null;
+  q=(q||'').trim(); if(!q)return null;
+  if(/^\d{6}$/.test(q)){
+    var nm=''; try{ var cm=await kwCodeMap(false); var ff=cm.list.find(function(x){return x[0]===q;}); if(ff)nm=ff[1]; }catch(e){}
+    return {code:q,name:nm};
+  }
   var m=await kwCodeMap(false), ql=q.toLowerCase();
   var f=m.list.find(function(x){return x[1].toLowerCase()===ql;})
      ||m.list.find(function(x){return x[1].toLowerCase().indexOf(ql)===0;})
