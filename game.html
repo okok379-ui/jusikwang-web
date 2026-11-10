@@ -275,6 +275,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
     <button class="pbtn" id="b-step">다음 1분봉 ▸</button>
     <button class="pbtn" id="b-finish" title="현재가로 전량 청산하고 결과 보기">🏁 매매 마무리</button>
     <button class="pbtn" id="b-cases" title="종목을 직접 선택">📅 종목 선택</button>
+    <button class="pbtn" id="b-history" title="이번 세션의 매수·매도 내역">📒 거래내역</button>
     <button class="pbtn" id="b-line" title="차트를 눌러 지지·저항선을 긋기">✏️ 지지저항선 긋기</button>
     <button class="pbtn" id="b-h" title="수평 지지·저항선">─ 수평선</button>
     <button class="pbtn" id="b-trend" title="추세선(저점·저점 연결)">╱ 추세선</button>
@@ -397,6 +398,16 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
   </div>
 </div>
 
+<div class="overlay" id="hist-overlay" hidden>
+  <div class="modal" style="max-width:560px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <h3 style="margin:0;font-size:17px">📒 거래내역</h3>
+      <span id="hist-sum" style="font-size:12px;color:var(--muted);font-weight:600"></span>
+      <button id="hist-close" class="play" style="margin-left:auto;justify-content:center">닫기</button>
+    </div>
+    <div id="hist-body" style="max-height:62vh;overflow:auto"></div>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 <script src="caselib.js"></script>
@@ -711,6 +722,49 @@ if(_bpSave)_bpSave.addEventListener('click',function(){
   var mg=$('#bp-msg');if(mg)mg.textContent='저장됨'+(buyPlan.on?' · 매수 ON':' · 매수 OFF')+(buyPlan.reenter?' · 재진입 ON':'');
 });
 initBuyPlan();
+
+/* ---------- 거래내역 ---------- */
+function histTime(m){var cm=S&&S.day&&S.day.clockMin;if(cm&&cm[m]!=null){var v=cm[m],hh=Math.floor(v/60)%24,mn=v%60;return (hh<10?'0':'')+hh+':'+(mn<10?'0':'')+mn;}return '-';}
+function renderHistory(){
+  var body=$('#hist-body'); if(!body)return;
+  if(!S||!S.trades||!S.trades.length){ body.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">아직 거래가 없어요.</div>'; $('#hist-sum').textContent=''; return; }
+  var shares=0,avg=0,buyN=0,sellN=0,realized=0;
+  var rows='';
+  for(var i=0;i<S.trades.length;i++){var t=S.trades[i],amt=t.price*t.qty,tag=t.tag||'';
+    if(t.side==='B'){ var ns=shares+t.qty; avg=Math.round((avg*shares+t.price*t.qty)/ns); shares=ns; buyN++;
+      rows+='<tr style="border-bottom:1px solid var(--grid)">'
+        +'<td style="padding:6px 8px;color:var(--muted)">'+(i+1)+'</td>'
+        +'<td style="padding:6px 8px;font-weight:700;color:var(--up)">매수</td>'
+        +'<td style="padding:6px 8px;font-family:var(--mono)">'+histTime(t.m)+'</td>'
+        +'<td style="padding:6px 8px;text-align:right;font-family:var(--mono)">'+won(t.price)+'</td>'
+        +'<td style="padding:6px 8px;text-align:right;font-family:var(--mono)">'+fmt(t.qty)+'</td>'
+        +'<td style="padding:6px 8px;text-align:right;font-family:var(--mono)">'+won(amt)+'</td>'
+        +'<td style="padding:6px 8px;text-align:right">—</td>'
+        +'<td style="padding:6px 8px;color:var(--muted);font-size:11.5px">'+tag+'</td></tr>';
+    } else { var pl=Math.round((t.price-avg)*t.qty); realized+=pl; shares-=t.qty; if(shares<1)avg=0; sellN++;
+      var pc=pl>=0?'var(--up)':'var(--down)';
+      rows+='<tr style="border-bottom:1px solid var(--grid)">'
+        +'<td style="padding:6px 8px;color:var(--muted)">'+(i+1)+'</td>'
+        +'<td style="padding:6px 8px;font-weight:700;color:var(--down)">매도'+(t.liq?'<span style="font-size:10px;color:var(--muted)"> (청산)</span>':'')+'</td>'
+        +'<td style="padding:6px 8px;font-family:var(--mono)">'+histTime(t.m)+'</td>'
+        +'<td style="padding:6px 8px;text-align:right;font-family:var(--mono)">'+won(t.price)+'</td>'
+        +'<td style="padding:6px 8px;text-align:right;font-family:var(--mono)">'+fmt(t.qty)+'</td>'
+        +'<td style="padding:6px 8px;text-align:right;font-family:var(--mono)">'+won(amt)+'</td>'
+        +'<td style="padding:6px 8px;text-align:right;font-weight:700;color:'+pc+'">'+(pl>=0?'+':'')+won(pl)+'</td>'
+        +'<td style="padding:6px 8px;color:var(--muted);font-size:11.5px">'+tag+'</td></tr>';
+    }
+  }
+  body.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12.5px">'
+    +'<thead><tr style="position:sticky;top:0;background:var(--panel);text-align:left;color:var(--muted);font-size:11px;border-bottom:1px solid var(--border)">'
+    +'<th style="padding:6px 8px;font-weight:600">#</th><th style="padding:6px 8px;font-weight:600">구분</th><th style="padding:6px 8px;font-weight:600">시각</th>'
+    +'<th style="padding:6px 8px;font-weight:600;text-align:right">가격</th><th style="padding:6px 8px;font-weight:600;text-align:right">수량</th>'
+    +'<th style="padding:6px 8px;font-weight:600;text-align:right">금액</th><th style="padding:6px 8px;font-weight:600;text-align:right">실현손익</th><th style="padding:6px 8px;font-weight:600">비고</th></tr></thead>'
+    +'<tbody>'+rows+'</tbody></table>';
+  var rc=realized>=0?'var(--up)':'var(--down)';
+  $('#hist-sum').innerHTML='매수 '+buyN+'회 · 매도 '+sellN+'회 · 실현손익 <b style="color:'+rc+'">'+(realized>=0?'+':'')+won(realized)+'</b>';
+}
+var _bHist=$('#b-history'); if(_bHist)_bHist.addEventListener('click',function(){renderHistory();$('#hist-overlay').hidden=false;});
+var _hClose=$('#hist-close'); if(_hClose)_hClose.addEventListener('click',function(){$('#hist-overlay').hidden=true;});
 
 /* ---------- playback ---------- */
 function play(){if(S.finished)return;S.playing=true;$('#b-play').innerHTML='❚❚ 일시정지';clearInterval(timer);timer=setInterval(tick,speed);}
