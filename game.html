@@ -235,13 +235,13 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
             <span class="sp-ttl">🎯 분할 매도 목표</span>
             <label class="sp-use"><input type="checkbox" id="sp-on"> 사용</label>
           </div>
-          <div class="sp-cols"><span></span><span>목표 수익률(%)</span><span>매도 비중(%)</span></div>
+          <div class="sp-cols"><span></span><span>목표 수익률(%)</span><span>비중(잔량%)</span></div>
           <div id="sp-rows"></div>
           <div class="sp-foot">
             <button id="sp-save">저장</button>
             <span id="sp-msg"></span>
           </div>
-          <div class="sp-hint">평단 대비 수익률이 목표에 닿으면 설정 비중만큼 자동 매도(수동 모드). 비우면 그 차수 건너뜀.</div>
+          <div class="sp-hint">평단 대비 수익률이 목표에 닿으면 <b>그때 남은 잔량</b>의 설정 비중만큼 자동 매도(수동 모드). 100%면 전량. 비우면 그 차수 건너뜀.</div>
         </div>
       </div>
     </div>
@@ -600,11 +600,12 @@ function sellQty(qty,label){
 function checkSellPlan(){
   if(!sellPlan.on||!S||S.finished||S.shares<1||!S.avg||curMode!=='manual')return;
   if(!S.spDone)S.spDone=[false,false,false];
-  var roi=(price()/S.avg-1)*100, base=S.peakShares||S.shares;
+  var roi=(price()/S.avg-1)*100;
   for(var k=0;k<sellPlan.rows.length;k++){
     var row=sellPlan.rows[k]; if(!row||S.spDone[k])continue;
     if(row.roi!=null&&row.pct>0&&roi>=row.roi){
-      var qty=Math.min(S.shares,Math.max(1,Math.round(base*row.pct/100)));
+      // 남은 잔량 기준: 그 시점 보유 수량의 비중만큼 매도 (100%면 전량)
+      var qty=(row.pct>=100)?S.shares:Math.min(S.shares,Math.max(1,Math.round(S.shares*row.pct/100)));
       sellQty(qty,(k+1)+'차 목표 '+row.roi+'% 도달');
       S.spDone[k]=true; if(S.shares<1)break;
     }
