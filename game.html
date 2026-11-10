@@ -474,6 +474,7 @@ function syncFromServer(){
   });
 }
 var userLines=[], drawMode=false, PANELS=[], lineType='h', pendingPt=null, zoom1=1, zoom3=1, zoomD=1, phaseOn=false, autoSROn=false;
+var freeDraw=null, freeDrawing=false;
 function clampZ(z){return Math.max(0.3,Math.min(12,z));}
 /* 자동 지지저항: 변곡점(고/저점) 중 여러 번 닿은 가격대를 군집화 */
 function autoSR(bars,rev){
@@ -735,6 +736,11 @@ function drawUserLines(label,R,lo,hi,X,Y,winStart,rev){
     var m=(ul.p2-ul.p1)/((ul.i2-ul.i1)||1),ia=Math.min(ul.i1,ul.i2),ib=Math.max(ul.i2,rev-1);
     ctx.setLineDash([]);ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(X(ia),Y(ul.p1+m*(ia-ul.i1)));ctx.lineTo(X(ib),Y(ul.p1+m*(ib-ul.i1)));ctx.stroke();
     ctx.beginPath();ctx.arc(X(ul.i1),Y(ul.p1),2.5,0,7);ctx.fill();ctx.beginPath();ctx.arc(X(ul.i2),Y(ul.p2),2.5,0,7);ctx.fill();
+  } else if(ul.t==='free'){
+    ctx.beginPath();ctx.rect(R.x,R.y,R.w,R.h);ctx.clip();
+    ctx.setLineDash([]);ctx.lineWidth=1.9;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();
+    ul.pts.forEach(function(pt,ii){var xx=X(pt.i),yy=Y(pt.p);ii?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy);});
+    ctx.stroke();
   } else if(ul.p>=lo&&ul.p<=hi){
     var uy=Y(ul.p);ctx.setLineDash([6,3]);ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(R.x,uy);ctx.lineTo(R.x+R.w,uy);ctx.stroke();
     ctx.setLineDash([]);ctx.font='700 9px IBM Plex Mono,monospace';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText('✕ '+fmt(ul.p),R.x+3,uy-6);
@@ -745,6 +751,12 @@ function drawUserLines(label,R,lo,hi,X,Y,winStart,rev){
   ctx.save();ctx.fillStyle='#e4b53c';ctx.strokeStyle='#e4b53c';
   ctx.beginPath();ctx.arc(X(pendingPt.i),Y(pendingPt.p),4,0,7);ctx.fill();
   ctx.setLineDash([3,3]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(X(pendingPt.i),R.y);ctx.lineTo(X(pendingPt.i),R.y+R.h);ctx.stroke();ctx.restore();
+ }
+ if(freeDraw&&freeDraw.label===label&&freeDraw.pts.length){
+  ctx.save();ctx.beginPath();ctx.rect(R.x,R.y,R.w,R.h);ctx.clip();
+  ctx.strokeStyle='#e4b53c';ctx.lineWidth=1.9;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();
+  freeDraw.pts.forEach(function(pt,ii){var xx=X(pt.i),yy=Y(pt.p);ii?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy);});
+  ctx.stroke();ctx.restore();
  }
 }
 function candlePanel(bars,rev,R,opts){
@@ -1114,7 +1126,33 @@ function hitLine(P,x,y){for(var k=0;k<userLines.length;k++){var ul=userLines[k];
  return -1;}
 var bLine=$('#b-line'), bH=$('#b-h'), bTrend=$('#b-trend');
 function syncLineBtns(){ bLine.classList.toggle('on',drawMode); bH.classList.toggle('on',drawMode&&lineType==='h'); bTrend.classList.toggle('on',drawMode&&lineType==='trend'); cv.style.cursor=drawMode?'crosshair':''; }
-bLine.addEventListener('click',function(){drawMode=!drawMode;if(!drawMode)pendingPt=null;syncLineBtns();toast(drawMode?('선긋기 ON · '+(lineType==='trend'?'추세선':'수평선')+' — 차트를 누르세요, 선을 다시 누르면 삭제'):'선긋기 OFF');if(S)draw();});
+bLine.addEventListener('click',function(){
+  if(drawMode&&lineType==='free'){drawMode=false;}
+  else{drawMode=true;lineType='free';}
+  pendingPt=null; syncLineBtns();
+  toast(drawMode?'✏️ 연필 선긋기 ON — 차트에서 마우스를 눌러 드래그하면 자유롭게 그려져요 (지우기: 선 지우기)':'선긋기 OFF');
+  if(S)draw();
+});
+function _panelAt(e){var r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;for(var pi=0;pi<PANELS.length;pi++){var P=PANELS[pi];if(x>=P.x&&x<=P.x+P.w&&y>=P.y&&y<=P.y+P.h)return P;}return null;}
+function _freePt(e,P){var r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+  var i=P.winStart+(x-P.x)/P.bw-0.5; if(i<P.winStart)i=P.winStart; if(i>P.rev-1)i=P.rev-1;
+  var p=P.hi-(y-P.y)/P.h*(P.hi-P.lo); if(p>P.hi)p=P.hi; if(p<P.lo)p=P.lo; return {i:i,p:p};}
+cv.addEventListener('pointerdown',function(e){
+  if(!drawMode||lineType!=='free'||!S)return;
+  var P=_panelAt(e); if(!P)return;
+  e.preventDefault(); try{cv.setPointerCapture(e.pointerId);}catch(_){}
+  freeDrawing=true; freeDraw={t:'free',label:P.label,pts:[_freePt(e,P)]}; draw();
+});
+cv.addEventListener('pointermove',function(e){
+  if(!freeDrawing||!freeDraw)return;
+  var P=null; for(var pi=0;pi<PANELS.length;pi++){if(PANELS[pi].label===freeDraw.label){P=PANELS[pi];break;}}
+  if(!P)return;
+  var c=_freePt(e,P),last=freeDraw.pts[freeDraw.pts.length-1];
+  if(!last||Math.abs(c.i-last.i)>0.03||Math.abs(c.p-last.p)>(P.hi-P.lo)*0.003){freeDraw.pts.push(c);draw();}
+});
+function _endFree(){ if(freeDrawing){ if(freeDraw&&freeDraw.pts.length>=2)userLines.push(freeDraw); freeDraw=null; freeDrawing=false; if(S)draw(); } }
+cv.addEventListener('pointerup',_endFree);
+cv.addEventListener('pointercancel',_endFree);
 function pickType(t){ lineType=t; drawMode=true; pendingPt=null; syncLineBtns();
   toast(t==='trend'?'추세선 모드 — 저점과 저점(또는 고점과 고점)을 두 번 눌러 연결':'수평선 모드 — 차트를 눌러 수평 지지·저항선을 그으세요'); if(S)draw(); }
 bH.addEventListener('click',function(){pickType('h');});
@@ -1159,6 +1197,7 @@ $('#log-close').addEventListener('click',function(){$('#log-overlay').hidden=tru
 $('#log-clear').addEventListener('click',function(){try{localStorage.removeItem('jusikwang_log')}catch(e){}renderLog();toast('연습기록 전체 삭제');});
 cv.addEventListener('click',function(e){
   if(!drawMode||!S)return;
+  if(lineType==='free')return;   // 연필(자유곡선)은 포인터 드래그로 처리
   var r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,pi;
   for(pi=0;pi<PANELS.length;pi++){var P=PANELS[pi];
     if(!(x>=P.x&&x<=P.x+P.w&&y>=P.y&&y<=P.y+P.h))continue;
