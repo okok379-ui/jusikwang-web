@@ -587,7 +587,7 @@ function loadRealCase(json){
   var startMin=(isFinite(sh)?sh:9)*60+(isFinite(sm)?sm:0);
   var clockMin=[]; for(var ci=0;ci<min1.length;ci++)clockMin[ci]=startMin+ci;   // 연속 차트용 분단위 시계(날별 09:00 재시작)
   var day={bars:bars,min1:min1,daily:daily,prevClose:prevClose,open:open,N:bars.length,real:true,startMin:startMin,
-    clockMin:clockMin,curStart:0,curOpen:open,dayStarts:[0],
+    clockMin:clockMin,curStart:0,curOpen:open,dayStarts:[0],dayDates:[j.date||''],
     arch:{name:(j.name||'실데이터')+' ('+(j.date||'')+')'},
     name:j.name||j.code||'실데이터 종목',code:(j.code||'').toString(),date:j.date||'',
     mktcapEok:+(j.mktcapEok||j.marketcap||0),reason:j.reason||'',limitPct:+(j.limitPct||j.changePct||0),direct:!!j.direct};
@@ -725,6 +725,7 @@ initBuyPlan();
 
 /* ---------- 거래내역 ---------- */
 function histTime(m){var cm=S&&S.day&&S.day.clockMin;if(cm&&cm[m]!=null){var v=cm[m],hh=Math.floor(v/60)%24,mn=v%60;return (hh<10?'0':'')+hh+':'+(mn<10?'0':'')+mn;}return '-';}
+function histDate(m){var d=S&&S.day;if(!d)return '';var ds=d.dayStarts||[0],seg=0;for(var k=0;k<ds.length;k++){if(m>=ds[k])seg=k;else break;}var dd=(d.dayDates&&d.dayDates[seg])||d.date||'';return (dd&&dd.length>=8)?(dd.slice(4,6)+'/'+dd.slice(6,8)):'';}
 function renderHistory(){
   var body=$('#hist-body'); if(!body)return;
   if(!S||!S.trades||!S.trades.length){ body.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">아직 거래가 없어요.</div>'; $('#hist-sum').textContent=''; return; }
@@ -735,6 +736,7 @@ function renderHistory(){
       rows+='<tr style="border-bottom:1px solid var(--grid)">'
         +'<td style="padding:6px 8px;color:var(--muted)">'+(i+1)+'</td>'
         +'<td style="padding:6px 8px;font-weight:700;color:var(--up)">매수</td>'
+        +'<td style="padding:6px 8px;font-family:var(--mono);color:var(--muted)">'+histDate(t.m)+'</td>'
         +'<td style="padding:6px 8px;font-family:var(--mono)">'+histTime(t.m)+'</td>'
         +'<td style="padding:6px 8px;text-align:right;font-family:var(--mono)">'+won(t.price)+'</td>'
         +'<td style="padding:6px 8px;text-align:right;font-family:var(--mono)">'+fmt(t.qty)+'</td>'
@@ -746,6 +748,7 @@ function renderHistory(){
       rows+='<tr style="border-bottom:1px solid var(--grid)">'
         +'<td style="padding:6px 8px;color:var(--muted)">'+(i+1)+'</td>'
         +'<td style="padding:6px 8px;font-weight:700;color:var(--down)">매도'+(t.liq?'<span style="font-size:10px;color:var(--muted)"> (청산)</span>':'')+'</td>'
+        +'<td style="padding:6px 8px;font-family:var(--mono);color:var(--muted)">'+histDate(t.m)+'</td>'
         +'<td style="padding:6px 8px;font-family:var(--mono)">'+histTime(t.m)+'</td>'
         +'<td style="padding:6px 8px;text-align:right;font-family:var(--mono)">'+won(t.price)+'</td>'
         +'<td style="padding:6px 8px;text-align:right;font-family:var(--mono)">'+fmt(t.qty)+'</td>'
@@ -756,7 +759,7 @@ function renderHistory(){
   }
   body.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12.5px">'
     +'<thead><tr style="position:sticky;top:0;background:var(--panel);text-align:left;color:var(--muted);font-size:11px;border-bottom:1px solid var(--border)">'
-    +'<th style="padding:6px 8px;font-weight:600">#</th><th style="padding:6px 8px;font-weight:600">구분</th><th style="padding:6px 8px;font-weight:600">시각</th>'
+    +'<th style="padding:6px 8px;font-weight:600">#</th><th style="padding:6px 8px;font-weight:600">구분</th><th style="padding:6px 8px;font-weight:600">날짜</th><th style="padding:6px 8px;font-weight:600">시각</th>'
     +'<th style="padding:6px 8px;font-weight:600;text-align:right">가격</th><th style="padding:6px 8px;font-weight:600;text-align:right">수량</th>'
     +'<th style="padding:6px 8px;font-weight:600;text-align:right">금액</th><th style="padding:6px 8px;font-weight:600;text-align:right">실현손익</th><th style="padding:6px 8px;font-weight:600">비고</th></tr></thead>'
     +'<tbody>'+rows+'</tbody></table>';
@@ -1501,6 +1504,7 @@ function applyNextDay(found){            // 동기: 다음 날 분봉을 기존 
   d.bars=bar3from(d.min1); d.N=d.bars.length;
   d.daily=(found.daily||[]).map(normBar);
   d.dayStarts=(d.dayStarts||[0]).concat([start]);
+  d.dayDates=(d.dayDates||[d.date]).concat([found.date||'']);
   d.curStart=start; d.curOpen=+(found.open||nmin1[0].o);
   d.date=found.date||d.date; d.prevClose=+(found.prevClose||d.prevClose); d.limitPct=+(found.limitPct||0);
   if(found.mktcapEok)d.mktcapEok=found.mktcapEok;
