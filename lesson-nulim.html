@@ -306,14 +306,14 @@ canvas{width:100%;height:100%;display:block}
     <section class="card"><div class="panel cta">
       <div class="big">👑</div>
       <h2>이제 직접 돌려보자</h2>
-      <p>개념은 다 봤으니 <b>주식왕</b>에서 한 사이클을 몸에 익힐 차례. 오른 종목의 눌림에서 <b>지지를 확인하고 → 나눠 사고 → 손절선을 지키고 → 종가에 청산</b>하는 흐름을 반복해 보세요.</p>
+      <p>개념은 다 봤으니 <b>주식한판</b>에서 한 사이클을 몸에 익힐 차례. 오른 종목의 눌림에서 <b>지지를 확인하고 → 나눠 사고 → 손절선을 지키고 → 종가에 청산</b>하는 흐름을 반복해 보세요.</p>
       <div class="checklist">
         <div><span class="mk">✓</span>20일선·지지 구간까지 눌렸는지 본다</div>
         <div><span class="mk">✓</span>종가 회복 + 저점 유지 '지지 확인' 후 매수</div>
         <div><span class="mk">✓</span>1·2·3차로 나눠 담고, 손절선을 정해둔다</div>
         <div><span class="mk">✓</span>저항·목표에서 나눠 익절, 종가에 청산</div>
       </div>
-      <button class="go" id="cta-go">주식왕으로 연습하기 ▸</button>
+      <button class="go" id="cta-go">주식한판으로 연습하기 ▸</button>
       <p class="mut" style="margin-top:14px">복습: <b>지지저항 · 기준봉 매매</b> 레슨과 함께 보면 완성됩니다.</p>
     </div></section>
 
@@ -351,7 +351,7 @@ var NAR=[
  "여섯째, 매도입니다. 매수는 기술이고 매도는 예술이라는 말이 있습니다. 기법이 아니라 심법의 영역이라 더 어렵습니다. 핵심은 욕심내지 않고 정해둔 수익을 받아들이는 것입니다. 123 매도법은 단타 기대수익률을 1에서 3퍼센트로 잡고, 1퍼센트 땡큐, 2퍼센트 감사, 3퍼센트 아멘으로 목표에 나눠 익절하는 방법입니다. 반반이 스킬은 저항선에 닿으면 절반은 익절해 수익을 챙기고, 절반은 홀딩해 수익을 극대화하는 것입니다. 남은 절반은 세 가지로 대응합니다. 추세가 살아 있으면 버티고, 다시 눌림매수 타점이 나오면 추가매수하고, 캔들이 4선을 훼손하면 전량 매도합니다.",
  "마지막은 매매심리와 복기입니다. 계좌가 깨지는 건 대개 기법이 아니라 멘탈 때문입니다. 오르는 걸 보고 뒤늦게 사는 추격매수, 손절 못 하고 물타기하는 본전 심리를 조심하세요. 예측하려 하지 말고 대응하세요. 매매가 끝나면 왜 샀고 왜 팔았는지 반드시 기록하고 복기합니다. 복기 없는 반복은 깡통계좌로 가는 지름길입니다.",
  "확인 퀴즈입니다. 두 문제로 점검해 봅시다.",
- "이제 주식왕에서 직접 연습할 차례입니다. 오른 종목의 눌림에서 15선 이탈과 20선 지지를 확인하고, 20선과 120선에서 나눠 사고, 1분봉이 20선을 깨면 손절하고, 저항에서 반은 익절하고 반은 홀딩하는 흐름을 몸에 익혀 보세요. 확인하고, 나눠 사고, 틀리면 끊는다. 수고했습니다."
+ "이제 주식한판에서 직접 연습할 차례입니다. 오른 종목의 눌림에서 15선 이탈과 20선 지지를 확인하고, 20선과 120선에서 나눠 사고, 1분봉이 20선을 깨면 손절하고, 저항에서 반은 익절하고 반은 홀딩하는 흐름을 몸에 익혀 보세요. 확인하고, 나눠 사고, 틀리면 끊는다. 수고했습니다."
 ];
 function pickVoice(){ if(!synth)return; var vs=synth.getVoices()||[]; koVoice=vs.filter(function(v){return /ko(-|_)?KR/i.test(v.lang)})[0]||vs.filter(function(v){return /korean|한국/i.test(v.name)})[0]||null; }
 if(synth){ pickVoice(); synth.onvoiceschanged=pickVoice; }
@@ -594,7 +594,7 @@ document.getElementById('cta-go').addEventListener('click',function(){
   var w={};location.href=GAME_URL;
   if(!w){
     var t=document.createElement('div');
-    t.innerHTML='주식왕이 자동으로 열리지 않으면 <a href="'+GAME_URL+'" target="_blank" rel="noopener" style="color:var(--accent);font-weight:700">여기</a>를 눌러 열어주세요 👑';
+    t.innerHTML='주식한판이 자동으로 열리지 않으면 <a href="'+GAME_URL+'" target="_blank" rel="noopener" style="color:var(--accent);font-weight:700">여기</a>를 눌러 열어주세요 🎮';
     t.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--border);box-shadow:var(--shadow);border-radius:10px;padding:11px 16px;font-size:13px;font-weight:600;z-index:9;max-width:90%;text-align:center';
     document.body.appendChild(t);setTimeout(function(){t.remove()},6000);
   }

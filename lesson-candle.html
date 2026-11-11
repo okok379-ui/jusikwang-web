@@ -221,13 +221,13 @@ canvas{width:100%;height:100%;display:block}
     <section class="card"><div class="panel cta">
       <div class="big">🕯️</div>
       <h2>이제 직접 읽어보자</h2>
-      <p class="mut">주식왕에서 캔들의 몸통·꼬리와 아래 거래량을 같이 보세요.<br>거래량이 터진 장대양봉(기준봉)과, 눌림에서의 긴 아랫꼬리를 찾아보세요.</p>
+      <p class="mut">주식한판에서 캔들의 몸통·꼬리와 아래 거래량을 같이 보세요.<br>거래량이 터진 장대양봉(기준봉)과, 눌림에서의 긴 아랫꼬리를 찾아보세요.</p>
       <div class="checklist">
         <div><span class="mk">✓</span>몸통이 큰 양봉 = 강한 상승</div>
         <div><span class="mk">✓</span>긴 아랫꼬리 = 지지, 긴 윗꼬리 = 저항</div>
         <div><span class="mk">✓</span>거래량 터진 돌파만 신뢰</div>
       </div>
-      <button class="go" id="cta-go">주식왕으로 연습하기 ▸</button>
+      <button class="go" id="cta-go">주식한판으로 연습하기 ▸</button>
     </div></section>
 
   </div>
@@ -262,7 +262,7 @@ var NAR=[
  "거래량 급증입니다. 돌파는 거래량을 동반해야 진짜입니다. 거래량이 급증한 장대양봉은 수급이 들어온 진짜 돌파이고, 거래량 없는 돌파는 속임수일 확률이 높아 다시 제자리로 밀리기 쉽습니다. 평소 거래량의 몇 배로 터지는 날을 주목하세요.",
  "캔들과 거래량이 겹치면 기준봉입니다. 기준봉은 몸통이 큰 장대양봉에, 거래량이 평소의 몇 배로 터진 상한가급 상승입니다. 이 봉의 몸통을 등분해 다음날 눌림목 지지선을 그립니다. 분할매수 방법은 레슨 4 심화에서 다룹니다.",
  "확인 퀴즈입니다. 두 문제를 풀며 점검해 보세요.",
- "이제 직접 읽어볼 차례입니다. 주식왕에서 캔들의 몸통과 꼬리, 그리고 아래 거래량을 함께 보세요. 거래량이 터진 장대양봉과 눌림에서의 긴 아랫꼬리를 찾아보세요. 수고했습니다."
+ "이제 직접 읽어볼 차례입니다. 주식한판에서 캔들의 몸통과 꼬리, 그리고 아래 거래량을 함께 보세요. 거래량이 터진 장대양봉과 눌림에서의 긴 아랫꼬리를 찾아보세요. 수고했습니다."
 ];
 function pickVoice(){ if(!synth)return; var vs=synth.getVoices()||[]; koVoice=vs.filter(function(v){return /ko(-|_)?KR/i.test(v.lang)})[0]||vs.filter(function(v){return /korean|한국/i.test(v.name)})[0]||null; }
 if(synth){ pickVoice(); synth.onvoiceschanged=pickVoice; }

@@ -239,13 +239,13 @@ canvas{width:100%;height:100%;display:block}
     <section class="card"><div class="panel cta">
       <div class="big">👑</div>
       <h2>이제 실전처럼 연습하자</h2>
-      <p class="mut">주식왕에서 기준봉 다음날 차트를 재생하며,<br>지지선마다 '지지 확인' 후 분할매수 → 손절·익절을 연습하세요.</p>
+      <p class="mut">주식한판에서 기준봉 다음날 차트를 재생하며,<br>지지선마다 '지지 확인' 후 분할매수 → 손절·익절을 연습하세요.</p>
       <div class="checklist">
         <div><span class="mk">✓</span>지지선 1/2 · 3/4 · 시가 / 손절 = 저가</div>
         <div><span class="mk">✓</span>확인 후 30/30/40 분할매수</div>
         <div><span class="mk">✓</span>저가 이탈 = 전량 손절, 익절은 미리 정한 기준대로</div>
       </div>
-      <button class="go" id="cta-go">주식왕으로 연습하기 ▸</button>
+      <button class="go" id="cta-go">주식한판으로 연습하기 ▸</button>
     </div></section>
 
   </div>
@@ -280,7 +280,7 @@ var NAR=[
  "6단계, 재매수입니다. 손절했더라도 가격이 기준봉 저가를 회복하면 분할로 다시 진입합니다. 단, 재매수는 최대 세 번까지만 하고, 기준봉 저가를 팔 퍼센트 이상 더 깨면 그 사이클은 중단합니다. 횟수와 무효화 기준을 정해두지 않으면 물타기로 계좌가 망가집니다.",
  "7단계, 익절입니다. 파는 기준도 미리 정합니다. 첫째 추세 이탈, 십분봉 이평을 이탈하고 음봉이 몇 개 나오며 수익률이 최소치를 넘었을 때 전량. 둘째 목표 수익률, 예를 들어 오 퍼센트 도달 시 즉시 전량. 셋째 분할 익절. 초보는 목표 수익률 방식이 가장 지키기 쉽습니다.",
  "확인 퀴즈입니다. 두 문제를 풀며 점검해 보세요.",
- "이제 실전처럼 연습할 차례입니다. 주식왕에서 기준봉 다음날 차트를 재생하며 지지선마다 지지 확인 후 분할매수하고, 손절과 익절을 미리 정한 기준대로 연습하세요. 수고했습니다."
+ "이제 실전처럼 연습할 차례입니다. 주식한판에서 기준봉 다음날 차트를 재생하며 지지선마다 지지 확인 후 분할매수하고, 손절과 익절을 미리 정한 기준대로 연습하세요. 수고했습니다."
 ];
 function pickVoice(){ if(!synth)return; var vs=synth.getVoices()||[]; koVoice=vs.filter(function(v){return /ko(-|_)?KR/i.test(v.lang)})[0]||vs.filter(function(v){return /korean|한국/i.test(v.name)})[0]||null; }
 if(synth){ pickVoice(); synth.onvoiceschanged=pickVoice; }

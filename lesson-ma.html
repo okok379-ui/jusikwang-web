@@ -123,7 +123,7 @@ canvas{width:100%;height:100%;display:block}
       <p>최근 <b>N일 종가의 평균</b>을 매일 계산해 이은 선입니다. 10일선이면 <b>최근 10일 종가의 평균</b>이죠. 하루하루 들쭉날쭉한 가격의 <b>노이즈를 걷어내고 큰 흐름만</b> 보여줍니다.</p>
       <div class="chartbox"><canvas data-demo="ma"></canvas></div>
       <div class="legend"><span><i style="background:var(--ma)"></i>10일 이동평균선</span></div>
-      <p class="mut">짧은 선(5일)은 가격에 민감하게 붙고, 긴 선(20·60일)은 느리고 큰 추세를 봅니다. 주식왕에서 보이는 <b>보라색 선</b>이 이 이동평균선이에요.</p>
+      <p class="mut">짧은 선(5일)은 가격에 민감하게 붙고, 긴 선(20·60일)은 느리고 큰 추세를 봅니다. 주식한판에서 보이는 <b>보라색 선</b>이 이 이동평균선이에요.</p>
     </div></section>
 
     <!-- 3 기울기=추세 -->
@@ -207,14 +207,14 @@ canvas{width:100%;height:100%;display:block}
     <!-- 9 CTA -->
     <section class="card"><div class="panel cta">
       <div class="big">📈</div>
-      <h2>주식왕에서 이평선 보기</h2>
-      <p>주식왕 차트의 <b>보라색 선</b>이 이동평균선(1분=10분·3분=30분·일봉=10일)입니다. 가격이 이 선을 <b>지지로 쓰는지, 깨는지</b> 지켜보세요.</p>
+      <h2>주식한판에서 이평선 보기</h2>
+      <p>주식한판 차트의 <b>보라색 선</b>이 이동평균선(1분=10분·3분=30분·일봉=10일)입니다. 가격이 이 선을 <b>지지로 쓰는지, 깨는지</b> 지켜보세요.</p>
       <div class="checklist">
         <div><span class="mk">✓</span>보라색 이평선의 기울기(추세)를 먼저 본다</div>
         <div><span class="mk">✓</span>일봉 기준봉이 10일선 위에 있는지 확인</div>
         <div><span class="mk">✓</span>가격이 이평선에서 되튀는 자리를 찾는다</div>
       </div>
-      <button class="go" id="cta-go">주식왕으로 연습하기 ▸</button>
+      <button class="go" id="cta-go">주식한판으로 연습하기 ▸</button>
       <p class="mut" style="margin-top:14px">다음 레슨: <b>기준봉 매매 — 지지선을 미리 긋기</b></p>
     </div></section>
 
@@ -242,14 +242,14 @@ var prevB=document.getElementById('prev'),nextB=document.getElementById('next'),
 var synth=window.speechSynthesis||null, autoRead=false, koVoice=null;
 var NAR=[
  "레슨 2, 이동평균선. 지난 레슨의 지지와 저항은 가로로 그은 고정된 선이었죠. 하지만 추세가 살아 움직이는 종목에선 지지선도 가격을 따라 같이 올라갑니다. 그 움직이는 지지저항이 바로 이동평균선입니다. 기준봉 매매의 핵심 조건인 10일선 위도 전부 여기서 나옵니다.",
- "이동평균선은 최근 엔 일 종가의 평균을 매일 계산해 이은 선입니다. 10일선이면 최근 10일 종가의 평균이죠. 하루하루 들쭉날쭉한 가격의 노이즈를 걷어내고 큰 흐름만 보여줍니다. 주식왕에서 보이는 보라색 선이 이 이동평균선입니다.",
+ "이동평균선은 최근 엔 일 종가의 평균을 매일 계산해 이은 선입니다. 10일선이면 최근 10일 종가의 평균이죠. 하루하루 들쭉날쭉한 가격의 노이즈를 걷어내고 큰 흐름만 보여줍니다. 주식한판에서 보이는 보라색 선이 이 이동평균선입니다.",
  "이평선의 기울기가 곧 추세입니다. 우상향에 가격이 선 위면 상승추세, 매수로 대응하는 구간입니다. 우하향에 가격이 선 아래면 하락추세, 섣불리 사지 않습니다. 수평이면 횡보, 방향이 정해질 때까지 관망합니다.",
  "가장 중요한 부분입니다. 상승추세에선 가격이 내려오다 이평선에 닿으면 다시 튀어 오릅니다. 선이 올라가니까 움직이는 지지선이 되는 거죠. 그래서 이평선 지지 확인 후 매수가 눌림목 매매의 기본 자리입니다. 지난 레슨의 지지 확인 3단계를 이평선에 그대로 적용합니다.",
  "여러 이평선을 같이 띄우면 순서가 보입니다. 위에서부터 단기, 중기, 장기, 즉 5일, 10일, 20일 순으로 줄 서면 정배열, 강한 상승추세입니다. 반대로 뒤집히면 역배열, 하락추세죠. 정배열 초입이 가장 좋은 매수 국면입니다.",
  "단기선이 장기선을 아래에서 위로 뚫으면 골든크로스, 추세 전환 매수 신호입니다. 위에서 아래로 뚫으면 데드크로스, 매도 신호죠. 다만 크로스는 늦게 뜨는 후행 신호라, 단독보다 기준봉과 거래량과 함께 보조로 쓰는 게 안전합니다.",
  "기준봉 선정 5대 조건의 마지막, 일봉 양봉이 10일선 위에 완전히 위치. 이게 단기 상승추세가 확고하다는 필터입니다. 기준봉이 10일선 위에 있어야 매수 대상이 되고, 가격이 10일선을 종가로 깨면 추세가 꺾인 것이니 손절을 고려합니다.",
  "확인 퀴즈입니다. 두 문제를 풀며 점검해 보세요.",
- "주식왕에서 보라색 이동평균선을 확인할 차례입니다. 선의 기울기로 추세를 읽고, 일봉 기준봉이 10일선 위에 있는지, 가격이 이평선에서 되튀는지 지켜보세요. 수고했습니다."
+ "주식한판에서 보라색 이동평균선을 확인할 차례입니다. 선의 기울기로 추세를 읽고, 일봉 기준봉이 10일선 위에 있는지, 가격이 이평선에서 되튀는지 지켜보세요. 수고했습니다."
 ];
 function pickVoice(){ if(!synth)return; var vs=synth.getVoices()||[]; koVoice=vs.filter(function(v){return /ko(-|_)?KR/i.test(v.lang)})[0]||vs.filter(function(v){return /korean|한국/i.test(v.name)})[0]||null; }
 if(synth){ pickVoice(); synth.onvoiceschanged=pickVoice; }
@@ -421,7 +421,7 @@ document.getElementById('cta-go').addEventListener('click',function(){
   if(synth)synth.cancel();
   var w={};location.href=GAME_URL;
   if(!w){var t=document.createElement('div');
-    t.innerHTML='주식왕이 자동으로 열리지 않으면 <a href="'+GAME_URL+'" target="_blank" rel="noopener" style="color:var(--accent);font-weight:700">여기</a>를 눌러 열어주세요 📈';
+    t.innerHTML='주식한판이 자동으로 열리지 않으면 <a href="'+GAME_URL+'" target="_blank" rel="noopener" style="color:var(--accent);font-weight:700">여기</a>를 눌러 열어주세요 📈';
     t.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--border);box-shadow:var(--shadow);border-radius:10px;padding:11px 16px;font-size:13px;font-weight:600;z-index:9;max-width:90%;text-align:center';
     document.body.appendChild(t);setTimeout(function(){t.remove()},6000);}
 });
