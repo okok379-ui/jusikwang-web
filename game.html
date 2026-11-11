@@ -1301,7 +1301,7 @@ function findCases(name,dateStr){
   return out;
 }
 async function tryDirectPlay(){
-  if(!window.CASE_LIB||!window.CASE_LIB.manifest){ loadCasesFromServer().then(tryDirectPlay); return; }
+  if(!window.CASE_LIB||!window.CASE_LIB.manifest){ toast('종목 데이터를 불러오지 못했어요'); return; }
   var nm=$('#case-search')?$('#case-search').value:'', dt=$('#case-date')?$('#case-date').value:'';
   if(!nm.trim() && !digits(dt)){ toast('종목명이나 날짜를 입력하세요'); return; }
   var m=findCases(nm,dt);
@@ -1553,7 +1553,7 @@ new MutationObserver(function(){draw()}).observe(document.documentElement,{attri
 if(window.matchMedia)window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',draw);
 
 function boot(data){
- renderStat(); fit(); syncFromServer(); loadCasesFromServer();
+ renderStat(); fit(); syncFromServer();
  if(data&&data.S&&data.S.day&&data.S.day.min1){S=data.S;speed=data.speed||260;curMode=S.mode||'manual';if(S.i==null)S.i=(S.idx!=null?S.idx*3+2:8);if(S.maxMin==null)S.maxMin=S.day.N*3-1;if(!S.eng)S.eng={ratios:[.1,.2,.4],bought:[false,false,false],shake:[null,null,null],peak:0,armed:false,done:true,lines:[0,0,0]};document.querySelectorAll('.md').forEach(function(x){x.classList.toggle('on',x.getAttribute('data-mode')===curMode)});$('#h-name').textContent=S.day.name;$('#h-code').textContent=S.day.code;$('#h-cap').textContent='시총 '+capText(S.day.mktcapEok||0);$('#h-reason').innerHTML=S.day.direct?('<b style="color:var(--sup)">실데이터</b>'+(S.day.date?' · '+fmtDate(S.day.date):'')+(S.day.reason?' · '+S.day.reason:'')):('전일 <b>상한가(+30%)</b> · 사유: '+(S.day.reason||''));$('#q-prev').textContent=won(S.day.prevClose);$('#q-open').textContent=won(S.day.open);render();draw();if(S.finished)showResult((S.cash-START)/START*100);}
  else newRound();
 }
