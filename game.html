@@ -46,22 +46,39 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px so
 .chip b{color:var(--fg);font-family:var(--mono);font-weight:600}
 
 .grid{display:grid;grid-template-columns:1fr 322px;gap:12px;align-items:start}
-@media (max-width:780px){.grid{grid-template-columns:1fr}}
-/* 모바일 보유 현황 바: 차트 보면서 수익률 한눈에 */
-#mbar{display:none}
+/* 모바일도 PC처럼 좌(차트)·우(주문/보유) 반반 배치 */
+#mbar{display:none!important}
 @media (max-width:780px){
-  #mbar{display:block;position:fixed;left:0;right:0;bottom:0;z-index:55;background:var(--panel,#fff);border-top:1px solid var(--border,#e5e7eb);box-shadow:0 -4px 18px rgba(15,23,42,.12);padding:7px 10px calc(7px + env(safe-area-inset-bottom))}
-  #mbar .mrow{display:grid;grid-template-columns:1.1fr 1fr 1fr 1.05fr;gap:4px;align-items:center}
-  #mbar .mc{min-width:0}
-  #mbar .mk{font-size:10px;color:var(--muted);line-height:1.2}
-  #mbar .mv{font-family:var(--mono);font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
-  #mbar .mv.big{font-size:17px}
-  #mbar .mbtns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:6px}
-  #mbar button{border:none;border-radius:9px;padding:9px 0;font-family:inherit;font-weight:800;font-size:13.5px;color:#fff}
-  #mbar button:disabled{opacity:.45}
-  body{padding-bottom:118px}
-  #back-result{bottom:128px!important}
-  .toast{bottom:calc(126px + env(safe-area-inset-bottom,0px))!important}
+  .grid{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)!important;gap:6px!important;align-items:start}
+  .side{gap:6px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .side .panel,.side>div{min-width:0}
+  .quote{padding:8px 8px!important}
+  .quote .px{font-size:22px!important}
+  .quote .chg{font-size:10.5px!important;line-height:1.35}
+  .quote .meta,.quote .sub{font-size:10px!important}
+  .stats .stat{padding:6px 7px!important}
+  .stats .k{font-size:9.5px!important}.stats .v{font-size:12px!important}
+  .order{padding:8px!important;gap:6px!important}
+  .amt{gap:4px}.amt span,.amt label{font-size:10.5px}
+  .amt input{font-size:13px!important;padding:7px 8px!important;min-width:0;width:100%}
+  .quickrow{gap:4px!important;flex-wrap:wrap}
+  .quickrow button{padding:6px 0!important;font-size:11px!important;flex:1 1 40%}
+  .btns,.sellrow{gap:5px!important}
+  .btns button,.sellrow button{padding:10px 0!important;font-size:13px!important}
+  .sellplan{padding:7px!important;font-size:11px}
+  .sellplan input{min-width:0;width:100%;font-size:12px!important;padding:5px 6px!important}
+  .sp-hint{font-size:10px!important}
+  .engine{font-size:11px!important;padding:7px!important}
+  .amt label,.amt .won{display:none}
+  /* 하단 조작바: 한 줄 가로 스크롤로 얇게 → 차트·주문 화면 확보 */
+  .playbar{flex-wrap:nowrap!important;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:5px!important;padding:6px 8px!important;scrollbar-width:none}
+  .playbar::-webkit-scrollbar{display:none}
+  .playbar>*{flex:none}
+  .playbar .hint{display:none}
+  .toast{bottom:calc(64px + env(safe-area-inset-bottom,0px))!important}
+  #back-result{bottom:64px!important}
+  .play{padding:8px 12px!important;font-size:13px!important}
+  .pbtn,.md,.sp{padding:6px 8px!important;font-size:11.5px!important;white-space:nowrap}
 }
 @media (max-width:640px){
   .wrap{padding:8px;gap:8px}
@@ -69,7 +86,7 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px so
   .brand h1{font-size:16px}
   .sess{gap:5px;width:100%}
   .chip{padding:3px 8px;font-size:10.5px}
-  .chart-wrap{height:clamp(300px,42vh,420px)}
+  .chart-wrap{height:clamp(470px,72vh,640px)}
   .chart-head{font-size:12px;padding:1px 2px 2px}
   .grid{gap:8px}
   .quote{padding:10px 12px}
@@ -1000,7 +1017,7 @@ function render(){
 /* ---------- chart ---------- */
 var cv=$('#cv'),ctx=cv.getContext('2d'),CW=0,CH=0,DPR=1,C={};
 function fit(){var r=cv.getBoundingClientRect();DPR=Math.min(2,window.devicePixelRatio||1);CW=Math.max(100,r.width);CH=Math.max(100,r.height);cv.width=Math.round(CW*DPR);cv.height=Math.round(CH*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);syncSideHeight();if(S)draw();}
-function syncSideHeight(){var cp=document.querySelector('.chartpanel'),sd=document.querySelector('.side');if(!cp||!sd)return;if(window.innerWidth>780){sd.style.maxHeight=cp.offsetHeight+'px';}else{sd.style.maxHeight='';}}
+function syncSideHeight(){var cp=document.querySelector('.chartpanel'),sd=document.querySelector('.side');if(!cp||!sd)return;sd.style.maxHeight=cp.offsetHeight+'px';}
 function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
 function roundRect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 var GUT=46;
