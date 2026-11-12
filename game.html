@@ -1068,7 +1068,7 @@ function volPanel(bars,rev,R,opts){
  if(opts.dates){var bwD=R.w/Math.max(slots,1),stepD=Math.max(1,Math.ceil(40/bwD)),lastI=rev-1;ctx.textAlign='center';ctx.textBaseline='middle';
    for(i=winStart;i<rev;i++){var dd=opts.dates[i];if(!dd||dd.length<8)continue;var isLast=(i===lastI);if(!isLast&&((lastI-i)%stepD!==0||lastI-i<stepD))continue;
      var xx=R.x+(i-winStart+0.5)*bwD;ctx.fillStyle=isLast?C.accent:C.fg;ctx.font=(isLast?'bold ':'600 ')+'10px IBM Plex Mono,monospace';ctx.fillText(dd.slice(4,6)+'/'+dd.slice(6,8),xx,R.y+R.h+7);}}
- if(opts.perHour){var cm=S&&S.day&&S.day.clockMin,per=60/opts.perHour,st=(S&&S.day&&S.day.startMin!=null)?S.day.startMin:540;ctx.fillStyle=C.fg;ctx.textAlign='center';ctx.font='600 10px IBM Plex Mono,monospace';for(i=winStart;i<rev;i++){var mnv=cm?cm[(per===1)?i:i*3]:(st+i*per);if(mnv==null)continue;if(mnv%60===0){var hh=Math.floor(mnv/60)%24,mn=mnv%60,xx=R.x+(i-winStart+0.5)*bw;if(xx>=R.x&&xx<=R.x+R.w)ctx.fillText((hh<10?'0':'')+hh+':'+(mn<10?'0':'')+mn,xx,R.y+R.h+7);}}}
+ if(opts.perHour){var cm=S&&S.day&&S.day.clockMin,per=60/opts.perHour,st=(S&&S.day&&S.day.startMin!=null)?S.day.startMin:540;ctx.fillStyle=C.fg;ctx.textAlign='center';ctx.font='600 10px IBM Plex Mono,monospace';for(i=winStart;i<rev;i++){var mnv=cm?cm[(per===1)?i:i*3]:(st+i*per);if(mnv==null)continue;if(mnv%(opts.tick||60)===0){var hh=Math.floor(mnv/60)%24,mn=mnv%60,xx=R.x+(i-winStart+0.5)*bw;if(xx>=R.x+14&&xx<=R.x+R.w-14&&(mn===0||xx-(opts._lx||-1e9)>=56)){opts._lx=xx;var lbT=(hh<10?'0':'')+hh+':'+(mn<10?'0':'')+mn;ctx.font='700 11px IBM Plex Mono,monospace';var twT=ctx.measureText(lbT).width+8;ctx.fillStyle='#fff';ctx.fillRect(xx-twT/2,R.y+R.h+2,twT,14);ctx.strokeStyle=C.grid;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(xx,R.y+R.h);ctx.lineTo(xx,R.y+R.h+3);ctx.stroke();ctx.fillStyle=C.fg;ctx.fillText(lbT,xx,R.y+R.h+9.5);}}}}
 }
 function draw(){
  if(!S||!S.day.min1)return;
@@ -1076,7 +1076,7 @@ function draw(){
  ctx.clearRect(0,0,CW,CH); PANELS=[];
  var d=S.day, mRev=S.i+1, bars3=live3(d.min1,S.i), tRev=bars3.length, i;
  var x0=6,w=CW-GUT-x0;
- var timeH=12, uGap=10, inGap=3;
+ var timeH=14, uGap=24, inGap=3;   // uGap: 시간축 라벨 줄 + 구분선
  var usable=CH - timeH - uGap*2;
  var unitH=usable/3, candleH=unitH*0.70, volH=unitH-candleH-inGap;
  function winOf(rev,base,z){ var slots=Math.max(8,Math.round(base/(z||1))); return {winStart:Math.max(0,rev-slots),slots:slots}; }
@@ -1096,12 +1096,12 @@ function draw(){
  // 1분봉
  var w1=winOf(mRev,120,zoom1);
  candlePanel(d.min1,mRev,{x:x0,y:y,w:w,h:candleH},{label:'1분봉',grid:2,maxCW:8,winStart:w1.winStart,slots:w1.slots,levels:baseLevels(false,true),ma:maSeeded(d.min1,mRev,10,d.prevClose),maLabel:'10',phase:true,markers:S.trades.map(function(t){return {i:t.m,side:t.side}}),prevClose:d.prevClose});
- volPanel(d.min1,mRev,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:8,winStart:w1.winStart,slots:w1.slots,perHour:60});
+ volPanel(d.min1,mRev,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:8,winStart:w1.winStart,slots:w1.slots,perHour:60,tick:15});
  y+=unitH+uGap;
  // 3분봉
  var w3=winOf(tRev,60,zoom3);
  candlePanel(bars3,tRev,{x:x0,y:y,w:w,h:candleH},{label:'3분봉',grid:2,maxCW:14,winStart:w3.winStart,slots:w3.slots,levels:baseLevels(true,true),ma:maSeeded(bars3,tRev,10,d.prevClose),maLabel:'10',phase:true,phaseMarks:true,autosr:true,markers:S.trades.map(function(t){return {i:Math.floor(t.m/3),side:t.side,px:t.price,tag:t.tag}}),labelMk:true,ideal:true,prevClose:d.prevClose});
- volPanel(bars3,tRev,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:14,winStart:w3.winStart,slots:w3.slots,perHour:20});
+ volPanel(bars3,tRev,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:14,winStart:w3.winStart,slots:w3.slots,perHour:20,tick:30});
  y+=unitH+uGap;
  // 일봉 + 오늘 형성중 봉 + 10일선
  var cs=(d.curStart!=null?d.curStart:0); if(cs>mRev-1)cs=0;   // 현재 날 구간만 형성봉으로 집계
@@ -1120,7 +1120,7 @@ function draw(){
  volPanel(dBars.slice(stt),dBars.length-stt,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:16,minSlots:VIEW,dates:dDates?dDates.slice(stt):null});
  // 패널 구분선(검은색)
  ctx.save();ctx.strokeStyle='#111827';ctx.lineWidth=1.2;ctx.setLineDash([]);
- [2+unitH+uGap/2, 2+2*unitH+uGap*1.5].forEach(function(yy){ctx.beginPath();ctx.moveTo(x0,yy);ctx.lineTo(x0+w,yy);ctx.stroke();});
+ [2+unitH+uGap-4, 2+2*unitH+2*uGap-4].forEach(function(yy){ctx.beginPath();ctx.moveTo(x0,yy);ctx.lineTo(x0+w,yy);ctx.stroke();});
  ctx.restore();
 }
 
