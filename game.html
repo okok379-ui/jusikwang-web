@@ -1419,7 +1419,7 @@ async function tryDirectPlay(){
 }
 function fmtDate(d){d=''+(d==null?'':d);return /^\d{8}$/.test(d)?(d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8)):d;}
 // KRX 휴장일(주말 외) — 일봉 날짜 추정용(케이스에 dailyDates가 없을 때)
-var KRX_HOLI={'20251225':1,'20251231':1,'20260101':1,'20260216':1,'20260217':1,'20260218':1,'20260302':1,'20260501':1,'20260505':1,'20260525':1,'20260603':1,'20260817':1,'20260924':1,'20260925':1,'20261005':1,'20261009':1,'20261225':1,'20261231':1};
+var KRX_HOLI={'20251225':1,'20251231':1,'20260101':1,'20260216':1,'20260217':1,'20260218':1,'20260302':1,'20260501':1,'20260505':1,'20260525':1,'20260603':1,'20260717':1,'20260817':1,'20260924':1,'20260925':1,'20261005':1,'20261009':1,'20261225':1,'20261231':1};
 function _ymd(dt){function z(n){return(n<10?'0':'')+n}return dt.getFullYear()+z(dt.getMonth()+1)+z(dt.getDate());}
 function _isTd(dt){var w=dt.getDay();return w!==0&&w!==6&&!KRX_HOLI[_ymd(dt)];}
 function prevTradeDay(ymd){var dt=new Date(+ymd.slice(0,4),+ymd.slice(4,6)-1,+ymd.slice(6,8));do{dt.setDate(dt.getDate()-1);}while(!_isTd(dt));return _ymd(dt);}
