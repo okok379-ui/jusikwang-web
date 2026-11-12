@@ -93,7 +93,7 @@ kbd{font-family:var(--mono);font-size:12px;border:1px solid var(--border);border
       <ul>
         <li><b>실데이터 모드</b> — 종목명·날짜를 지정하면 키움 과거 데이터로 그 종목을 그대로 재생합니다.</li>
         <li><b>랜덤 연습 모드</b> — 가상으로 생성된 상한가 눌림 패턴으로 가볍게 연습합니다.</li>
-        <li>1분봉·3분봉·일봉을 함께 보며, 분할 매수·분할 매도·물타기까지 자동 규칙으로 돌려볼 수 있습니다.</li>
+        <li>1분봉·3분봉·일봉을 함께 보며, 분할매수·분할 매도·자동 진입까지 자동 규칙으로 돌려볼 수 있습니다.</li>
       </ul>
     </section>
 
@@ -131,7 +131,7 @@ kbd{font-family:var(--mono);font-size:12px;border:1px solid var(--border);border
         <li>이동평균선 4·15·20·120선을 사용합니다.</li>
       </ul>
       <h3>우측 패널</h3>
-      <p>매매 주문, 분할 매도 목표, 분할 매수(물타기) 설정이 모여 있습니다. 내용이 길면 패널 안에서 스크롤됩니다.</p>
+      <p>매매 주문, 분할 매도 목표, 분할매수 설정이 모여 있습니다. 내용이 길면 패널 안에서 스크롤됩니다.</p>
     </section>
 
     <section class="sec" id="play">
@@ -149,7 +149,7 @@ kbd{font-family:var(--mono);font-size:12px;border:1px solid var(--border);border
       <h2><span class="n">5</span>매매하기</h2>
       <ul>
         <li><b>매수금액</b> 입력 또는 <span class="k">100만</span> <span class="k">300만</span> <span class="k">500만</span> <span class="k">최대</span> 버튼으로 금액을 정합니다.</li>
-        <li><span class="k">매수 B</span> — 매수(<kbd>B</kbd>). <span class="k">추가매수</span> — 같은 금액으로 더 담기(물타기·불타기).</li>
+        <li><span class="k">매수 B</span> — 매수(<kbd>B</kbd>). <span class="k">추가매수</span> — 같은 금액으로 더 담기.</li>
         <li><span class="k">절반 매도</span> / <span class="k">전량 매도 S</span> — 보유분 매도(<kbd>S</kbd>는 전량).</li>
         <li><span class="k">수동</span> / <span class="k">자동</span> — <b>수동</b>은 내가 직접 매매합니다(자동 규칙은 동작하지 않음). <b>자동</b>은 아래 분할 매도 목표·분할 매수·1차 자동 진입 규칙(체크한 것)대로 프로그램이 매매합니다. 자동 모드에서도 직접 주문 버튼은 쓸 수 있습니다.</li>
       </ul>
@@ -166,8 +166,8 @@ kbd{font-family:var(--mono);font-size:12px;border:1px solid var(--border);border
     </section>
 
     <section class="sec" id="buyplan">
-      <h2><span class="n">7</span>분할 매수(물타기)·자동 재진입</h2>
-      <p>우측 <span class="k">🔻 분할 매수(물타기)</span> 패널입니다.</p>
+      <h2><span class="n">7</span>분할매수·자동 재진입</h2>
+      <p>우측 <span class="k">🔻 분할매수</span> 패널입니다.</p>
       <ul>
         <li><b>1회 매수금</b>을 정하면 모든 차수가 그 금액으로 <b>균등 매수</b>합니다(예: 100만원씩).</li>
         <li><b>최초 매수가 기준</b>으로 각 차수의 <b>하락률(%)</b>에 닿을 때마다 자동 매수합니다. 2차~9차까지, 기본 −3%·−6%·−9%…</li>
@@ -197,7 +197,7 @@ kbd{font-family:var(--mono);font-size:12px;border:1px solid var(--border);border
       <ul>
         <li><b>구분·날짜·시각·가격·수량·금액·실현손익·이유</b>를 보여줍니다.</li>
         <li>매도마다 그 거래의 실현손익을 평단 기준으로 계산해 +/−로 표시합니다.</li>
-        <li><b>이유</b>에는 직접 매수/추가매수, 물타기 N차, 재진입, 분할매도 목표 도달, 자동 손절·익절, 청산 등이 기록됩니다.</li>
+        <li><b>이유</b>에는 직접 매수/추가매수, 분할매수 N차, 재진입, 분할매도 목표 도달, 자동 손절·익절, 청산 등이 기록됩니다.</li>
         <li>상단에 매수·매도 횟수와 총 실현손익 요약이 나옵니다.</li>
       </ul>
     </section>

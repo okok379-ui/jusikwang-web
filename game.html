@@ -254,7 +254,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
         </div>
         <div class="sellplan" id="buyplan">
           <div class="sp-top">
-            <span class="sp-ttl">🔻 분할 매수(물타기)</span>
+            <span class="sp-ttl">🔻 분할매수</span>
             <label class="sp-use"><input type="checkbox" id="bp-on"> 사용</label>
           </div>
           <label class="bp-amt">1회 매수금 <input type="number" id="bp-amount" step="100000"> 원 <span class="bp-eq">· 전 차수 균등</span></label>
@@ -627,7 +627,7 @@ function buy(amount,reason){
  var fresh=(S.shares<1);   // 잔량 0에서 새로 진입 = 1차(최초) 매수
  var ns=S.shares+qty; S.avg=Math.round((S.avg*S.shares+p*qty)/ns); S.shares=ns; S.cash-=(cost+fee); S.peakShares=Math.max(S.peakShares||0,S.shares);
  S.spDone=[false,false,false];   // 매수(재매수·추가매수)마다 분할매도 1·2·3차 룰 재적용(새 평단 기준)
- if(fresh){ S.bpBase=p; S.bpDone=[]; S.cycleReal=0; S.cycleCost=0; }   // 최초 매수가 기준점 설정 → 물타기 2~9차 무장 · 새 사이클 시작
+ if(fresh){ S.bpBase=p; S.bpDone=[]; S.cycleReal=0; S.cycleCost=0; }   // 최초 매수가 기준점 설정 → 분할매수 2~9차 무장 · 새 사이클 시작
  S.cycleCost=(S.cycleCost||0)+cost+fee;
  S.trades.push({m:S.i,side:'B',price:p,qty:qty,tag:reason||(fresh?'직접 매수(1차)':'추가 매수')});
  toast('매수 '+fmt(qty)+'주 @ '+won(p)); render(); draw();
@@ -700,9 +700,9 @@ if(_spSave)_spSave.addEventListener('click',function(){
 });
 initSellPlan();
 
-/* ---------- 분할 매수(물타기) : 최초 매수가 기준 -N% 도달 시 시드의 M% 매수 ---------- */
+/* ---------- 분할매수 : 최초 매수가 기준 -N% 도달 시 시드의 M% 매수 ---------- */
 var BP_LS='jusikwang_buyplan';
-var BP_N=8;   // 물타기 차수(2차~9차 = 8단계)
+var BP_N=8;   // 분할매수 차수(2차~9차 = 8단계)
 var buyPlan={on:false,amount:1000000,rows:[{drop:3},{drop:6},{drop:9},{drop:12},{drop:15},{drop:18},{drop:21},{drop:24}],reenter:false};
 (function(){try{var s=JSON.parse(localStorage.getItem(BP_LS));if(s&&s.rows&&s.rows.length)buyPlan={on:!!s.on,amount:(s.amount>0?s.amount:(s.entry>0?s.entry:1000000)),rows:s.rows.slice(0,BP_N).map(function(r){return {drop:r.drop};}),reenter:!!s.reenter};}catch(e){}})();
 function checkReentry(){
@@ -722,7 +722,7 @@ function checkBuyPlan(){
     var row=buyPlan.rows[k]; if(!row||S.bpDone[k])continue;
     if(row.drop>0&&px<=base*(1-row.drop/100)){
       var before=S.shares;
-      buy(amt,'물타기 '+(k+2)+'차 (-'+row.drop+'%)');   // 최초 매수가 대비 하락 → 균등 매수
+      buy(amt,'분할매수 '+(k+2)+'차 (-'+row.drop+'%)');   // 최초 매수가 대비 하락 → 균등 매수
       S.bpDone[k]=true;
       if(S.shares<=before){ if(++guard>0)break; }    // 현금 부족 등으로 체결 안되면 중단
     }
@@ -858,7 +858,7 @@ function showResult(ret){
    else if(ret>=id.maxProfit*0.3&&ret>0){grade='A';comment='좋은 매매였습니다. 진입과 익절 타이밍이 합격점이에요.'+(chasedHigh?' 다만 매수가가 다소 높았습니다.':'')}
    else if(ret>0){grade='B';comment='수익으로 마감했습니다. '+(nearLow?'저점 근처에서 잘 받았어요. 익절을 조금 더 길게 가져가도 좋았겠네요.':'진입가가 높아 수익폭이 줄었습니다. 눌림 저점을 더 기다려보세요.')}
    else if(ret>-4){grade='C';comment=chasedHigh?'급등 직후 추격매수(상투)가 손실로 이어졌습니다. 오른 걸 따라붙지 말고 눌림을 기다리세요.':'손실로 마감했습니다. 지지가 깨지면 미루지 말고 손절하는 원칙을 세워두세요.'}
-   else{grade='D';comment=trap?'함정 종목을 끝까지 들고 갔습니다. 손절선을 정해두고 지지 이탈 시 바로 끊어야 합니다.':'큰 손실입니다. 추격매수·물타기보다 손절 원칙이 먼저입니다.'}
+   else{grade='D';comment=trap?'함정 종목을 끝까지 들고 갔습니다. 손절선을 정해두고 지지 이탈 시 바로 끊어야 합니다.':'큰 손실입니다. 추격매수·무계획 추가매수보다 손절 원칙이 먼저입니다.'}
  }
  var gcolor={S:'#f3a52b',A:'#2ec27e',B:'#3b82f6',C:'#8a97a7',D:'#f0433a'}[grade];
  $('#r-badge').textContent=grade; $('#r-badge').style.background=gcolor;
