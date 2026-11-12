@@ -399,6 +399,19 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
   </div>
 </div>
 
+<div class="overlay" id="ask-overlay" hidden>
+  <div class="modal" style="max-width:380px;text-align:center">
+    <div style="font-size:34px;line-height:1">🎉</div>
+    <h3 style="margin:8px 0 6px;font-size:18px">익절 완료!</h3>
+    <div id="ask-msg" style="font-size:14px;line-height:1.6;margin-bottom:16px"></div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px">매매를 계속 진행할까요, 여기서 마무리할까요?</div>
+    <div style="display:flex;gap:8px">
+      <button id="ask-cont" class="btn" style="flex:1;background:var(--accent);color:var(--accent-ink);border:none;font-weight:800">▶ 계속 진행</button>
+      <button id="ask-end" class="btn" style="flex:1;font-weight:800">🏁 매매 마무리</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="hist-overlay" hidden>
   <div class="modal" style="max-width:560px">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
@@ -613,7 +626,8 @@ function buy(amount,reason){
  var fresh=(S.shares<1);   // 잔량 0에서 새로 진입 = 1차(최초) 매수
  var ns=S.shares+qty; S.avg=Math.round((S.avg*S.shares+p*qty)/ns); S.shares=ns; S.cash-=(cost+fee); S.peakShares=Math.max(S.peakShares||0,S.shares);
  S.spDone=[false,false,false];   // 매수(재매수·추가매수)마다 분할매도 1·2·3차 룰 재적용(새 평단 기준)
- if(fresh){ S.bpBase=p; S.bpDone=[]; }   // 최초 매수가 기준점 설정 → 물타기 2~9차 무장
+ if(fresh){ S.bpBase=p; S.bpDone=[]; S.cycleReal=0; S.cycleCost=0; }   // 최초 매수가 기준점 설정 → 물타기 2~9차 무장 · 새 사이클 시작
+ S.cycleCost=(S.cycleCost||0)+cost+fee;
  S.trades.push({m:S.i,side:'B',price:p,qty:qty,tag:reason||(fresh?'직접 매수(1차)':'추가 매수')});
  toast('매수 '+fmt(qty)+'주 @ '+won(p)); render(); draw();
 }
@@ -621,9 +635,9 @@ function sell(frac,reason){
  if(S.finished||S.shares<1){if(S.shares<1)toast('보유 수량이 없습니다');return}
  var qty=frac>=1?S.shares:Math.max(1,Math.floor(S.shares*frac));
  var p=price(),proceeds=qty*p,fee=Math.round(proceeds*SELLFEE);
- S.realized+=Math.round((p-S.avg)*qty)-fee; S.cash+=(proceeds-fee); S.shares-=qty; if(S.shares<1)S.avg=0;
+ var r=Math.round((p-S.avg)*qty)-fee; S.realized+=r; S.cycleReal=(S.cycleReal||0)+r; S.cash+=(proceeds-fee); S.shares-=qty; if(S.shares<1)S.avg=0;
  S.trades.push({m:S.i,side:'S',price:p,qty:qty,tag:reason||(frac>=1?'직접 매도(전량)':'직접 매도(절반)')});
- toast('매도 '+fmt(qty)+'주 @ '+won(p)); render(); draw();
+ toast('매도 '+fmt(qty)+'주 @ '+won(p)); render(); draw(); maybeAskExit();
 }
 
 /* ---------- 분할 매도 목표 (수동 모드 자동 익절) ---------- */
@@ -633,9 +647,20 @@ var sellPlan={on:false,rows:[{roi:1,pct:50},{roi:2,pct:30},{roi:3,pct:20}]};
 function sellQty(qty,label){
   if(!S||S.finished||S.shares<1)return; qty=Math.min(qty,S.shares); if(qty<1)return;
   var p=price(),proceeds=qty*p,fee=Math.round(proceeds*SELLFEE);
-  S.realized+=Math.round((p-S.avg)*qty)-fee;S.cash+=(proceeds-fee);S.shares-=qty;if(S.shares<1)S.avg=0;
+  var r=Math.round((p-S.avg)*qty)-fee; S.realized+=r; S.cycleReal=(S.cycleReal||0)+r; S.cash+=(proceeds-fee);S.shares-=qty;if(S.shares<1)S.avg=0;
   S.trades.push({m:S.i,side:'S',price:p,qty:qty,tag:label||''});
-  toast((label||'매도')+' '+fmt(qty)+'주 @ '+won(p));
+  toast((label||'매도')+' '+fmt(qty)+'주 @ '+won(p)); maybeAskExit();
+}
+/* ---------- 전량 익절 시 계속/마무리 묻기 ---------- */
+var _askWasPlaying=false;
+function maybeAskExit(){
+  if(!S||S.finished||S.shares>0)return;
+  var cr=S.cycleReal||0; if(cr<=0)return;               // 수익으로 끝난 사이클(익절)만
+  var cost=S.cycleCost||0, pct=cost?cr/cost*100:0;
+  S.cycleReal=0; S.cycleCost=0;                            // 같은 사이클로 두 번 묻지 않게
+  _askWasPlaying=!!S.playing; stop();
+  $('#ask-msg').innerHTML='보유 종목이 <b>전량 익절</b>됐어요.<br>이번 사이클 실현손익 <b class="up">+'+won(cr)+'</b> <span style="color:var(--muted)">('+(pct>=0?'+':'')+pct.toFixed(2)+'%)</span>';
+  $('#ask-overlay').hidden=false;
 }
 function checkSellPlan(){
   if(!sellPlan.on||!S||S.finished||S.shares<1||!S.avg||curMode!=='manual')return;
@@ -1398,6 +1423,8 @@ $('#b-clearline').addEventListener('click',function(){userLines=[];pendingPt=nul
 $('#b-phase').addEventListener('click',function(){phaseOn=!phaseOn;$('#b-phase').classList.toggle('on',phaseOn);if(S)draw();toast(phaseOn?'구간 표시 ON · 🟢상승(매수) 🔴하락(매도) ⚪지지(관망) — 10이평 기울기 기준':'구간 표시 OFF');});
 $('#b-autosr').addEventListener('click',function(){autoSROn=!autoSROn;$('#b-autosr').classList.toggle('on',autoSROn);if(S)draw();toast(autoSROn?'자동 지지저항 ON · 고점·저점이 반복된 가격대를 표시(초록=지지, 분홍=저항)':'자동 지지저항 OFF');});
 $('#b-finish').addEventListener('click',finishNow);
+$('#ask-cont').addEventListener('click',function(){$('#ask-overlay').hidden=true; if(_askWasPlaying)play();});
+$('#ask-end').addEventListener('click',function(){$('#ask-overlay').hidden=true; finishNow();});
 $('#b-log').addEventListener('click',openLog);
 $('#b-learn').addEventListener('click',function(){location.href='lesson-sr.html';});
 $('#b-cases').addEventListener('click',openCases);
