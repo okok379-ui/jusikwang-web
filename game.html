@@ -350,7 +350,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
       <h3 style="margin:0;font-size:17px">📈 종목 선택</h3>
       <button id="case-close" class="play" style="margin-left:auto;justify-content:center">닫기</button>
     </div>
-    <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px">종목명과 날짜를 입력하면 그 종목을 바로 매매할 수 있어요 · 날짜는 비워두면 전체</div>
+    <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px">날짜는 <b>기준봉(검색된) 날짜</b>예요 · 매매는 그 <b>다음 거래일</b>에 해요 · 날짜를 비워두면 전체</div>
     <div style="display:flex;gap:6px;margin-bottom:8px">
       <input id="case-search" autocomplete="off" placeholder="🔎 종목명 또는 코드" style="flex:1;min-width:0;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:inherit;font-size:14px;padding:10px">
       <input id="case-date" type="date" style="width:158px;flex:none;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:inherit;font-size:14px;padding:9px 10px;color-scheme:light">
@@ -1323,8 +1323,8 @@ function findCases(name,dateStr){
   name=(name||'').trim().toLowerCase(); var df=digits(dateStr);
   var out=[]; var lib=window.CASE_LIB;
   if(!lib||!lib.manifest)return out;
-  lib.manifest.forEach(function(day){
-    if(df && digits(day.date).indexOf(df)<0) return;
+  caseGroups().forEach(function(day){
+    if(df && digits(day.base).indexOf(df)<0) return;
     day.items.forEach(function(it){
       if(!name || it.name.toLowerCase().indexOf(name)>=0 || (''+it.code).indexOf(name)>=0) out.push(it);
     });
@@ -1348,8 +1348,8 @@ async function tryDirectPlay(){
   var btn=$('#case-play'), old=btn?btn.textContent:'';
   if(btn){btn.disabled=true;btn.textContent='키움에서 받는 중…';}
   try{
-    toast('키움에서 '+nm.trim()+' '+digits(dt)+' 데이터 받는 중…');
-    var cs=await kwBuildCase(stockArg,dt);
+    toast('키움에서 '+nm.trim()+' 기준봉 '+fmtDate(digits(dt))+' → 매매일 '+fmtDate(nextTradeDay(digits(dt)))+' 받는 중…');
+    var cs=await kwBuildCase(stockArg,nextTradeDay(digits(dt)));   // 입력=기준봉일 → 매매는 다음 거래일
     $('#case-overlay').hidden=true;
     loadRealCase(cs);
   }catch(e){ toast(e&&e.message?e.message:'조회 실패'); }
@@ -1361,6 +1361,19 @@ var KRX_HOLI={'20251225':1,'20251231':1,'20260101':1,'20260216':1,'20260217':1,'
 function _ymd(dt){function z(n){return(n<10?'0':'')+n}return dt.getFullYear()+z(dt.getMonth()+1)+z(dt.getDate());}
 function _isTd(dt){var w=dt.getDay();return w!==0&&w!==6&&!KRX_HOLI[_ymd(dt)];}
 function prevTradeDay(ymd){var dt=new Date(+ymd.slice(0,4),+ymd.slice(4,6)-1,+ymd.slice(6,8));do{dt.setDate(dt.getDate()-1);}while(!_isTd(dt));return _ymd(dt);}
+function nextTradeDay(ymd){var dt=new Date(+ymd.slice(0,4),+ymd.slice(4,6)-1,+ymd.slice(6,8));do{dt.setDate(dt.getDate()+1);}while(!_isTd(dt));return _ymd(dt);}
+// 종목 목록을 '기준봉(검색된) 날짜'로 묶기 — 최신 기준봉일 먼저
+function caseGroups(){
+  var lib=window.CASE_LIB, g={}, order=[];
+  (lib&&lib.manifest||[]).forEach(function(day){day.items.forEach(function(it){
+    var c=lib.cases&&lib.cases[it.key], play=(c&&c.date)||day.date;
+    var base=(c&&c.limitDate)||(/^\d{8}$/.test(play)?prevTradeDay(play):play);
+    if(!g[base]){g[base]={base:base,play:play,items:[]};order.push(base);}
+    g[base].items.push(it);
+  });});
+  order.sort(function(a,b){return a<b?1:(a>b?-1:0);});
+  return order.map(function(k){return g[k];});
+}
 function tradeDatesBack(last,n){var out=[],cur=last;if(!/^\d{8}$/.test(cur||''))return null;out.unshift(cur);while(out.length<n){cur=prevTradeDay(cur);out.unshift(cur);}return out;}
 // 일봉 각 봉의 날짜(마지막 = 매매일 형성봉)
 function dailyDatesOf(d){
@@ -1378,11 +1391,11 @@ function renderCases(filter,dateFilter){
  filter=(filter||'').trim().toLowerCase();
  var df=digits(dateFilter==null?($('#case-date')?$('#case-date').value:''):dateFilter);
  var html='';
- lib.manifest.forEach(function(day){
-   if(df && digits(day.date).indexOf(df)<0) return;
+ caseGroups().forEach(function(day){
+   if(df && digits(day.base).indexOf(df)<0) return;
    var items=day.items.filter(function(it){return !filter||it.name.toLowerCase().indexOf(filter)>=0||(''+it.code).indexOf(filter)>=0;});
    if(!items.length)return;
-   html+='<div style="font-size:12px;font-weight:700;color:var(--muted);margin:12px 2px 6px">📅 '+fmtDate(day.date)+' · 종목 '+items.length+'개</div>';
+   html+='<div style="font-size:12px;font-weight:700;color:var(--muted);margin:12px 2px 6px">📅 기준봉 '+fmtDate(day.base)+' · '+items.length+'종목 <span style="color:var(--accent)">→ '+fmtDate(day.play).slice(5)+' 매매</span></div>';
    items.forEach(function(it){
      html+='<button class="case-row" data-key="'+it.key+'">'
        +'<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14px">'+it.name+' <span style="color:var(--muted);font-family:var(--mono);font-size:11px">'+it.code+'</span></div>'
