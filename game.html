@@ -574,8 +574,8 @@ function startWithDay(day,seed){
  $('#h-name').textContent=day.name; $('#h-code').textContent=day.code;
  $('#h-cap').textContent='시총 '+capText(day.mktcapEok);
  $('#h-reason').innerHTML=day.direct
-   ? ('<b style="color:var(--sup)">실데이터</b>'+(day.date?' · '+fmtDate(day.date):'')+(day.reason?' · '+day.reason:''))
-   : ((day.real?'<b style="color:var(--sup)">실데이터</b> · ':'')+'전일 <b>상한가'+(day.limitPct?'(+'+day.limitPct.toFixed(1)+'%)':'')+'</b>'+(day.date?' · '+fmtDate(day.date):'')+(day.reason?' · '+day.reason:''));
+   ? ('<b style="color:var(--sup)">실데이터</b> · '+baseLine(day)+(day.reason?' · '+day.reason:''))
+   : ((day.real?'<b style="color:var(--sup)">실데이터</b> · ':'')+(day.real?baseLine(day):'전일 <b>상한가'+(day.limitPct?'(+'+day.limitPct.toFixed(1)+'%)':'')+'</b>')+(day.reason?' · '+day.reason:''));
  $('#q-prev').textContent=won(day.prevClose); $('#q-open').textContent=won(day.open);
  $('#b-play').innerHTML='▶ 시작';
  render(); draw();
@@ -602,6 +602,7 @@ function loadRealCase(json){
   var clockMin=[]; for(var ci=0;ci<min1.length;ci++)clockMin[ci]=startMin+ci;   // 연속 차트용 분단위 시계(날별 09:00 재시작)
   var day={bars:bars,min1:min1,daily:daily,prevClose:prevClose,open:open,N:bars.length,real:true,startMin:startMin,
     clockMin:clockMin,curStart:0,curOpen:open,dayStarts:[0],dayDates:[j.date||''],
+    limitDate:(j.limitDate||'').toString(),dailyDates:(j.dailyDates&&j.dailyDates.length===daily.length)?j.dailyDates.slice():null,
     arch:{name:(j.name||'실데이터')+' ('+(j.date||'')+')'},
     name:j.name||j.code||'실데이터 종목',code:(j.code||'').toString(),date:j.date||'',
     mktcapEok:+(j.mktcapEok||j.marketcap||0),reason:j.reason||'',limitPct:+(j.limitPct||j.changePct||0),direct:!!j.direct};
@@ -1063,6 +1064,9 @@ function volPanel(bars,rev,R,opts){
  ctx.globalAlpha=1;ctx.restore();
  ctx.fillStyle=C.muted;ctx.textAlign='left';ctx.font='9px IBM Plex Sans KR,sans-serif';ctx.textBaseline='middle';ctx.fillText('거래량',R.x+5,R.y+8);
  ctx.font='8px IBM Plex Mono,monospace';ctx.fillText(fmt(maxV),R.x+R.w+5,R.y+7);
+ if(opts.dates){var bwD=R.w/Math.max(slots,1),stepD=Math.max(1,Math.ceil(40/bwD)),lastI=rev-1;ctx.textAlign='center';ctx.textBaseline='middle';
+   for(i=winStart;i<rev;i++){var dd=opts.dates[i];if(!dd||dd.length<8)continue;var isLast=(i===lastI);if(!isLast&&((lastI-i)%stepD!==0||lastI-i<stepD))continue;
+     var xx=R.x+(i-winStart+0.5)*bwD;ctx.fillStyle=isLast?C.accent:C.fg;ctx.font=(isLast?'bold ':'600 ')+'10px IBM Plex Mono,monospace';ctx.fillText(dd.slice(4,6)+'/'+dd.slice(6,8),xx,R.y+R.h+7);}}
  if(opts.perHour){var cm=S&&S.day&&S.day.clockMin,per=60/opts.perHour,st=(S&&S.day&&S.day.startMin!=null)?S.day.startMin:540;ctx.fillStyle=C.fg;ctx.textAlign='center';ctx.font='600 10px IBM Plex Mono,monospace';for(i=winStart;i<rev;i++){var mnv=cm?cm[(per===1)?i:i*3]:(st+i*per);if(mnv==null)continue;if(mnv%60===0){var hh=Math.floor(mnv/60)%24,mn=mnv%60,xx=R.x+(i-winStart+0.5)*bw;if(xx>=R.x&&xx<=R.x+R.w)ctx.fillText((hh<10?'0':'')+hh+':'+(mn<10?'0':'')+mn,xx,R.y+R.h+7);}}}
 }
 function draw(){
@@ -1111,7 +1115,8 @@ function draw(){
    var di=(dBars.length-1)-((nseg-1)-seg)-stt; if(di<0||di>=dBars.length-stt)continue;
    var key=di+t.side; if(dSeen[key])continue; dSeen[key]=1; dMarks.push({i:di,side:t.side});}
  candlePanel(dBars.slice(stt),dBars.length-stt,{x:x0,y:y,w:w,h:candleH},{label:'일봉',grid:2,maxCW:16,minSlots:VIEW,ma:dma.slice(stt),maLabel:'10일',autosr:true,prevClose:d.prevClose,markers:dMarks});
- volPanel(dBars.slice(stt),dBars.length-stt,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:16,minSlots:VIEW});
+ var dDates=dailyDatesOf(d);
+ volPanel(dBars.slice(stt),dBars.length-stt,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:16,minSlots:VIEW,dates:dDates?dDates.slice(stt):null});
  // 패널 구분선(검은색)
  ctx.save();ctx.strokeStyle='#111827';ctx.lineWidth=1.2;ctx.setLineDash([]);
  [2+unitH+uGap/2, 2+2*unitH+uGap*1.5].forEach(function(yy){ctx.beginPath();ctx.moveTo(x0,yy);ctx.lineTo(x0+w,yy);ctx.stroke();});
@@ -1239,7 +1244,7 @@ async function kwBuildCase(nameOrCode,dateStr){
   var mcap=await kwMktcapEok(code);
   return {name:rc.name||code,code:code,date:date,limitDate:d15[d15.length-1].t.slice(0,8),
     prevClose:prevClose,open:min1[0].o,limitPct:limitPct,mktcapEok:mcap,reason:'키움 직접 조회',direct:true,
-    min1Start:min1[0].t.slice(8,12),min1:toArr(min1),daily:toArr(d15)};
+    min1Start:min1[0].t.slice(8,12),min1:toArr(min1),daily:toArr(d15),dailyDates:d15.map(function(x){return x.t.slice(0,8);})};
 }
 function kwFillMinutes(bars){
   if(!bars||bars.length<2)return bars;
@@ -1351,6 +1356,22 @@ async function tryDirectPlay(){
   finally{ if(btn){btn.disabled=false;btn.textContent=old;} }
 }
 function fmtDate(d){d=''+(d==null?'':d);return /^\d{8}$/.test(d)?(d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8)):d;}
+// KRX 휴장일(주말 외) — 일봉 날짜 추정용(케이스에 dailyDates가 없을 때)
+var KRX_HOLI={'20251225':1,'20251231':1,'20260101':1,'20260216':1,'20260217':1,'20260218':1,'20260302':1,'20260501':1,'20260505':1,'20260525':1,'20260603':1,'20260817':1,'20260924':1,'20260925':1,'20261005':1,'20261009':1,'20261225':1,'20261231':1};
+function _ymd(dt){function z(n){return(n<10?'0':'')+n}return dt.getFullYear()+z(dt.getMonth()+1)+z(dt.getDate());}
+function _isTd(dt){var w=dt.getDay();return w!==0&&w!==6&&!KRX_HOLI[_ymd(dt)];}
+function prevTradeDay(ymd){var dt=new Date(+ymd.slice(0,4),+ymd.slice(4,6)-1,+ymd.slice(6,8));do{dt.setDate(dt.getDate()-1);}while(!_isTd(dt));return _ymd(dt);}
+function tradeDatesBack(last,n){var out=[],cur=last;if(!/^\d{8}$/.test(cur||''))return null;out.unshift(cur);while(out.length<n){cur=prevTradeDay(cur);out.unshift(cur);}return out;}
+// 일봉 각 봉의 날짜(마지막 = 매매일 형성봉)
+function dailyDatesOf(d){
+  var n=d.daily.length, base=d.dailyDates;
+  if(!base||base.length!==n){var last=(d.limitDate&&/^\d{8}$/.test(d.limitDate))?d.limitDate:(/^\d{8}$/.test(d.date||'')?prevTradeDay(d.date):null);base=last?tradeDatesBack(last,n):null;}
+  return base?base.concat([d.date||'']):null;
+}
+function baseLine(day){
+  var bd=day.limitDate||((/^\d{8}$/.test(day.date||''))?prevTradeDay(day.date):'');
+  return (bd?'기준봉 <b>'+fmtDate(bd)+'</b>'+(day.limitPct?' (+'+(+day.limitPct).toFixed(1)+'%)':'')+' → ':'')+'매매일 <b>'+fmtDate(day.date||'')+'</b>';
+}
 function renderCases(filter,dateFilter){
  var lib=window.CASE_LIB,box=$('#case-list');
  if(!lib||!lib.manifest){box.innerHTML='<div style="color:var(--muted);padding:20px;text-align:center">케이스 데이터를 불러오지 못했습니다.</div>';return;}
@@ -1531,11 +1552,12 @@ function applyNextDay(found){            // 동기: 다음 날 분봉을 기존 
   d.dayDates=(d.dayDates||[d.date]).concat([found.date||'']);
   d.curStart=start; d.curOpen=+(found.open||nmin1[0].o);
   d.date=found.date||d.date; d.prevClose=+(found.prevClose||d.prevClose); d.limitPct=+(found.limitPct||0);
+  d.limitDate=(found.limitDate||'').toString(); d.dailyDates=(found.dailyDates&&found.dailyDates.length===d.daily.length)?found.dailyDates.slice():null;
   if(found.mktcapEok)d.mktcapEok=found.mktcapEok;
   S.maxMin=d.min1.length-1; S.finished=false;
   _pfKey=null; _pfData=null; _pfReadyKey=null;
   $('#overlay').hidden=true;
-  $('#h-reason').innerHTML='<b style="color:var(--sup)">실데이터</b> · '+fmtDate(d.date||'')+' · 연속 진행';
+  $('#h-reason').innerHTML='<b style="color:var(--sup)">실데이터</b> · 매매일 '+fmtDate(d.date||'')+' · 연속 진행';
   $('#h-cap').textContent='시총 '+capText(d.mktcapEok||0);
   render(); draw(); toast(fmtDate(found.date||'')+' 이어서 연속 진행');
   return true;
@@ -1582,7 +1604,7 @@ if(window.matchMedia)window.matchMedia('(prefers-color-scheme:dark)').addEventLi
 
 function boot(data){
  renderStat(); fit(); syncFromServer();
- if(data&&data.S&&data.S.day&&data.S.day.min1){S=data.S;speed=data.speed||260;curMode=S.mode||'manual';if(S.i==null)S.i=(S.idx!=null?S.idx*3+2:8);if(S.maxMin==null)S.maxMin=S.day.N*3-1;if(!S.eng)S.eng={ratios:[.1,.2,.4],bought:[false,false,false],shake:[null,null,null],peak:0,armed:false,done:true,lines:[0,0,0]};document.querySelectorAll('.md').forEach(function(x){x.classList.toggle('on',x.getAttribute('data-mode')===curMode)});$('#h-name').textContent=S.day.name;$('#h-code').textContent=S.day.code;$('#h-cap').textContent='시총 '+capText(S.day.mktcapEok||0);$('#h-reason').innerHTML=S.day.direct?('<b style="color:var(--sup)">실데이터</b>'+(S.day.date?' · '+fmtDate(S.day.date):'')+(S.day.reason?' · '+S.day.reason:'')):('전일 <b>상한가(+30%)</b> · 사유: '+(S.day.reason||''));$('#q-prev').textContent=won(S.day.prevClose);$('#q-open').textContent=won(S.day.open);render();draw();if(S.finished)showResult((S.cash-START)/START*100);}
+ if(data&&data.S&&data.S.day&&data.S.day.min1){S=data.S;speed=data.speed||260;curMode=S.mode||'manual';if(S.i==null)S.i=(S.idx!=null?S.idx*3+2:8);if(S.maxMin==null)S.maxMin=S.day.N*3-1;if(!S.eng)S.eng={ratios:[.1,.2,.4],bought:[false,false,false],shake:[null,null,null],peak:0,armed:false,done:true,lines:[0,0,0]};document.querySelectorAll('.md').forEach(function(x){x.classList.toggle('on',x.getAttribute('data-mode')===curMode)});$('#h-name').textContent=S.day.name;$('#h-code').textContent=S.day.code;$('#h-cap').textContent='시총 '+capText(S.day.mktcapEok||0);$('#h-reason').innerHTML=(S.day.direct||S.day.real)?('<b style="color:var(--sup)">실데이터</b> · '+baseLine(S.day)+(S.day.reason?' · '+S.day.reason:'')):('전일 <b>상한가(+30%)</b> · 사유: '+(S.day.reason||''));$('#q-prev').textContent=won(S.day.prevClose);$('#q-open').textContent=won(S.day.open);render();draw();if(S.finished)showResult((S.cash-START)/START*100);}
  else newRound();
 }
 if(window.claude&&window.claude.hot){window.claude.hot.snapshot(function(){return {S:S,speed:speed}});window.claude.hot.ready?window.claude.hot.ready(boot):boot(window.claude.hot.data||{});}
