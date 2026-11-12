@@ -1540,12 +1540,27 @@ $('#b-sell-all').addEventListener('click',function(){sell(1,'직접 매도(전�
 $('#r-next').addEventListener('click',function(){ $('#overlay').hidden=true; openCases(); });
 var rolling=false, _pfKey=null, _pfData=null, _pfReadyKey=null;
 function _dayKey(){ return (S&&S.day)?(S.day.code+'@'+digits(S.day.date)):''; }
-async function fetchNextDay(){   // 현재 S.day 기준 다음 거래일 케이스 조회
-  var d=S&&S.day, kc=kwCfg();
-  if(!d||!d.code||!kc.ak||!kc.sk||!d.direct) return null;
+var _nextWhy='';   // 다음날 못 받은 이유: 'nokey' | 'kwfail' | 'future'
+async function fetchNextDay(){   // 현재 S.day 기준 다음 거래일 케이스 조회: ① 내장 데이터 → ② 키움 API
+  _nextWhy='';
+  var d=S&&S.day; if(!d||!d.code) return null;
   var base=digits(d.date); if(base.length!==8) return null;
-  var found=null,cur=base; for(var k=0;k<8&&!found;k++){ cur=kwDateMinus(cur,-1); try{ found=await kwBuildCase(d.code,cur); }catch(e){ found=null; } }
+  var lib=window.CASE_LIB, nx=nextTradeDay(base);
+  if(lib&&lib.cases){ var c=lib.cases[nx+'_'+d.code]; if(c&&c.min1&&c.min1.length) return c; }
+  var kc=kwCfg(); if(!kc.ak||!kc.sk){ _nextWhy='nokey'; return null; }
+  var today=_ymd(new Date()), found=null, cur=base, lastErr='';
+  for(var k=0;k<4&&!found;k++){
+    cur=nextTradeDay(cur); if(cur>today){ if(!lastErr)_nextWhy='future'; break; }
+    try{ found=await kwBuildCase(d.code,cur); }catch(e){ found=null; lastErr=(e&&e.message)||'조회 실패'; }
+  }
+  if(!found&&!_nextWhy){ _nextWhy='kwfail'; if(lastErr)console.warn('키움 다음날 조회 실패:',lastErr); }
   return found;
+}
+function noNextDayMsg(){
+  if(_nextWhy==='nokey'){ toast('다음 거래일 데이터가 목록에 없어요 — ⚙️ 키움 API(앱키·시크릿키)를 넣으면 키움에서 받아 이어서 진행해요'); openKwSettings(); }
+  else if(_nextWhy==='future') toast('다음 거래일이 아직 오지 않았어요 (보유·평단 유지). 마감하려면 🏁 매매 마무리.');
+  else if(_nextWhy==='kwfail') toast('키움에서 다음 거래일 데이터를 받지 못했어요(분봉 제공기간·키 확인). 보유·평단 유지 — ▶ 계속으로 다시 시도');
+  else toast('다음 거래일 데이터가 없어 여기서 멈춰요 (보유·평단 유지). 마감하려면 🏁 매매 마무리.');
 }
 function prefetchNext(){                 // 다음 거래일을 미리 받아둔다(끊김 없는 롤오버)
   var key=_dayKey(); if(!key||_pfKey===key) return;
@@ -1587,10 +1602,10 @@ async function rollDay(resume){          // 선반입 미완 시 비동기 폴�
   if(rolling)return; rolling=true; stop();
   var found=null;
   if(_pfData && _pfReadyKey===_dayKey()) found=_pfData;
-  if(!found){ try{ found=await fetchNextDay(); }catch(e){ found=null; } }
+  if(!found){ if(kwCfg().ak)toast('다음 거래일 데이터 받는 중… (키움)'); try{ found=await fetchNextDay(); }catch(e){ found=null; } }
   rolling=false;
   var ok=found?applyNextDay(found):false;
-  if(!ok){ stop(); toast('다음 거래일 데이터가 없어 여기서 멈춰요 (보유·평단 유지). 마감하려면 🏁 매매 마무리.'); return; }   // 청산하지 않음
+  if(!ok){ stop(); _pfKey=null; noNextDayMsg(); return; }   // 청산하지 않음 · 다음 시도 때 다시 조회
   if(resume) play();
 }
 async function continueNextDay(){ stop(); var found=null; try{ found=await fetchNextDay(); }catch(e){ found=null; } if(found&&applyNextDay(found)){ play(); } else { $('#overlay').hidden=true; openCases(); } }
