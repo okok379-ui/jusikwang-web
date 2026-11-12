@@ -321,6 +321,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
       <div class="rstat"><div class="k">이 종목 패턴</div><div class="v" id="r-pat" style="font-family:var(--sans);font-size:12.5px">—</div></div>
     </div>
     <div id="r-recent"></div>
+    <button class="play" id="r-review" style="width:100%;margin-bottom:9px;justify-content:center">🔍 차트로 복기하기</button>
     <button class="btn ghost" id="r-ideal-view" style="width:100%;margin-bottom:9px">📖 교과서 매매 보기</button>
     <button class="play" id="r-continue" hidden style="width:100%;margin-bottom:9px;justify-content:center;background:var(--sup);color:#fff">▶ 다음 날 계속 ▸</button>
     <div class="modal-btns">
@@ -1046,6 +1047,7 @@ function candlePanel(bars,rev,R,opts){
      ctx.fillStyle=color;ctx.globalAlpha=.92;roundRect(bx,by,tw,th,3);ctx.fill();ctx.globalAlpha=1;
      ctx.fillStyle='#fff';ctx.textBaseline='middle';ctx.fillText(full,bx+tw/2,by+th/2+0.5);}
  });
+ if(opts.vline!=null&&opts.vline>=winStart&&opts.vline<rev){var vx=X(opts.vline);ctx.save();ctx.setLineDash([4,3]);ctx.strokeStyle='#6b7280';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(vx,R.y);ctx.lineTo(vx,R.y+R.h);ctx.stroke();ctx.restore();ctx.fillStyle='#6b7280';ctx.font='bold 10px IBM Plex Sans KR,sans-serif';ctx.textAlign='left';ctx.fillText('🏁 마무리',vx+4,R.y+22);}
  drawUserLines(opts.label,R,lo,hi,X,Y,winStart,rev);
  ctx.restore();
  if(rev>0){var lb=bars[rev-1],ly=Y(lb.c),ref=opts.prevClose!=null?opts.prevClose:lb.o,lcol=lb.c>=ref?C.up:C.down;ctx.fillStyle=lcol;ctx.fillRect(R.x+R.w,ly-7,GUT-2,14);ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='9px IBM Plex Mono,monospace';ctx.fillText(fmt(lb.c),R.x+R.w+(GUT-2)/2,ly);}
@@ -1095,12 +1097,12 @@ function draw(){
  var y=2;
  // 1분봉
  var w1=winOf(mRev,120,zoom1);
- candlePanel(d.min1,mRev,{x:x0,y:y,w:w,h:candleH},{label:'1분봉',grid:2,maxCW:8,winStart:w1.winStart,slots:w1.slots,levels:baseLevels(false,true),ma:maSeeded(d.min1,mRev,10,d.prevClose),maLabel:'10',phase:true,markers:S.trades.map(function(t){return {i:t.m,side:t.side}}),prevClose:d.prevClose});
+ candlePanel(d.min1,mRev,{x:x0,y:y,w:w,h:candleH},{label:'1분봉',grid:2,maxCW:8,winStart:w1.winStart,slots:w1.slots,levels:baseLevels(false,true),ma:maSeeded(d.min1,mRev,10,d.prevClose),maLabel:'10',phase:true,markers:S.trades.map(function(t){return {i:t.m,side:t.side}}),prevClose:d.prevClose,vline:(S.reviewEnd!=null?S.reviewEnd:null)});
  volPanel(d.min1,mRev,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:8,winStart:w1.winStart,slots:w1.slots,perHour:60,tick:15});
  y+=unitH+uGap;
  // 3분봉
  var w3=winOf(tRev,60,zoom3);
- candlePanel(bars3,tRev,{x:x0,y:y,w:w,h:candleH},{label:'3분봉',grid:2,maxCW:14,winStart:w3.winStart,slots:w3.slots,levels:baseLevels(true,true),ma:maSeeded(bars3,tRev,10,d.prevClose),maLabel:'10',phase:true,phaseMarks:true,autosr:true,markers:S.trades.map(function(t){return {i:Math.floor(t.m/3),side:t.side,px:t.price,tag:t.tag}}),labelMk:true,ideal:true,prevClose:d.prevClose});
+ candlePanel(bars3,tRev,{x:x0,y:y,w:w,h:candleH},{label:'3분봉',grid:2,maxCW:14,winStart:w3.winStart,slots:w3.slots,levels:baseLevels(true,true),ma:maSeeded(bars3,tRev,10,d.prevClose),maLabel:'10',phase:true,phaseMarks:true,autosr:true,markers:S.trades.map(function(t){return {i:Math.floor(t.m/3),side:t.side,px:t.price,tag:t.tag}}),labelMk:true,ideal:true,prevClose:d.prevClose,vline:(S.reviewEnd!=null?Math.floor(S.reviewEnd/3):null)});
  volPanel(bars3,tRev,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:14,winStart:w3.winStart,slots:w3.slots,perHour:20,tick:30});
  y+=unitH+uGap;
  // 일봉 + 오늘 형성중 봉 + 10일선
@@ -1605,6 +1607,18 @@ $('#r-ideal-view').addEventListener('click',function(){
     toast('이 종목은 매수 조건(3분봉 10이평 상향 돌파)이 나오지 않았습니다 — 관망 자리였어요.');
   }
 });
+// 복기: 결과창을 닫고 내 매수·매도 위치 + 마무리 이후 흐름까지 전체 차트로 보기
+function enterReview(){
+  if(!S||!S.finished)return;
+  if(S.reviewEnd==null)S.reviewEnd=S.i;            // 마무리한 시점
+  S.i=S.maxMin;                                       // 그날 남은 흐름까지 공개
+  var tRev=Math.floor(S.i/3)+1;
+  zoom1=Math.min(1,120/(S.i+1)); zoom3=Math.min(1,60/tRev); zoomD=1;   // 하루 전체가 보이게
+  $('#overlay').hidden=true; $('#back-result').hidden=false;
+  render(); draw();
+  toast('복기 모드 · ▲매수 ▼매도 위치와 회색 점선(마무리 시점) 이후 흐름을 확인하세요. 휠로 확대/축소');
+}
+$('#r-review').addEventListener('click',enterReview);
 $('#back-result').addEventListener('click',function(){ $('#back-result').hidden=true; $('#overlay').hidden=false; });
 document.querySelectorAll('.quick').forEach(function(q){q.addEventListener('click',function(){var a=q.getAttribute('data-amt');if(a==='max')setAmt(S?Math.floor(S.cash):0);else setAmt(parseInt(a,10));});});
 document.querySelectorAll('.sp').forEach(function(s){s.addEventListener('click',function(){document.querySelectorAll('.sp').forEach(function(x){x.classList.remove('on')});s.classList.add('on');speed=parseInt(s.getAttribute('data-sp'),10);if(S&&S.playing){clearInterval(timer);timer=setInterval(tick,speed);}});});
