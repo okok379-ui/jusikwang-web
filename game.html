@@ -260,12 +260,12 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
           <label class="bp-amt">1회 매수금 <input type="number" id="bp-amount" step="100000"> 원 <span class="bp-eq">· 전 차수 균등</span></label>
           <div class="sp-cols"><span></span><span>하락률(%)</span></div>
           <div id="bp-rows"></div>
-          <label class="bp-reentry"><input type="checkbox" id="bp-reenter"> 전량 매도 후 1차 자동 재진입</label>
+          <label class="bp-reentry"><input type="checkbox" id="bp-reenter"> 1차 자동 진입 (다음날 시가 · 전량 매도 후엔 다음 거래일 시가)</label>
           <div class="sp-foot">
             <button id="bp-save">저장</button>
             <span id="bp-msg"></span>
           </div>
-          <div class="sp-hint"><b>최초 매수가</b> 기준 하락률마다 <b>1회 매수금</b>으로 균등 매수(수동). 재진입 시 전량매도 후 1회 매수금으로 1차 재매수.</div>
+          <div class="sp-hint"><b>최초 매수가</b> 기준 하락률마다 <b>1회 매수금</b>으로 균등 매수(수동). 자동 진입을 켜면 진행일 장 시작에 1차 매수, 전량 매도한 날은 쉬고 다음 거래일 시가에 다시 진입.</div>
         </div>
       </div>
     </div>
@@ -707,9 +707,11 @@ var buyPlan={on:false,amount:1000000,rows:[{drop:3},{drop:6},{drop:9},{drop:12},
 function checkReentry(){
   if(!buyPlan.reenter||!S||S.finished||curMode!=='manual')return;
   if(S.shares>0)return;
-  var lastT=S.trades[S.trades.length-1]; if(lastT&&lastT.m===S.i)return;   // 전량 매도한 그 봉에선 재진입 안함(다음 봉부터)
+  // 진행일(기준봉 다음날) 장 시작에 1차 진입. 전량 매도한 날은 더 사지 않고 다음 거래일 시작에 재진입
+  var cs=(S.day&&S.day.curStart)||0;
+  for(var i=S.trades.length-1;i>=0;i--){ if(S.trades[i].m>=cs) return; else break; }
   var amt=buyPlan.amount||1000000; if(S.cash<amt)return;
-  buy(amt,'전량매도 후 재진입(1차)');   // bpBase 재설정, 분할매수·분할매도 재무장
+  buy(amt,S.trades.length?'다음날 시가 재진입(1차)':'진행일 시가 진입(1차)');   // bpBase 재설정, 분할매수·분할매도 재무장
 }
 function checkBuyPlan(){
   if(!buyPlan.on||!S||S.finished||curMode!=='manual')return;
