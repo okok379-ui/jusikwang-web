@@ -106,6 +106,9 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
 .quick:hover{color:var(--fg);border-color:var(--muted)}
 .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .btn{border:1px solid transparent;border-radius:10px;padding:12px;font-size:14px;font-weight:700;color:#fff}
+.btn.ask-end{background:#fff;color:#1f2937;border:1px solid #cbd5e1;cursor:pointer}.btn.ask-end:hover{background:#f1f5f9;border-color:#94a3b8}.btn.ask-end:disabled{color:#94a3b8;background:#f8fafc}
+#ask-bar{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:60;display:flex;gap:8px;align-items:center;background:#fff;border:1px solid #cbd5e1;border-radius:12px;padding:8px 10px;box-shadow:0 6px 24px rgba(15,23,42,.18);font-size:13px;font-weight:700;color:#1f2937}
+#ask-bar button{border:none;border-radius:9px;padding:9px 14px;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer}
 .btn:disabled{opacity:.4;cursor:not-allowed}
 .buy{background:var(--up)} .sell{background:var(--down)}
 .btn.ghost{background:transparent;border-color:var(--border);color:var(--fg);font-weight:600}
@@ -400,6 +403,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
   </div>
 </div>
 
+<div id="ask-bar" hidden><span>🎉 익절 완료 · 복기 중</span><button id="askb-cont" style="background:var(--accent);color:var(--accent-ink)">▶ 계속 진행</button><button id="askb-end" style="background:#fff;color:#1f2937;border:1px solid #cbd5e1">🏁 매매 마무리</button></div>
 <div class="overlay" id="ask-overlay" hidden>
   <div class="modal" style="max-width:380px;text-align:center">
     <div style="font-size:34px;line-height:1">🎉</div>
@@ -408,8 +412,9 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
     <div style="font-size:13px;color:var(--muted);margin-bottom:12px">매매를 계속 진행할까요, 여기서 마무리할까요?</div>
     <div style="display:flex;gap:8px">
       <button id="ask-cont" class="btn" style="flex:1;background:var(--accent);color:var(--accent-ink);border:none;font-weight:800">▶ 계속 진행</button>
-      <button id="ask-end" class="btn" style="flex:1;font-weight:800">🏁 매매 마무리</button>
+      <button id="ask-end" class="btn ask-end" style="flex:1;font-weight:800">🏁 매매 마무리</button>
     </div>
+    <button id="ask-chart" class="btn ask-end" style="width:100%;margin-top:8px;font-weight:700">📈 차트로 돌아가기 (복기)</button>
   </div>
 </div>
 
@@ -571,7 +576,7 @@ function startWithDay(day,seed){
  S={seed:(seed==null?-1:seed),day:day,ideal:idealStats(day.bars),rule:ruleTrade(day),i:0,maxMin:day.N*3-1,cash:START,shares:0,avg:0,realized:0,trades:[],playing:false,finished:false,mode:curMode,peakShares:0,spDone:[false,false,false],bpBase:null,bpDone:[]};
  var gj=day.daily[day.daily.length-1],body=gj.c-gj.o;
  S.eng={ratios:[.3,.3,.4],bought:[false,false,false],shake:[null,null,null],peak:0,armed:false,done:false,lines:[roundTick(gj.c-body*0.5),roundTick(gj.c-body*0.75),roundTick(gj.o)],stop:roundTick(gj.l)};
- stop(); $('#overlay').hidden=true; var br=$('#back-result');if(br)br.hidden=true; updateModeUI(); userLines=[]; pendingPt=null;
+ stop(); $('#overlay').hidden=true; var br=$('#back-result');if(br)br.hidden=true; var ab=$('#ask-bar');if(ab)ab.hidden=true; $('#ask-overlay').hidden=true; updateModeUI(); userLines=[]; pendingPt=null;
  $('#h-name').textContent=day.name; $('#h-code').textContent=day.code;
  $('#h-cap').textContent='시총 '+capText(day.mktcapEok);
  $('#h-reason').innerHTML=day.direct
@@ -587,7 +592,9 @@ function newRound(seed){
 }
 function bar3from(min1){var b=[],g,N=Math.floor(min1.length/3);for(g=0;g<N;g++){var a=min1[3*g],m=min1[3*g+1],c=min1[3*g+2];b.push({o:a.o,h:Math.max(a.h,m.h,c.h),l:Math.min(a.l,m.l,c.l),c:c.c,v:(a.v||0)+(m.v||0)+(c.v||0)});}return b;}
 function normBar(x){ if(Array.isArray(x))return {o:+x[0],h:+x[1],l:+x[2],c:+x[3],v:+(x[4]||0)}; return {o:+x.o,h:+x.h,l:+x.l,c:+x.c,v:+(x.v||x.volume||0)}; }
+var _lastCase=null;   // 같은 종목 재도전용 원본 케이스
 function loadRealCase(json){
+ _lastCase=json;
  try{
   var j=(typeof json==='string')?JSON.parse(json):json;
   var min1=(j.min1||j.minute||j.m1||[]).map(normBar);
@@ -799,7 +806,7 @@ var _bHist=$('#b-history'); if(_bHist)_bHist.addEventListener('click',function()
 var _hClose=$('#hist-close'); if(_hClose)_hClose.addEventListener('click',function(){$('#hist-overlay').hidden=true;});
 
 /* ---------- playback ---------- */
-function play(){if(S.finished)return;S.playing=true;$('#b-play').innerHTML='❚❚ 일시정지';clearInterval(timer);timer=setInterval(tick,speed);}
+function play(){if(S.finished)return;var ab=$('#ask-bar');if(ab)ab.hidden=true;S.playing=true;$('#b-play').innerHTML='❚❚ 일시정지';clearInterval(timer);timer=setInterval(tick,speed);}
 function stop(){if(!S)return;S.playing=false;clearInterval(timer);timer=null;$('#b-play').innerHTML=(S.i>8?'▶ 계속':'▶ 시작');}
 function toggle(){if(!S)return;S.playing?stop():play();}
 function adv(){ if(S.i>=S.maxMin)return false; S.i++; var g=(S.i%3===2)?Math.floor(S.i/3):-1; engineStep(g); return true; }
@@ -1461,8 +1468,13 @@ $('#b-clearline').addEventListener('click',function(){userLines=[];pendingPt=nul
 $('#b-phase').addEventListener('click',function(){phaseOn=!phaseOn;$('#b-phase').classList.toggle('on',phaseOn);if(S)draw();toast(phaseOn?'구간 표시 ON · 🩷상승(매수) 🩵하락(매도) ⚪지지(관망) — 10이평 기울기 기준':'구간 표시 OFF');});
 $('#b-autosr').addEventListener('click',function(){autoSROn=!autoSROn;$('#b-autosr').classList.toggle('on',autoSROn);if(S)draw();toast(autoSROn?'자동 지지저항 ON · 고점·저점이 반복된 가격대를 표시(초록=지지, 분홍=저항)':'자동 지지저항 OFF');});
 $('#b-finish').addEventListener('click',finishNow);
-$('#ask-cont').addEventListener('click',function(){$('#ask-overlay').hidden=true; if(_askWasPlaying)play();});
-$('#ask-end').addEventListener('click',function(){$('#ask-overlay').hidden=true; finishNow();});
+function askContinue(){$('#ask-overlay').hidden=true;$('#ask-bar').hidden=true; play();}
+function askEnd(){$('#ask-overlay').hidden=true;$('#ask-bar').hidden=true; finishNow();}
+$('#ask-cont').addEventListener('click',askContinue);
+$('#ask-end').addEventListener('click',askEnd);
+$('#ask-chart').addEventListener('click',function(){$('#ask-overlay').hidden=true;$('#ask-bar').hidden=false; toast('차트에서 매수▲·매도▼ 위치를 복기하세요. 다 보면 아래에서 계속 진행 / 매매 마무리');});
+$('#askb-cont').addEventListener('click',askContinue);
+$('#askb-end').addEventListener('click',askEnd);
 $('#b-log').addEventListener('click',openLog);
 $('#b-learn').addEventListener('click',function(){location.href='lesson-sr.html';});
 $('#b-cases').addEventListener('click',openCases);
@@ -1610,7 +1622,11 @@ async function rollDay(resume){          // 선반입 미완 시 비동기 폴�
 }
 async function continueNextDay(){ stop(); var found=null; try{ found=await fetchNextDay(); }catch(e){ found=null; } if(found&&applyNextDay(found)){ play(); } else { $('#overlay').hidden=true; openCases(); } }
 $('#r-continue').addEventListener('click',continueNextDay);
-$('#r-retry').addEventListener('click',function(){newRound(S.seed);});
+$('#r-retry').addEventListener('click',function(){   // 실데이터면 같은 종목·같은 첫 매매일로 처음부터
+  var d=S&&S.day, src=_lastCase;
+  if(d&&d.real&&!src&&window.CASE_LIB){ var k0=((d.dayDates&&d.dayDates[0])||d.date)+'_'+d.code; src=window.CASE_LIB.cases[k0]||null; }
+  if(d&&d.real&&src){ loadRealCase(src); toast('같은 종목 재도전: '+(d.name||'')); } else { newRound(S.seed); }
+});   // 실데이터면 같은 종목·같은 날 처음부터
 $('#case-random').addEventListener('click',function(){ $('#case-overlay').hidden=true; newRound(); });
 $('#r-ideal-view').addEventListener('click',function(){
   if(!S)return;
