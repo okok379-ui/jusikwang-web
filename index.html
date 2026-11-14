@@ -134,6 +134,7 @@ header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 8
 <header><div class="hd">
   <div class="logo">🎮 주식한판</div>
   <div class="sp"></div>
+  <a href="https://open.kakao.com/o/gQJzQZWi" target="_blank" rel="noopener" style="background:#FEE500;color:#191600;font-weight:800;font-size:12.5px;padding:6px 11px;border-radius:999px;text-decoration:none;white-space:nowrap">💬 오픈채팅방</a>
   <span class="plan" id="h-plan">무료</span>
   <span id="h-auth"></span>
 </div></header>
@@ -148,6 +149,8 @@ header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 8
     <div class="ctas">
       <button class="btn primary" id="cta-play">▶ 무료로 연습 시작</button>
       <button class="btn ghost" id="cta-learn">커리큘럼 보기</button>
+      <a class="btn" href="https://open.kakao.com/o/gQJzQZWi" target="_blank" rel="noopener" style="background:#FEE500;color:#191600;border-color:transparent;text-decoration:none">💬 오픈채팅방 입장</a>
+      <a class="btn ghost" href="guide.html" style="text-decoration:none">📸 사용법 보기</a>
     </div>
     <div class="trust">
       <span>누적 연습 <b id="t-plays">0</b>판</span>
@@ -233,7 +236,7 @@ header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 8
   </section>
 
   <div class="foot">
-    <p style="margin:0 0 10px"><a href="manual.html" style="color:var(--accent);font-weight:700;text-decoration:none">📖 사용자 메뉴얼</a> · 게임 사용법·기능 전체 안내</p>
+    <p style="margin:0 0 10px"><a href="guide.html" style="color:var(--accent);font-weight:700;text-decoration:none">📸 화면으로 보는 사용법</a> · <a href="manual.html" style="color:var(--accent);font-weight:700;text-decoration:none">📖 자세한 메뉴얼</a></p>
     가상의 종목·가격 데이터로 매매 원리를 연습하는 교육용 서비스입니다. 특정 종목의 매수·매도를 권유하지 않으며, 실제 투자 수익을 보장하지 않습니다.<br>
     회원가입은 무료이며, 프로는 입금 확인 후 활성화됩니다.
   </div>
@@ -300,8 +303,7 @@ var SB_KEY='sb_publishable_w4-fBKFRRsO3u9ApjO8shQ_KuwW002P';
 var KAKAO_URL='https://open.kakao.com/o/gQJzQZWi';
 var PAY={
   price:'',
-  bank:'○○은행 123-456-7890 (예금주: 홍길동)',
-  kakao:'카카오페이 송금 → 010-0000-0000'
+  bank:'', kakao:''   // 계좌번호는 사이트에 표시하지 않음 — 오픈채팅으로 안내
 };
 function rpc(fn,body){
   return fetch(SB_URL+'/rest/v1/rpc/'+fn,{
@@ -473,9 +475,8 @@ function openPro(){
  m.querySelector('#pay-name').parentNode.style.display='';
  $('#pay-submit').style.display='';
  $('#pro-cancel').textContent='닫기';
- $('#pay-info').innerHTML=(PAY.price?'<b>'+esc(PAY.price)+'</b><br>':'')+'· 계좌입금: '+esc(PAY.bank)+'<br>· 카카오페이: '+esc(PAY.kakao)
-   +'<br><span style="color:var(--muted)">입금 후 아래 신청을 누르면 관리자 확인 뒤 프로가 활성화됩니다.</span>'
-   +'<br>· 문의: <a href="'+KAKAO_URL+'" target="_blank" rel="noopener" style="color:var(--accent);font-weight:700">💬 카카오톡 오픈채팅</a>';
+ $('#pay-info').innerHTML='결제 방법은 <a href="'+KAKAO_URL+'" target="_blank" rel="noopener" style="color:var(--accent);font-weight:700">💬 카카오톡 오픈채팅방</a>에서 안내해 드려요.'
+   +'<br><span style="color:var(--muted)">안내받은 대로 결제한 뒤 아래 신청을 누르면 관리자 확인 뒤 프로가 활성화됩니다.</span>';
  var pn=$('#pay-name'); if(pn)pn.value=(S.user&&S.user.nick)||'';
  m.hidden=false;
 }
@@ -509,5 +510,5 @@ render();
 refreshSession();
 })();
 </script>
-<a href="https://open.kakao.com/o/gQJzQZWi" target="_blank" rel="noopener" id="kakao-fab" aria-label="카카오톡 오픈채팅으로 문의하기" style="position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:70;display:flex;align-items:center;gap:6px;background:#FEE500;color:#191600;font-weight:800;font-size:14px;padding:11px 16px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.18);text-decoration:none;font-family:inherit">💬 문의하기</a>
+<a href="https://open.kakao.com/o/gQJzQZWi" target="_blank" rel="noopener" id="kakao-fab" aria-label="카카오톡 오픈채팅방 입장" style="position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:70;display:flex;align-items:center;gap:6px;background:#FEE500;color:#191600;font-weight:800;font-size:14px;padding:11px 16px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.18);text-decoration:none;font-family:inherit">💬 오픈채팅방 입장</a>
 </body></html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>주식한판 · 화면으로 보는 연습게임 사용법</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f5;--panel:#fff;--panel2:#f2f5f9;--fg:#121820;--muted:#5a6675;--border:#d6dce5;
+  --up:#e03131;--down:#1c64f2;--accent:#b9770a;--accent-ink:#fff;--sup:#0f8f81;--pin:#e11d48;
+  --sans:"IBM Plex Sans KR",system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.top{position:sticky;top:0;z-index:20;background:rgba(238,241,245,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.top .in{max-width:1080px;margin:0 auto;padding:11px 20px;display:flex;align-items:center;gap:12px}
+.top .brand{font-weight:700;font-size:17px}.top .brand small{color:var(--muted);font-weight:500;font-size:13px;margin-left:6px}
+.top .nav{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.top .nav a{border:1px solid var(--border);border-radius:9px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--fg);background:var(--panel)}
+.top .nav a.cta{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.wrap{max-width:1080px;margin:0 auto;padding:26px 20px 90px}
+h1{font-size:30px;margin:0 0 6px;letter-spacing:-.01em}
+.lede{color:var(--muted);font-size:15px;margin:0 0 20px}
+.steps{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 26px;padding:0;list-style:none}
+.steps li{background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:6px 13px;font-size:13px;font-weight:600}
+.steps li a{color:var(--fg)}
+.steps li b{color:var(--accent);margin-right:5px;font-family:var(--mono)}
+.sec{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:22px 24px;margin-bottom:20px;scroll-margin-top:72px;box-shadow:0 1px 2px rgba(20,30,45,.05),0 10px 24px rgba(20,30,45,.05)}
+.sec h2{font-size:21px;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+.sec h2 .no{background:var(--accent);color:#fff;border-radius:9px;font-size:14px;font-family:var(--mono);padding:2px 9px}
+.sec .sub{color:var(--muted);margin:0 0 16px;font-size:14px}
+.shot{margin:12px 0 16px;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--panel2)}
+.shot img{display:block;width:100%;height:auto}
+.shot.narrow{max-width:460px}
+.shot.inline{display:inline-block;vertical-align:top;margin-right:12px}
+.cap{font-size:12.5px;color:var(--muted);margin:-8px 0 14px}
+.two{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:start}
+.two .shot{margin-top:0}
+ol.pins{list-style:none;padding:0;margin:0;counter-reset:p}
+ol.pins li{counter-increment:p;position:relative;padding:7px 0 7px 38px;border-bottom:1px dashed var(--border);font-size:14.5px}
+ol.pins li:last-child{border-bottom:none}
+ol.pins li::before{content:counter(p);position:absolute;left:0;top:7px;width:26px;height:26px;border-radius:50%;background:var(--pin);color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;font-family:var(--mono)}
+ol.pins li b{color:var(--fg)}
+.tip{background:#fff8e8;border:1px solid #f1d9a6;border-radius:11px;padding:11px 14px;font-size:14px;margin:12px 0 0}
+.tip.green{background:#ecfbf7;border-color:#b7e9dc}
+.tip.red{background:#fff0f2;border-color:#fbc7d0}
+kbd{font-family:var(--mono);font-size:12px;border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:0 6px;background:var(--panel2)}
+.k{display:inline-block;background:var(--panel2);border:1px solid var(--border);border-radius:7px;padding:0 7px;font-weight:700;font-size:13px;white-space:nowrap}
+table.t{width:100%;border-collapse:collapse;font-size:14px;margin:6px 0}
+table.t th,table.t td{border-bottom:1px solid var(--border);padding:8px 8px;text-align:left;vertical-align:top}
+table.t th{background:var(--panel2);font-size:12.5px;color:var(--muted)}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0 4px;font-size:13.5px;font-weight:700}
+.flow span{background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:6px 10px}
+.flow i{color:var(--muted);font-style:normal}
+footer{color:var(--muted);font-size:12.5px;text-align:center;margin-top:30px}
+@media(max-width:760px){
+  .two{grid-template-columns:1fr}
+  h1{font-size:24px}.sec{padding:16px 15px}
+  .top .nav a:not(.cta){display:none}
+}
+</style>
+</head>
+<body>
+<div class="top"><div class="in">
+  <div class="brand">🎮 주식한판 <small>화면으로 보는 사용법</small></div>
+  <div class="nav">
+    <a href="index.html">🏠 처음으로</a>
+    <a href="manual.html">📖 자세한 메뉴얼</a>
+    <a class="cta" href="game.html">▶ 연습게임 시작</a>
+  </div>
+</div></div>
+
+<div class="wrap">
+  <h1>화면으로 보는 연습게임 사용법</h1>
+  <p class="lede">20% 이상 오른 관심종목의 <b>다음 거래일</b> 차트를 1분씩 재생하면서, 직접 사고팔아 보는 연습게임입니다. 아래 순서대로 따라 하면 5분 안에 첫 판을 할 수 있어요.</p>
+  <ul class="steps">
+    <li><a href="#s1"><b>1</b>화면 구성</a></li>
+    <li><a href="#s2"><b>2</b>종목 고르기</a></li>
+    <li><a href="#s3"><b>3</b>재생·조작</a></li>
+    <li><a href="#s4"><b>4</b>직접 매매(수동)</a></li>
+    <li><a href="#s5"><b>5</b>규칙 매매(자동)</a></li>
+    <li><a href="#s6"><b>6</b>익절 완료</a></li>
+    <li><a href="#s7"><b>7</b>마무리·복기</a></li>
+    <li><a href="#s8"><b>8</b>차트 도구</a></li>
+    <li><a href="#s9"><b>9</b>핸드폰</a></li>
+  </ul>
+
+  <!-- 1 -->
+  <section class="sec" id="s1">
+    <h2><span class="no">1</span>화면 구성</h2>
+    <p class="sub">왼쪽은 차트, 오른쪽은 시세·내 계좌·주문, 아래는 조작 버튼이에요.</p>
+    <div class="shot"><img src="guide/01_overview.jpg" alt="게임 전체 화면에 번호를 붙인 그림" loading="lazy"></div>
+    <ol class="pins">
+      <li><b>종목·날짜</b> — 종목명과 <b>기준봉 날짜(검색된 날) → 매매일</b>. 매매는 항상 기준봉 다음 거래일에 해요.</li>
+      <li><b>1분봉</b> — 가장 촘촘한 차트. 보라색 선은 10이평, 주황 점선은 전일 종가.</li>
+      <li><b>3분봉</b> — 흐름을 보기 좋은 차트. 내 매수(▲)·매도(▼) 위치와 이유가 표시돼요.</li>
+      <li><b>일봉</b> — 최근 한 달 흐름과 날짜. 맨 오른쪽 주황 날짜가 오늘(매매일) 봉이에요.</li>
+      <li><b>현재가</b> — 전일 대비·시가 대비 등락률과 현재 시각.</li>
+      <li><b>내 계좌</b> — 평단가·보유수량·평가손익·실현손익·현금·총자산·<b>현재 수익률(평단 대비)</b>.</li>
+      <li><b>주문</b> — 매수금액을 고르고 <span class="k">매수</span> <span class="k">추가매수</span> <span class="k">절반 매도</span> <span class="k">전량 매도</span>.</li>
+      <li><b>자동 규칙 설정</b> — 분할 매도 목표, 그 아래 분할매수 설정(스크롤).</li>
+      <li><b>조작 버튼</b> — 재생, 1분씩 넘기기, 매매 마무리, 종목 선택 등.</li>
+    </ol>
+    <div class="tip">시작 자금은 <b>가상 1,000만 원</b>이에요. 실제 돈은 전혀 들지 않아요.</div>
+  </section>
+
+  <!-- 2 -->
+  <section class="sec" id="s2">
+    <h2><span class="no">2</span>종목 고르기</h2>
+    <p class="sub">아래 조작 버튼의 <span class="k">📅 종목 선택</span>을 누르면 이 창이 열려요.</p>
+    <div class="two">
+      <div class="shot narrow"><img src="guide/02_cases.jpg" alt="종목 선택 창" loading="lazy"></div>
+      <div>
+        <ol class="pins">
+          <li><b>날짜 = 기준봉(검색된) 날짜</b>예요. 매매는 그 다음 거래일 차트로 해요.</li>
+          <li><b>종목명·코드와 날짜</b>를 넣을 수 있어요. 비워두면 전체 목록이 보여요.</li>
+          <li><span class="k">▶ 입력한 종목·날짜로 매매 시작</span> — 입력한 종목으로 바로 시작.</li>
+          <li><span class="k">🎲 랜덤 종목으로 연습</span> — 아무 종목이나 골라 줘요. 감 잡기에 좋아요.</li>
+          <li><span class="k">⚙️ 키움 API 설정</span> — 목록에 없는 종목·날짜를 키움에서 받아올 때만 필요해요(선택).</li>
+          <li><b>목록</b> — 기준봉 날짜별로 묶여 있고 <b>→ 매매일</b>이 함께 보여요. 종목을 누르면 바로 시작!</li>
+        </ol>
+        <div class="tip green">2026년 1월~11월에 +20% 이상 오른 <b>실제 종목 500여 개</b>가 들어 있어요.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="sec" id="s3">
+    <h2><span class="no">3</span>재생·조작 버튼</h2>
+    <p class="sub">차트는 장 시작부터 1분씩 흘러가요. 원하는 속도로 재생하거나 한 칸씩 넘겨 보세요.</p>
+    <div class="shot"><img src="guide/04_playbar.jpg" alt="하단 조작 버튼" loading="lazy"></div>
+    <ol class="pins">
+      <li><span class="k">▶ 시작 / 계속</span> — 재생·일시정지. 키보드 <kbd>Space</kbd>.</li>
+      <li><span class="k">다음 1분봉 ▸</span> — 한 칸(1분)씩 넘겨요. 신중하게 볼 때.</li>
+      <li><span class="k">🏁 매매 마무리</span> — 이번 판을 끝내고 결과를 봐요.</li>
+      <li><span class="k">📅 종목 선택</span> — 다른 종목으로 바꿔요.</li>
+      <li><span class="k">📒 거래내역</span> — 지금까지 사고판 기록(날짜·시각·가격·이유).</li>
+      <li><span class="k">✏️ 지지저항선 긋기</span> / 수평선 / 추세선 / 선 지우기 — 차트에 직접 선 긋기.</li>
+      <li><span class="k">수동</span> <span class="k">자동</span> — 내가 직접 매매할지, 규칙대로 자동 매매할지(4·5번 참고).</li>
+      <li>단축키 — <kbd>B</kbd> 매수, <kbd>S</kbd> 전량 매도.</li>
+      <li><span class="k">➖ 100% ➕</span> 확대·축소, <span class="k">◀ ▶</span> 이전/다음 시간 보기.</li>
+      <li><span class="k">0.5× 1× 2× 4×</span> — 재생 속도.</li>
+    </ol>
+    <div class="tip">장이 끝나도 멈추지 않아요. <b>보유 수량·평단을 그대로 들고 다음 거래일 차트로 이어서</b> 진행돼요. 그만하려면 🏁 매매 마무리.</div>
+  </section>
+
+  <!-- 4 -->
+  <section class="sec" id="s4">
+    <h2><span class="no">4</span>직접 매매하기 (수동 모드)</h2>
+    <p class="sub">기본은 <b>수동</b>이에요. 내가 누른 주문만 체결돼요.</p>
+    <div class="two">
+      <div class="shot narrow" style="max-width:330px"><img src="guide/03_order.jpg" alt="시세·계좌·주문 패널" loading="lazy"></div>
+      <div>
+        <div class="flow"><span>① 매수금액 고르기</span><i>→</i><span>② 매수</span><i>→</i><span>③ 수익률 보기</span><i>→</i><span>④ 절반/전량 매도</span></div>
+        <ol class="pins" style="margin-top:10px">
+          <li><b>매수금액</b> — <span class="k">100만</span> <span class="k">300만</span> <span class="k">500만</span> <span class="k">최대</span> 중 고르거나 직접 입력.</li>
+          <li><span class="k">매수</span> 또는 <span class="k">추가매수</span> — 현재가로 바로 체결돼요. 차트에 <b style="color:var(--up)">▲매수</b> 표시.</li>
+          <li><b>현재 수익률</b>은 평단가 대비예요. 빨강 = 수익, 파랑 = 손실.</li>
+          <li><span class="k">절반 매도</span> <span class="k">전량 매도</span> — 차트에 <b style="color:var(--down)">▼매도</b> 표시, 실현손익에 반영.</li>
+        </ol>
+        <div class="tip">눌림을 기다렸다가 사고, 정해 둔 목표에서 나눠 파는 연습을 해 보세요. 급등 직후 따라 사면 결과창에서 지적해 줘요.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="sec" id="s5">
+    <h2><span class="no">5</span>규칙대로 자동 매매 (자동 모드)</h2>
+    <p class="sub">규칙을 정해 두고 <span class="k">자동</span>을 누르면 프로그램이 대신 사고팔아요. 내 규칙이 통하는지 검증할 때 좋아요.</p>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start">
+      <div><div class="shot inline" style="max-width:300px"><img src="guide/05_sellplan.jpg" alt="분할 매도 목표 설정" loading="lazy"></div><div class="cap">분할 매도 목표</div></div>
+      <div><div class="shot inline" style="max-width:300px"><img src="guide/06_buyplan.jpg" alt="분할매수 설정" loading="lazy"></div><div class="cap">분할매수 · 1차 자동 진입</div></div>
+    </div>
+    <table class="t">
+      <tr><th style="width:150px">규칙</th><th>하는 일</th></tr>
+      <tr><td><b>1차 자동 진입</b></td><td>매매일 <b>장 시작</b>에 1회 매수금(기본 100만 원)으로 1차 매수. 전량 매도되면 <b>1분 뒤 다시 1차 매수</b>.</td></tr>
+      <tr><td><b>분할매수 2~9차</b></td><td><b>최초 매수가</b>(평단 아님) 대비 −3%, −6%, … −24%마다 같은 금액씩 추가 매수.</td></tr>
+      <tr><td><b>분할 매도 1~3차</b></td><td>평단 대비 목표 수익률에 닿으면 <b>그때 남은 잔량</b>의 비중(%)만큼 매도. 100% = 전량.</td></tr>
+      <tr><td><b>리셋</b></td><td>어떤 매수든 체결되면 매도 목표는 처음(1차)부터 다시 적용돼요.</td></tr>
+    </table>
+    <div class="flow"><span>① '사용' 체크</span><i>→</i><span>② 숫자 입력</span><i>→</i><span>③ <b>저장</b> 꼭 누르기</span><i>→</i><span>④ 아래 <b>자동</b> 선택</span><i>→</i><span>⑤ ▶ 시작</span></div>
+    <div class="shot"><img src="guide/07_auto.jpg" alt="자동 모드로 분할매수가 체결된 차트" loading="lazy"></div>
+    <div class="cap">자동 모드 예시 — 3분봉에 <b>분할매수 2차(−3%)</b>, <b>3차(−6%)</b>가 체결된 모습. 오른쪽 위에 '🤖 자동 매매 중' 표시.</div>
+    <div class="tip red"><b>저장</b>을 누르지 않으면 바뀐 숫자가 적용되지 않아요. 수동 모드에서는 규칙이 동작하지 않아요.</div>
+  </section>
+
+  <!-- 6 -->
+  <section class="sec" id="s6">
+    <h2><span class="no">6</span>익절 완료 — 계속할까, 마무리할까</h2>
+    <p class="sub">보유 종목이 <b>전량 수익으로 팔리면</b> 재생이 멈추고 물어봐요.</p>
+    <div class="two">
+      <div class="shot narrow" style="max-width:380px"><img src="guide/08_ask.jpg" alt="익절 완료 창" loading="lazy"></div>
+      <div>
+        <table class="t">
+          <tr><td style="width:170px"><span class="k">▶ 계속 진행</span></td><td>그대로 이어서 매매해요(자동 모드면 1분 뒤 1차 재진입).</td></tr>
+          <tr><td><span class="k">🏁 매매 마무리</span></td><td>여기서 끝내고 결과를 봐요.</td></tr>
+          <tr><td><span class="k">📈 차트로 돌아가기</span></td><td>창만 닫고 멈춘 차트에서 방금 매매를 복기해요.</td></tr>
+        </table>
+        <p style="font-size:14px;margin:12px 0 6px">차트로 돌아가면 화면 맨 위에 선택 바가 떠 있어요. 다 보고 고르면 돼요.</p>
+        <div class="shot" style="max-width:380px"><img src="guide/09_askbar.jpg" alt="상단 계속/마무리 바" loading="lazy"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section class="sec" id="s7">
+    <h2><span class="no">7</span>매매 마무리와 복기</h2>
+    <p class="sub"><span class="k">🏁 매매 마무리</span>를 누르면 결과 카드가 나와요.</p>
+    <div class="two">
+      <div class="shot narrow" style="max-width:420px"><img src="guide/11_result.jpg" alt="결과 카드" loading="lazy"></div>
+      <div>
+        <ol class="pins">
+          <li><b>등급과 수익률</b> — 이번 판의 내 수익률과 한 줄 평가.</li>
+          <li><b>교과서 매매와 비교</b> — 원칙대로 했으면 몇 %였는지.</li>
+          <li><span class="k">🔍 차트로 복기하기</span> — 하루 전체 차트에서 내 매수·매도 위치와 <b>마무리 이후 흐름</b>까지 확인.</li>
+          <li><span class="k">📖 교과서 매매 보기</span> — 원칙대로라면 어디서 사고팔았을지 차트에 표시.</li>
+          <li><span class="k">같은 종목 재도전</span> — 같은 종목·같은 날을 처음부터 다시. <span class="k">새 종목 선택 ▸</span> — 다른 종목으로.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="shot"><img src="guide/12_review.jpg" alt="복기 화면" loading="lazy"></div>
+    <div class="cap">복기 화면 — 회색 점선 <b>🏁 마무리</b> 이후의 흐름까지 보여요. 휠로 확대해서 타점을 자세히 보세요. 아래 <span class="k">↩ 결과로 돌아가기</span>로 결과 카드로 돌아가요.</div>
+    <p style="font-size:14px;margin:14px 0 6px"><span class="k">📒 거래내역</span>에서는 언제·얼마에·왜 샀고 팔았는지 한 표로 볼 수 있어요.</p>
+    <div class="shot" style="max-width:780px"><img src="guide/10_history.jpg" alt="거래내역" loading="lazy"></div>
+  </section>
+
+  <!-- 8 -->
+  <section class="sec" id="s8">
+    <h2><span class="no">8</span>차트 도구</h2>
+    <p class="sub">눌림·지지 자리를 찾는 연습을 돕는 보조 기능이에요. 매매는 하지 않고 표시만 해요.</p>
+    <div class="two">
+      <div class="shot" style="max-width:480px;margin-top:0"><img src="guide/13_tools.jpg" alt="구간 표시와 자동 지지저항" loading="lazy"></div>
+      <div>
+        <table class="t">
+          <tr><td style="width:150px"><span class="k">📈 구간 표시</span></td><td>3분봉 10이평 기울기로 배경색 표시. <b style="color:#e06c9f">분홍 = 상승</b>, <b style="color:#2bb3a3">청록 = 하락</b>, 회색 = 횡보. 바뀌는 순간 ▲매수/▼매도 표시.</td></tr>
+          <tr><td><span class="k">🤖 자동 지지저항</span></td><td>고점·저점이 반복된 가격대에 지지·저항선을 자동으로 그려요.</td></tr>
+          <tr><td><span class="k">✏️ 선 긋기</span></td><td>수평선은 한 번, 추세선은 두 점을 눌러 직접 그어요. <span class="k">선 지우기</span>로 전체 삭제.</td></tr>
+          <tr><td><b>확대·축소</b></td><td>차트 위에서 <b>마우스 휠</b> 또는 <span class="k">➖</span> <span class="k">➕</span>. <span class="k">100%</span>로 원래대로.</td></tr>
+          <tr><td><b>이전 시간 보기</b></td><td>차트를 <b>오른쪽으로 끌거나</b> <span class="k">◀</span> 버튼(또는 Shift+휠). 돌아올 땐 <span class="k">⏭ 최신</span>.</td></tr>
+        </table>
+        <div class="shot" style="max-width:300px"><img src="guide/14_pan.jpg" alt="확대·이동 버튼" loading="lazy"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 -->
+  <section class="sec" id="s9">
+    <h2><span class="no">9</span>핸드폰에서</h2>
+    <p class="sub">핸드폰에서도 PC처럼 <b>왼쪽 차트, 오른쪽 시세·내 계좌·주문</b>이 한 화면에 보여요.</p>
+    <div class="two">
+      <div class="shot narrow" style="max-width:300px"><img src="guide/15_mobile.jpg" alt="핸드폰 화면" loading="lazy"></div>
+      <div>
+        <ol class="pins">
+          <li>오른쪽 칸은 <b>위아래로 스크롤</b>하면 분할 매도·분할매수 설정이 나와요.</li>
+          <li>아래 조작 버튼 줄은 <b>옆으로 밀면</b> 나머지 버튼이 나와요.</li>
+          <li>차트를 손가락으로 <b>오른쪽으로 밀면</b> 이전 시간을 볼 수 있어요.</li>
+          <li>화면이 좁게 느껴지면 핸드폰을 <b>가로로</b> 돌려 보세요.</li>
+        </ol>
+        <div class="tip green">궁금한 점은 오른쪽 아래 <b>💬 오픈채팅방 입장</b>(카카오톡)으로 들어와 편하게 물어보세요.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>가상의 연습용 게임이며 실제 투자 판단·수익을 보장하지 않습니다. · <a href="manual.html">자세한 글 메뉴얼</a> · <a href="game.html">연습게임 시작 ▶</a></footer>
+</div>
+<a href="https://open.kakao.com/o/gQJzQZWi" target="_blank" rel="noopener" id="kakao-fab" aria-label="카카오톡 오픈채팅방 입장" style="position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:70;display:flex;align-items:center;gap:6px;background:#FEE500;color:#191600;font-weight:800;font-size:14px;padding:11px 16px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.18);text-decoration:none;font-family:inherit">💬 오픈채팅방 입장</a>
+</body>
+</html>
