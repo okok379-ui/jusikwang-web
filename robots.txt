@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://okok379-ui.github.io/jusikwang-web/sitemap.xml

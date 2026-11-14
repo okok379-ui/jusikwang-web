@@ -1,5 +1,24 @@
-<!doctype html><html data-theme="light"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!doctype html><html lang="ko" data-theme="light"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>주식한판 — 오늘도 주식게임 한 판, 실력은 한 단계 업!</title>
+<meta name="description" content="돈 잃지 않고 실제 차트를 재생하며 기준봉·눌림목 매매를 연습하는 무료 주식 트레이닝 게임. 지지저항·이동평균선·캔들 레슨부터 분할매수·익절·손절 연습까지.">
+<meta name="keywords" content="주식게임,주식 연습,모의투자,차트 연습,기준봉,눌림목,단타 연습,주식 공부,주식한판">
+<link rel="canonical" href="https://okok379-ui.github.io/jusikwang-web/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="주식한판">
+<meta property="og:title" content="주식한판 - 오늘도 주식게임 한 판, 실력은 한 단계 업!">
+<meta property="og:description" content="실제 차트를 재생하며 분할매수·익절·손절을 하루 수십 번 연습. 돈 잃지 않는 주식 트레이닝, 무료로 시작하세요.">
+<meta property="og:url" content="https://okok379-ui.github.io/jusikwang-web/">
+<meta property="og:image" content="https://okok379-ui.github.io/jusikwang-web/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="주식한판 - 오늘도 주식게임 한 판, 실력은 한 단계 업!">
+<meta name="twitter:description" content="실제 차트를 재생하며 분할매수·익절·손절을 연습하는 무료 주식 트레이닝 게임">
+<meta name="twitter:image" content="https://okok379-ui.github.io/jusikwang-web/og.png">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<meta name="theme-color" content="#0e1116">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap">
 <style>
 :root{
@@ -153,7 +172,7 @@ header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 8
       <a class="btn ghost" href="guide.html" style="text-decoration:none">📸 사용법 보기</a>
     </div>
     <div class="trust">
-      <span>누적 연습 <b id="t-plays">0</b>판</span>
+      <span id="t-plays-wrap" hidden>누적 연습 <b id="t-plays">0</b>판</span>
       <span>레슨 <b>2</b>개 공개</span>
       <span>실데이터 케이스 지원</span>
     </div>
@@ -345,6 +364,7 @@ function render(){
    var dk=$('#d-kakao'); if(dk)dk.innerHTML='로그인 계정 · 📱 <b style="color:var(--fg);font-family:var(--mono)">'+esc(fmtPhone(S.user.phone||''))+'</b>';
  }
  $('#t-plays').textContent = S.total||0;
+ var tpw=$('#t-plays-wrap'); if(tpw) tpw.hidden = !(S.total>0);
  // game limit text
  var gl=$('#game-limit');
  if(isPro()) gl.innerHTML='프로 · <b>무제한</b> 연습';
