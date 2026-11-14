@@ -238,7 +238,7 @@ header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 8
   <div class="foot">
     <p style="margin:0 0 10px"><a href="guide.html" style="color:var(--accent);font-weight:700;text-decoration:none">📸 화면으로 보는 사용법</a> · <a href="manual.html" style="color:var(--accent);font-weight:700;text-decoration:none">📖 자세한 메뉴얼</a></p>
     가상의 종목·가격 데이터로 매매 원리를 연습하는 교육용 서비스입니다. 특정 종목의 매수·매도를 권유하지 않으며, 실제 투자 수익을 보장하지 않습니다.<br>
-    회원가입은 무료이며, 프로는 입금 확인 후 활성화됩니다.
+    회원가입은 무료입니다. 프로 이용은 💬 오픈채팅방으로 문의해 주세요.
   </div>
 </div>
 
@@ -266,16 +266,16 @@ header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 8
 <div class="ov" id="pro-ov" hidden>
   <div class="modal">
     <div style="font-size:17px;font-weight:800;margin-bottom:4px">프로 신청 <span class="tag pro">PRO</span></div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:14px">아래 중 한 가지로 입금 후 신청하면, 관리자 확인 후 프로가 활성화됩니다.</div>
+    
     <div id="pay-info" style="background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px 13px;font-size:13px;line-height:1.7;margin-bottom:14px"></div>
-    <div class="fld"><label>입금 수단</label>
+    <div class="fld" style="display:none"><label>입금 수단</label>
       <select id="pay-method" style="width:100%;padding:11px;border-radius:9px;border:1px solid var(--border);background:var(--panel);color:var(--fg);font-family:inherit;font-size:14px">
         <option value="계좌입금">계좌입금</option>
         <option value="카카오페이">카카오페이</option>
       </select>
     </div>
-    <div class="fld"><label>입금자명</label><input id="pay-name" placeholder="입금하신 분 성함"></div>
-    <button class="btn primary block" id="pay-submit" style="margin-top:8px">입금했어요 · 프로 신청</button>
+    <div class="fld" style="display:none"><label>입금자명</label><input id="pay-name" placeholder="입금하신 분 성함"></div>
+    <button class="btn primary block" id="pay-submit" style="margin-top:8px;display:none">프로 신청</button>
     <button class="lnk" id="pro-cancel" style="display:block;margin:10px auto 0">닫기</button>
   </div>
 </div>
@@ -299,7 +299,7 @@ var FREE_PLAYS=3;
 /* ---- Supabase (efree 프로젝트 · 주식왕 전용 테이블) ---- */
 var SB_URL='https://swekuozzyonslloqghpc.supabase.co';
 var SB_KEY='sb_publishable_w4-fBKFRRsO3u9ApjO8shQ_KuwW002P';
-/* 프로 결제 안내 — 실제 계좌/카카오페이 정보로 교체하세요 */
+/* 프로 안내 */
 var KAKAO_URL='https://open.kakao.com/o/gQJzQZWi';
 var PAY={
   price:'',
@@ -465,18 +465,17 @@ function startPractice(){
  var url=GAME+(GAME.indexOf('?')<0?'?':'&')+'lic='+encodeURIComponent(S.lic||'')+'&plan='+(isPro()?'pro':'free');
  location.href=url;
 }
-/* 프로 결제 신청 */
+/* 프로 신청 안내 */
 function openPro(){
  if(!S.user){openLogin();return;}
  if(isPro()){toast('이미 프로 회원입니다 👑');return;}
  var m=$('#pro-ov');
  m.querySelector('.modal>div').textContent='프로 신청';
- m.querySelector('#pay-method').parentNode.style.display='';
- m.querySelector('#pay-name').parentNode.style.display='';
- $('#pay-submit').style.display='';
+ m.querySelector('#pay-method').parentNode.style.display='none';
+ m.querySelector('#pay-name').parentNode.style.display='none';
+ $('#pay-submit').style.display='none';
  $('#pro-cancel').textContent='닫기';
- $('#pay-info').innerHTML='결제 방법은 <a href="'+KAKAO_URL+'" target="_blank" rel="noopener" style="color:var(--accent);font-weight:700">💬 카카오톡 오픈채팅방</a>에서 안내해 드려요.'
-   +'<br><span style="color:var(--muted)">안내받은 대로 결제한 뒤 아래 신청을 누르면 관리자 확인 뒤 프로가 활성화됩니다.</span>';
+ $('#pay-info').innerHTML='프로 이용은 <a href="'+KAKAO_URL+'" target="_blank" rel="noopener" style="color:var(--accent);font-weight:700">💬 카카오톡 오픈채팅방</a>으로 문의해 주세요.';
  var pn=$('#pay-name'); if(pn)pn.value=(S.user&&S.user.nick)||'';
  m.hidden=false;
 }
