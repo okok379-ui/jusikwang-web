@@ -219,8 +219,7 @@ header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 8
       </div>
       <div class="card plan-c hi">
         <div class="nm">프로 <span class="tag pro">🔥 이벤트</span></div>
-        <div class="pr">99,000원<small> / 월</small></div>
-        <div style="font-size:12px;color:var(--accent);font-weight:700;margin:-4px 0 8px">런칭 이벤트 특가</div>
+        <div style="font-size:13px;color:var(--accent);font-weight:700;margin:2px 0 10px">런칭 이벤트 진행 중</div>
         <ul>
           <li>연습 <b>무제한</b></li>
           <li>전 커리큘럼 + 심화 레슨</li>
@@ -299,7 +298,7 @@ var SB_URL='https://swekuozzyonslloqghpc.supabase.co';
 var SB_KEY='sb_publishable_w4-fBKFRRsO3u9ApjO8shQ_KuwW002P';
 /* 프로 결제 안내 — 실제 계좌/카카오페이 정보로 교체하세요 */
 var PAY={
-  price:'99,000원 / 월 (런칭 이벤트가)',
+  price:'',
   bank:'○○은행 123-456-7890 (예금주: 홍길동)',
   kakao:'카카오페이 송금 → 010-0000-0000'
 };
@@ -473,7 +472,7 @@ function openPro(){
  m.querySelector('#pay-name').parentNode.style.display='';
  $('#pay-submit').style.display='';
  $('#pro-cancel').textContent='닫기';
- $('#pay-info').innerHTML='<b>'+esc(PAY.price)+'</b><br>· 계좌입금: '+esc(PAY.bank)+'<br>· 카카오페이: '+esc(PAY.kakao)
+ $('#pay-info').innerHTML=(PAY.price?'<b>'+esc(PAY.price)+'</b><br>':'')+'· 계좌입금: '+esc(PAY.bank)+'<br>· 카카오페이: '+esc(PAY.kakao)
    +'<br><span style="color:var(--muted)">입금 후 아래 신청을 누르면 관리자 확인 뒤 프로가 활성화됩니다.</span>';
  var pn=$('#pay-name'); if(pn)pn.value=(S.user&&S.user.nick)||'';
  m.hidden=false;

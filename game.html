@@ -114,6 +114,7 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px so
 .chart-sub b{color:var(--up)}
 .chart-wrap{position:relative;width:100%;height:clamp(540px,78vh,720px)}
 canvas{width:100%;height:100%;display:block;border-radius:8px}
+#cv{touch-action:pan-y}
 
 .side{display:flex;flex-direction:column;gap:12px;overflow-y:auto}
 .side::-webkit-scrollbar{width:7px}.side::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
@@ -139,6 +140,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
 .quick:hover{color:var(--fg);border-color:var(--muted)}
 .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .btn{border:1px solid transparent;border-radius:10px;padding:12px;font-size:14px;font-weight:700;color:#fff}
+#hist-body th,#hist-body td{white-space:nowrap}#hist-body td:last-child{white-space:normal;min-width:120px}
 .btn.ask-end{background:#fff;color:#1f2937;border:1px solid #cbd5e1;cursor:pointer}.btn.ask-end:hover{background:#f1f5f9;border-color:#94a3b8}.btn.ask-end:disabled{color:#94a3b8;background:#f8fafc}
 #ask-bar{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:60;display:flex;gap:8px;align-items:center;background:#fff;border:1px solid #cbd5e1;border-radius:12px;padding:8px 10px;box-shadow:0 6px 24px rgba(15,23,42,.18);font-size:13px;font-weight:700;color:#1f2937}
 #ask-bar button{border:none;border-radius:9px;padding:9px 14px;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer}
@@ -296,7 +298,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
           <label class="bp-amt">1회 매수금 <input type="number" id="bp-amount" step="100000"> 원 <span class="bp-eq">· 전 차수 균등</span></label>
           <div class="sp-cols"><span></span><span>하락률(%)</span></div>
           <div id="bp-rows"></div>
-          <label class="bp-reentry"><input type="checkbox" id="bp-reenter"> 1차 자동 진입 (다음날 시가 · 전량 매도 후 1분 뒤 재진입)</label>
+          <label class="bp-reentry"><input type="checkbox" id="bp-reenter"> 1차 자동 진입 (매매일 장 시작 · 전량 매도 후 1분 뒤 재진입)</label>
           <div class="sp-foot">
             <button id="bp-save">저장</button>
             <span id="bp-msg"></span>
@@ -328,6 +330,9 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
       <button class="sp" id="z-out" title="축소(긴 기간)">➖</button>
       <button class="sp" id="z-reset" style="font-size:10.5px">100%</button>
       <button class="sp" id="z-in" title="확대">➕</button>
+      <button class="sp" id="z-back" title="이전 시간으로(차트를 오른쪽으로 끌어도 됨)">◀</button>
+      <button class="sp" id="z-fwd" title="다음 시간으로">▶</button>
+      <button class="sp" id="z-latest" title="현재 시간으로" hidden style="color:var(--accent);font-weight:800">⏭ 최신</button>
     </div>
     <div class="speeds" role="group" aria-label="재생 속도">
       <button class="sp" data-sp="520">0.5×</button>
@@ -465,7 +470,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
 </div>
 
 <div class="overlay" id="hist-overlay" hidden>
-  <div class="modal" style="max-width:560px">
+  <div class="modal" style="max-width:780px">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
       <h3 style="margin:0;font-size:17px">📒 거래내역</h3>
       <span id="hist-sum" style="font-size:12px;color:var(--muted);font-weight:600"></span>
@@ -600,7 +605,7 @@ function syncFromServer(){
     renderStat(st); renderRecent();
   });
 }
-var userLines=[], drawMode=false, PANELS=[], lineType='h', pendingPt=null, zoom1=1, zoom3=1, zoomD=1, phaseOn=false, autoSROn=false;
+var userLines=[], drawMode=false, PANELS=[], lineType='h', pendingPt=null, zoom1=1, zoom3=1, zoomD=1, pan1=0, pan3=0, panD=0, phaseOn=false, autoSROn=false;
 var freeDraw=null, freeDrawing=false;
 function clampZ(z){return Math.max(0.3,Math.min(12,z));}
 /* 자동 지지저항: 변곡점(고/저점) 중 여러 번 닿은 가격대를 군집화 */
@@ -1155,29 +1160,33 @@ function draw(){
  }
  var y=2;
  // 1분봉
- var w1=winOf(mRev,120,zoom1);
- candlePanel(d.min1,mRev,{x:x0,y:y,w:w,h:candleH},{label:'1분봉',grid:2,maxCW:8,winStart:w1.winStart,slots:w1.slots,levels:baseLevels(false,true),ma:maSeeded(d.min1,mRev,10,d.prevClose),maLabel:'10',phase:true,markers:S.trades.map(function(t){return {i:t.m,side:t.side}}),prevClose:d.prevClose,vline:(S.reviewEnd!=null?S.reviewEnd:null)});
- volPanel(d.min1,mRev,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:8,winStart:w1.winStart,slots:w1.slots,perHour:60,tick:15});
+ pan1=Math.max(0,Math.min(pan1,mRev-8)); var e1=mRev-pan1;   // pan: 오른쪽에서 숨긴 봉 수(과거 보기)
+ var w1=winOf(e1,120,zoom1);
+ candlePanel(d.min1,e1,{x:x0,y:y,w:w,h:candleH},{label:'1분봉',grid:2,maxCW:8,winStart:w1.winStart,slots:w1.slots,levels:baseLevels(false,true),ma:maSeeded(d.min1,e1,10,d.prevClose),maLabel:'10',phase:true,markers:S.trades.filter(function(t){return t.m<e1}).map(function(t){return {i:t.m,side:t.side}}),prevClose:d.prevClose,vline:(S.reviewEnd!=null?S.reviewEnd:null)});
+ volPanel(d.min1,e1,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:8,winStart:w1.winStart,slots:w1.slots,perHour:60,tick:15});
  y+=unitH+uGap;
  // 3분봉
- var w3=winOf(tRev,60,zoom3);
- candlePanel(bars3,tRev,{x:x0,y:y,w:w,h:candleH},{label:'3분봉',grid:2,maxCW:14,winStart:w3.winStart,slots:w3.slots,levels:baseLevels(true,true),ma:maSeeded(bars3,tRev,10,d.prevClose),maLabel:'10',phase:true,phaseMarks:true,autosr:true,markers:S.trades.map(function(t){return {i:Math.floor(t.m/3),side:t.side,px:t.price,tag:t.tag}}),labelMk:true,ideal:true,prevClose:d.prevClose,vline:(S.reviewEnd!=null?Math.floor(S.reviewEnd/3):null)});
- volPanel(bars3,tRev,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:14,winStart:w3.winStart,slots:w3.slots,perHour:20,tick:30});
+ pan3=Math.max(0,Math.min(pan3,tRev-8)); var e3=tRev-pan3;
+ var w3=winOf(e3,60,zoom3);
+ candlePanel(bars3,e3,{x:x0,y:y,w:w,h:candleH},{label:'3분봉',grid:2,maxCW:14,winStart:w3.winStart,slots:w3.slots,levels:baseLevels(true,true),ma:maSeeded(bars3,e3,10,d.prevClose),maLabel:'10',phase:true,phaseMarks:true,autosr:true,markers:S.trades.filter(function(t){return Math.floor(t.m/3)<e3}).map(function(t){return {i:Math.floor(t.m/3),side:t.side,px:t.price,tag:t.tag}}),labelMk:true,ideal:true,prevClose:d.prevClose,vline:(S.reviewEnd!=null?Math.floor(S.reviewEnd/3):null)});
+ volPanel(bars3,e3,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:14,winStart:w3.winStart,slots:w3.slots,perHour:20,tick:30});
  y+=unitH+uGap;
  // 일봉 + 오늘 형성중 봉 + 10일선
  var cs=(d.curStart!=null?d.curStart:0); if(cs>mRev-1)cs=0;   // 현재 날 구간만 형성봉으로 집계
  var th=-Infinity,tl=Infinity,tv=0,tc=d.min1[mRev-1].c;
  for(i=cs;i<mRev;i++){var m=d.min1[i];if(m.h>th)th=m.h;if(m.l<tl)tl=m.l;tv+=m.v;}
  var dBars=d.daily.concat([{o:(d.curOpen!=null?d.curOpen:d.open),h:th,l:tl,c:tc,v:tv}]);
- var dma=maArray(dBars,dBars.length,10);
+ var dma=null;
+ panD=Math.max(0,Math.min(panD,dBars.length-5)); if(panD>0){dBars=dBars.slice(0,dBars.length-panD);}
+ dma=maArray(dBars,dBars.length,10);
  var VIEW=Math.max(5,Math.min(dBars.length,Math.round(dBars.length/zoomD))), stt=Math.max(0,dBars.length-VIEW);
  // 일봉 매수/매도 마크(거래가 일어난 날의 일봉에 표시, 캔들·방향별 1개로 집계)
  var ds=d.dayStarts||[0], nseg=ds.length, dSeen={}, dMarks=[];
  for(i=0;i<S.trades.length;i++){var t=S.trades[i],seg=0,q;for(q=0;q<ds.length;q++){if(t.m>=ds[q])seg=q;else break;}
-   var di=(dBars.length-1)-((nseg-1)-seg)-stt; if(di<0||di>=dBars.length-stt)continue;
+   var di=(dBars.length-1+panD)-((nseg-1)-seg)-stt; if(di<0||di>=dBars.length-stt)continue;
    var key=di+t.side; if(dSeen[key])continue; dSeen[key]=1; dMarks.push({i:di,side:t.side});}
  candlePanel(dBars.slice(stt),dBars.length-stt,{x:x0,y:y,w:w,h:candleH},{label:'일봉',grid:2,maxCW:16,minSlots:VIEW,ma:dma.slice(stt),maLabel:'10일',autosr:true,prevClose:d.prevClose,markers:dMarks});
- var dDates=dailyDatesOf(d);
+ var dDates=dailyDatesOf(d); if(dDates&&panD>0)dDates=dDates.slice(0,dDates.length-panD);
  volPanel(dBars.slice(stt),dBars.length-stt,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:16,minSlots:VIEW,dates:dDates?dDates.slice(stt):null});
  // 패널 구분선(검은색)
  ctx.save();ctx.strokeStyle='#111827';ctx.lineWidth=1.2;ctx.setLineDash([]);
@@ -1566,6 +1575,7 @@ $('#b-manual').addEventListener('click',function(){location.href='manual.html';}
 $('#log-close').addEventListener('click',function(){$('#log-overlay').hidden=true;});
 $('#log-clear').addEventListener('click',function(){try{localStorage.removeItem('jusikwang_log')}catch(e){}renderLog();toast('연습기록 전체 삭제');});
 cv.addEventListener('click',function(e){
+  if(_dragMoved)return;
   if(!drawMode||!S)return;
   if(lineType==='free')return;   // 연필(자유곡선)은 포인터 드래그로 처리
   var r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,pi;
@@ -1582,12 +1592,36 @@ cv.addEventListener('click',function(e){
     return;
   }
 });
-function setZoom(z){var v=clampZ(z);zoom1=zoom3=zoomD=v;$('#z-reset').textContent=Math.round(v*100)+'%';if(S)draw();}
+function setZoom(z){var v=clampZ(z);zoom1=zoom3=zoomD=v;if(v===1){pan1=pan3=panD=0;}$('#z-reset').textContent=Math.round(v*100)+'%';if(S)draw();}
 $('#z-in').addEventListener('click',function(){setZoom(Math.max(zoom1,zoom3,zoomD)*1.4);});
 $('#z-out').addEventListener('click',function(){setZoom(Math.max(zoom1,zoom3,zoomD)/1.4);});
-$('#z-reset').addEventListener('click',function(){setZoom(1);});
+$('#z-reset').addEventListener('click',function(){setZoom(1);_panHint();});
+function _panAll(k){ ['1분봉','3분봉'].forEach(function(l){for(var i=0;i<PANELS.length;i++)if(PANELS[i].label===l){var P=PANELS[i],n=Math.max(1,Math.round((P.rev-P.winStart)/3));if(l==='1분봉')pan1=Math.max(0,pan1+k*n);else pan3=Math.max(0,pan3+k*n);}}); if(S)draw(); _panHint(); }
+$('#z-back').addEventListener('click',function(){_panAll(1);});
+$('#z-fwd').addEventListener('click',function(){_panAll(-1);});
+$('#z-latest').addEventListener('click',function(){pan1=pan3=panD=0;if(S)draw();_panHint();});
+// ── 과거 시간으로 이동(팬): 차트를 좌우로 끌기 · Shift+휠 · 가로 스크롤 ──
+function _panTarget(e){var r=cv.getBoundingClientRect(),yy=(e.clientY-r.top)/Math.max(1,r.height)*CH;
+  function py(l){for(var i=0;i<PANELS.length;i++)if(PANELS[i].label===l)return PANELS[i];return null;}
+  var p3=py('3분봉'),pd=py('일봉'); if(p3&&yy<p3.y)return py('1분봉'); if(pd&&yy<pd.y)return p3; return pd;}
+function _panBy(P,bars){ if(!P||!S)return; bars=Math.round(bars); if(!bars)return;
+  if(P.label==='1분봉')pan1=Math.max(0,pan1+bars); else if(P.label==='3분봉')pan3=Math.max(0,pan3+bars); else panD=Math.max(0,panD+bars);
+  draw(); _panHint(); }
+var _panHinted=false;
+function _panHint(){ var on=pan1>0||pan3>0||panD>0; var b=$('#z-latest'); if(b)b.hidden=!on;
+  if(on&&!_panHinted){_panHinted=true;toast('과거 보기 중 — ⏭ 최신 버튼으로 현재 시간으로 돌아와요');} if(!on)_panHinted=false; }
+var _drag=null, _dragMoved=false;
+cv.addEventListener('pointerdown',function(e){ if(drawMode||!S)return; var P=_panTarget(e); if(!P)return;
+  _drag={x:e.clientX,P:P,acc:0,scale:(cv.getBoundingClientRect().width/Math.max(1,CW))}; _dragMoved=false; });
+cv.addEventListener('pointermove',function(e){ if(!_drag)return; var dx=e.clientX-_drag.x; if(Math.abs(dx)<3&&!_dragMoved)return;
+  _dragMoved=true; try{cv.setPointerCapture(e.pointerId);}catch(_){}
+  var bwPx=Math.max(1,_drag.P.bw*_drag.scale), n=Math.trunc(dx/bwPx);
+  if(n){ _panBy(_drag.P,n); _drag.x+=n*bwPx; } });
+function _endDrag(){ _drag=null; setTimeout(function(){_dragMoved=false;},0); }
+cv.addEventListener('pointerup',_endDrag); cv.addEventListener('pointercancel',_endDrag); cv.addEventListener('pointerleave',_endDrag);
 cv.addEventListener('wheel',function(e){
   e.preventDefault();
+  if(e.shiftKey||Math.abs(e.deltaX)>Math.abs(e.deltaY)){ var P=_panTarget(e); var dv=(Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY); _panBy(P,-(dv>0?1:-1)*Math.max(1,Math.round(P?(40/Math.max(2,P.bw)):3))); return; }
   var r=cv.getBoundingClientRect(), yy=(e.clientY-r.top)/Math.max(1,r.height)*CH;
   var f=(e.deltaY<0?1.2:1/1.2);
   function py(l){for(var i=0;i<PANELS.length;i++)if(PANELS[i].label===l)return PANELS[i].y;return null;}
