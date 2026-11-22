@@ -198,13 +198,32 @@ async function kwToken(){
   var t=d.token||d.access_token; if(!t) throw new Error('토큰 응답 오류');
   _tok={t:t,exp:Date.now()+5*3600*1000}; return t;
 }
+/* 키움 유량 제한 대응 — 호출을 한 줄로 세우고 간격 보장, 1700 나면 늘려가며 재시도 */
+var KW_GAP=260, _kwChain=Promise.resolve(), _kwLast=0;
+function kwGate(){
+  _kwChain=_kwChain.then(function(){
+    var w=KW_GAP-(Date.now()-_kwLast);
+    return (w>0)?new Promise(function(r){setTimeout(r,w);}):null;
+  }).then(function(){ _kwLast=Date.now(); });
+  return _kwChain;
+}
+function kwIsFlood(m){ return /유량|요청 개수|1700|too many/i.test(''+m); }
 async function kwPost(path,apiId,body,cont,nk){
-  var c=kwCfg(),tok=await kwToken();
-  var r=await fetch(kwBase(c.mode)+path,{method:'POST',headers:{'Content-Type':'application/json;charset=UTF-8',
-    'authorization':'Bearer '+tok,'api-id':apiId,'cont-yn':cont||'N','next-key':nk||''},body:JSON.stringify(body)});
-  var d; try{d=await r.json();}catch(e){throw new Error(apiId+' 응답 파싱 실패');}
-  if(d.return_code!=null&&d.return_code!==0) throw new Error(apiId+' 실패: '+(d.return_msg||d.return_code));
-  d._cont=r.headers.get('cont-yn')||'N'; d._next=r.headers.get('next-key')||''; return d;
+  var c=kwCfg(),tok=await kwToken(),lastMsg='';
+  for(var att=0;att<4;att++){
+    await kwGate();
+    var r=await fetch(kwBase(c.mode)+path,{method:'POST',headers:{'Content-Type':'application/json;charset=UTF-8',
+      'authorization':'Bearer '+tok,'api-id':apiId,'cont-yn':cont||'N','next-key':nk||''},body:JSON.stringify(body)});
+    var d; try{d=await r.json();}catch(e){throw new Error(apiId+' 응답 파싱 실패');}
+    if(d.return_code!=null&&d.return_code!==0){
+      lastMsg=(d.return_msg||d.return_code);
+      if(kwIsFlood(lastMsg)&&att<3){ KW_GAP=Math.min(900,KW_GAP+120);
+        await new Promise(function(r2){setTimeout(r2,700*(att+1));}); continue; }
+      throw new Error(apiId+' 실패: '+lastMsg);
+    }
+    d._cont=r.headers.get('cont-yn')||'N'; d._next=r.headers.get('next-key')||''; return d;
+  }
+  throw new Error(apiId+' 실패: '+lastMsg);
 }
 function kwNum(v){var s=(''+(v==null?'':v)).replace(/[,+]/g,'').trim();if(s===''||s==='-')return 0;var n=parseFloat(s);return isFinite(n)?Math.abs(Math.trunc(n)):0;}
 function kwRows(d){var best=null;for(var k in d){var v=d[k];if(Array.isArray(v)&&v.length&&typeof v[0]==='object'){if(!best||v.length>best.length)best=v;}}return best||[];}
@@ -402,7 +421,7 @@ $('#b-top').addEventListener('click',async function(){
         }
       }catch(e){ skipped++; }
       done++; fill.style.width=Math.round(done/cand.length*100)+'%';
-      await sleep(200);
+      await sleep(40);
     }
     scored.sort(function(a,b){return b.m.score-a.m.score});
     var top=scored.slice(0,10);

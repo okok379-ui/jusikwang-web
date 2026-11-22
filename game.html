@@ -396,7 +396,8 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
       <h3 style="margin:0;font-size:17px">📈 종목 선택</h3>
       <button id="case-close" class="play" style="margin-left:auto;justify-content:center">닫기</button>
     </div>
-    <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px">10분할매수에 <b>적합한 종목</b>만 매매합니다 · 날짜는 <b>매매 시작일</b>이에요</div>
+    <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px">10분할매수에 <b>적합한 종목</b>만 매매합니다 · 날짜는 <b>매매 시작일</b>이에요<br>
+      <span style="font-size:11px">후보는 <b>오늘</b> 거래대금 상위에서 뽑습니다 — 과거 날짜는 그날 실제 순위와 다를 수 있어요</span></div>
     <div style="display:flex;gap:6px;margin-bottom:8px">
       <input id="case-search" autocomplete="off" placeholder="🔎 종목명 또는 코드" style="flex:1;min-width:0;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:inherit;font-size:14px;padding:10px">
       <input id="case-date" type="date" style="width:158px;flex:none;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:inherit;font-size:14px;padding:9px 10px;color-scheme:light">
@@ -1398,13 +1399,37 @@ async function kwToken(){
   _kwTok={t:tok,exp:Date.now()+5*3600*1000};
   return tok;
 }
+/* 키움 유량 제한(초당 요청 수) 대응 — 모든 호출을 한 줄로 세우고 간격을 보장.
+   그래도 1700(요청 개수 초과)이 나면 점점 더 기다리며 재시도한다. */
+var KW_GAP=260, _kwChain=Promise.resolve(), _kwLast=0;
+function kwGate(){
+  _kwChain=_kwChain.then(function(){
+    var wait=KW_GAP-(Date.now()-_kwLast);
+    return (wait>0)?new Promise(function(r){setTimeout(r,wait);}):null;
+  }).then(function(){ _kwLast=Date.now(); });
+  return _kwChain;
+}
+function kwIsFlood(msg){ return /유량|요청 개수|1700|too many/i.test(''+msg); }
 async function kwPost(path,apiId,body,cont,nextKey){
-  var c=kwCfg(), tok=await kwToken();
-  var r=await fetch(kwBase(c.mode)+path,{method:'POST',headers:{'Content-Type':'application/json;charset=UTF-8','authorization':'Bearer '+tok,'api-id':apiId,'cont-yn':cont||'N','next-key':nextKey||''},body:JSON.stringify(body)});
-  var d; try{d=await r.json();}catch(e){throw new Error(apiId+' 응답 파싱 실패');}
-  var rc=d.return_code; if(rc!=null && rc!==0) throw new Error(apiId+' 실패: '+(d.return_msg||rc));
-  d._cont=r.headers.get('cont-yn')||'N'; d._next=r.headers.get('next-key')||'';
-  return d;
+  var c=kwCfg(), tok=await kwToken(), lastMsg='';
+  for(var att=0; att<4; att++){
+    await kwGate();
+    var r=await fetch(kwBase(c.mode)+path,{method:'POST',headers:{'Content-Type':'application/json;charset=UTF-8','authorization':'Bearer '+tok,'api-id':apiId,'cont-yn':cont||'N','next-key':nextKey||''},body:JSON.stringify(body)});
+    var d; try{d=await r.json();}catch(e){throw new Error(apiId+' 응답 파싱 실패');}
+    var rc=d.return_code;
+    if(rc!=null && rc!==0){
+      lastMsg=(d.return_msg||rc);
+      if(kwIsFlood(lastMsg) && att<3){
+        KW_GAP=Math.min(900,KW_GAP+120);                 // 한 번 걸리면 이후 간격을 늘린다
+        await new Promise(function(r2){setTimeout(r2,700*(att+1));});
+        continue;
+      }
+      throw new Error(apiId+' 실패: '+lastMsg);
+    }
+    d._cont=r.headers.get('cont-yn')||'N'; d._next=r.headers.get('next-key')||'';
+    return d;
+  }
+  throw new Error(apiId+' 실패: '+lastMsg);
 }
 function kwNum(v){var s=(''+(v==null?'':v)).replace(/[,+]/g,'').trim();if(s===''||s==='-')return 0;var n=parseFloat(s);return isFinite(n)?Math.abs(Math.trunc(n)):0;}
 var _capCache={};
@@ -1711,7 +1736,7 @@ async function findS10(){
         else{ var m=Split10Fit.run(bars,cfg); if(m.ok) scored.push({code:cand[i].code,name:cand[i].name,m:m}); else skip++; }
       }catch(e){ skip++; }
       fill.style.width=Math.round((i+1)/cand.length*100)+'%';
-      await new Promise(function(r2){setTimeout(r2,140);});
+      await new Promise(function(r2){setTimeout(r2,40);});
     }
     scored.sort(function(a,b){return b.m.score-a.m.score;});
     _s10Picks=scored.slice(0,10);
