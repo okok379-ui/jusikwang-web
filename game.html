@@ -904,6 +904,13 @@ function fastResult(){
   var ab=$('#ask-bar'); if(ab)ab.hidden=true;
   $('#ask-overlay').hidden=true;
   var btn=$('#b-fast'); if(btn){btn.disabled=true;btn.textContent='⏭ 계산 중…';}
+
+  /* 규칙이 꺼져 있으면 돌릴 게 없어 '관망'으로 끝난다.
+     이번 실행에 한해서만 자동 진입을 적용하고, 사용자가 저장한 설정은 건드리지 않는다. */
+  var oMode=curMode, oRe=buyPlan.reenter, applied=[];
+  if(curMode!=='auto'){ curMode='auto'; applied.push('자동 모드'); }
+  if(S.shares<1 && !buyPlan.reenter){ buyPlan.reenter=true; applied.push('1차 자동 진입'); }
+
   _ff=true;
   var startI=S.i, days=1, guard=0;
   try{
@@ -917,9 +924,13 @@ function fastResult(){
     }
   }catch(e){ toast('계산 중 오류: '+(e&&e.message||e)); }
   _ff=false;
+  curMode=oMode; buyPlan.reenter=oRe;                    // 원래 설정 복구(저장값은 그대로)
+
   if(btn){btn.disabled=false;btn.textContent='⏭ 바로 결과보기';}
   render(); draw();
-  toast('1분봉 '+(S.i-startI)+'개'+(days>1?' · '+days+'거래일':'')+'를 규칙대로 돌렸습니다');
+  var n=S.trades.length;
+  toast('1분봉 '+(S.i-startI)+'개'+(days>1?' · '+days+'거래일':'')+' · 체결 '+n+'건'
+        +(applied.length?' · '+applied.join('·')+' 적용(설정은 그대로)':''));
   endRound();                                            // 마지막 봉 종가로 청산 + 결과
 }
 function finishNow(){
