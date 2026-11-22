@@ -295,7 +295,7 @@ function pickVoice(){ if(!synth)return; var vs=synth.getVoices()||[]; koVoice=vs
 if(synth){ pickVoice(); synth.onvoiceschanged=pickVoice; }
 // ---- 음성: 기기 TTS 설정 없이도 재생되는 온라인 음성(구글) 우선, 실패 시 기기 TTS 폴백 ----
 var audioEl=new Audio(); audioEl.preload='none';
-var AUDIO_PREFIX=(function(){var p=location.pathname;if(/candle/.test(p))return'candle';if(/jun/.test(p))return'jun';if(/ma/.test(p))return'ma';if(/sr/.test(p))return'sr';return'';})();
+var AUDIO_PREFIX=(function(){var p=location.pathname;if(/split10/.test(p))return'split10';if(/candle/.test(p))return'candle';if(/ma/.test(p))return'ma';if(/sr/.test(p))return'sr';return'';})();
 var ttsQ=[], ttsIdx=0, mp3Mode=false, ttsTimer=null, audioWorks=false;
 function gttsUrl(t){return 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ko&q='+encodeURIComponent(t);}
 function chunkText(t){var ps=(t||'').match(/[^.!?。]+[.!?。]?/g)||[t];var out=[],cur2='';ps.forEach(function(p){if((cur2+p).length>170){if(cur2.trim())out.push(cur2.trim());cur2=p;}else cur2+=p;});if(cur2.trim())out.push(cur2.trim());return out;}
