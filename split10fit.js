@@ -80,17 +80,38 @@
     return Math.max(0, Math.min(1, r)) * pts;
   }
 
-  /* 장기 추세 배점(15점). 내려간 종목도, 너무 많이 오른 종목도 깎는다.
-     손절이 없는 전략이라 급등 뒤 되돌림은 -24% 로 끝나지 않는다.
-       ~ -50%:0점   -50~0%: 선형   0~+60%: 만점
-       +60~+150%: 15→7.5   +150~+300%: 7.5→0   +300%~: 0점 */
-  function trendPts(tr) {
-    if (tr < 0) return band(tr, 0, -50, 15);
-    if (tr <= 60) return 15;
-    if (tr <= 150) return 15 - 7.5 * (tr - 60) / 90;
-    if (tr <= 300) return Math.max(0, 7.5 - 7.5 * (tr - 150) / 150);
-    return 0;
+  /* 이동평균 — closes[i] 기준 per일 평균. 데이터가 모자라면 null */
+  function maAt(cl, per, i) {
+    if (i < per - 1 || i >= cl.length) return null;
+    var sum = 0;
+    for (var k = i - per + 1; k <= i; k++) sum += cl[k];
+    return sum / per;
   }
+
+  /* 지금 이평선이 오르고 있는가 — 20봉/60봉 기울기와 정배열.
+     장기추세(250봉 두 점)는 '지난 1년에 올랐나'일 뿐이라, 반년 내리다 두 달 전
+     돌아선 종목을 깎아버린다. 10분할매수는 '지금 들어가서 되돌아오는가'가 전부다. */
+  function maTrend(bars) {
+    var cl = [], i;
+    for (i = 0; i < bars.length; i++) cl.push(bars[i].close);
+    var n = cl.length;
+    var o = {ma20_slope: 0, ma60_slope: 0, aligned: false, ma20: null, ma60: null};
+    var a20 = maAt(cl, 20, n - 1), b20 = maAt(cl, 20, n - 21);
+    var a60 = maAt(cl, 60, n - 1), b60 = maAt(cl, 60, n - 61);
+    if (a20 && b20) o.ma20_slope = (a20 / b20 - 1) * 100;
+    if (a60 && b60) o.ma60_slope = (a60 / b60 - 1) * 100;
+    o.ma20 = a20; o.ma60 = a60;
+    if (a20 && a60) o.aligned = cl[n - 1] > a20 && a20 > a60;
+    return o;
+  }
+
+  /* 추세 배점(15점) — '지난 1년에 올랐나'가 아니라 '지금 오르고 있나'로 본다.
+     20봉 이평 기울기 7 + 60봉 이평 기울기 5 + 정배열 3.
+     장기추세(250봉)는 배점에서 빼고, 과열·급락 상한에서만 쓴다. */
+  function maPts(m) {
+    return band(m.ma20_slope, 8, -8, 7) + band(m.ma60_slope, 12, -12, 5) + (m.aligned ? 3 : 0);
+  }
+  function maUp(m) { return m.aligned && m.ma20_slope >= 5; }
 
   function score(m, cfg) {
     var parts = [
@@ -98,8 +119,11 @@
       ['익절 소요일', band(-m.avg_days, -5, -35, 15), 15, '평균 ' + m.avg_days.toFixed(1) + '일'],
       ['9차 소진율', band(-m.full9_rate, 0, -25, 10), 10, m.full9_rate.toFixed(1) + '%'],
       ['최대 평가손실', band(m.worst_dd, -12, -45, 15), 15, m.worst_dd.toFixed(1) + '%'],
-      ['장기 추세', trendPts(m.trend), 15,
-        m.trend_days + '봉 ' + (m.trend >= 0 ? '+' : '') + m.trend.toFixed(0) + '%'],
+      ['추세 (이평)', maPts(m), 15,
+        'MA20 ' + (m.ma20_slope >= 0 ? '+' : '') + m.ma20_slope.toFixed(1) + '% · MA60 ' +
+        (m.ma60_slope >= 0 ? '+' : '') + m.ma60_slope.toFixed(1) + '%' +
+        (m.aligned ? ' · 정배열' : ' · 역배열') +
+        ' · ' + m.trend_days + '봉 ' + (m.trend >= 0 ? '+' : '') + m.trend.toFixed(0) + '%'],
       ['유동성·가격대', band(Math.min(m.avg_amt / 1e8, 50), 20, 2, 3) + band(Math.min(m.qty1, 50), 10, 1, 2), 5,
         (m.avg_amt / 1e8).toFixed(0) + '억 · ' + m.qty1 + '주']
     ];
@@ -110,8 +134,9 @@
       return '미회복 ' + m.fail_rate.toFixed(0) + '% · 최대 평가손실 ' + m.worst_dd.toFixed(0) +
              '% · 추세 ' + (m.trend >= 0 ? '+' : '') + m.trend.toFixed(0) + '%';
     };
-    if (m.fail_rate >= 15 || m.worst_dd <= -50 || m.trend <= -60) { cap = 39; capWhy = why(); }
-    else if (m.fail_rate >= 8 || m.worst_dd <= -35 || m.trend <= -35) { cap = 54; capWhy = why(); }
+    var t39 = maUp(m) ? -75 : -60, t54 = maUp(m) ? -50 : -35;
+    if (m.fail_rate >= 15 || m.worst_dd <= -50 || m.trend <= t39) { cap = 39; capWhy = why(); }
+    else if (m.fail_rate >= 8 || m.worst_dd <= -35 || m.trend <= t54) { cap = 54; capWhy = why(); }
     /* 과열 상한 — 많이 오른 종목은 평균 지표가 좋아도 등급을 올려주지 않는다 */
     var ohw = function () { return '장기 추세 ' + (m.trend >= 0 ? '+' : '') + m.trend.toFixed(0) + '% — 과열(되돌림 위험)'; };
     if (m.trend >= 400 && cap > 54) { cap = 54; capWhy = ohw(); }
@@ -193,8 +218,12 @@
       qty1: cur ? Math.floor(cfg.once / cur) : 0,
       drop10_rate: pct(drops10, n - 1), drop10_cnt: drops10,
       avg_amt: amt, cur: cur, hi52: hi52, lo52: lo52, pos52: pos52,
-      trend: trend, trend_days: n - baseI, dd_p95: quantile(worstList, 0.05)
+      trend: trend, trend_days: n - baseI, dd_p95: quantile(worstList, 0.05),
+      ma20_slope: 0, ma60_slope: 0, aligned: false, ma20: null, ma60: null
     };
+    var mt = maTrend(bars);
+    m.ma20_slope = mt.ma20_slope; m.ma60_slope = mt.ma60_slope;
+    m.aligned = mt.aligned; m.ma20 = mt.ma20; m.ma60 = mt.ma60;
     var s = score(m, cfg);
     for (var kk in s) m[kk] = s[kk];
     return m;
