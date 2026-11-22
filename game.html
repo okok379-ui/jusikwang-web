@@ -915,10 +915,17 @@ async function fastResult(){
   if(S.shares<1 && !buyPlan.reenter){ buyPlan.reenter=true; applied.push('1차 자동 진입'); }
 
   _ff=true;
-  var startI=S.i, days=1, guard=0, why='', dailyDays=0, dailyTo='';
+  var startI=S.i, days=1, guard=0, why='', dailyDays=0, dailyTo='', hadPos=(S.shares>0);
   try{
     while(guard++ < 400000){
-      if(S.i < S.maxMin){ adv(); checkBuyPlan(); checkSellPlan(); checkReentry(); continue; }
+      if(S.i < S.maxMin){
+        adv(); checkBuyPlan(); checkSellPlan();
+        if(hadPos && S.shares<1){ why='tp'; break; }      // 전량 익절 → 재진입하지 않고 마무리
+        if(S.shares>0) hadPos=true;
+        checkReentry();
+        if(S.shares>0) hadPos=true;
+        continue;
+      }
       if(S.shares<1){ why='flat'; break; }                  // 규칙대로 전량 청산된 상태 — 여기서 끝
       if(days>=FF_MAX_DAYS){ why='maxdays'; break; }
       if(rollInline()){ days++; continue; }                 // 미리 받아둔 다음 거래일
@@ -1009,10 +1016,7 @@ async function ffDailyRun(){
         }
       }
     }
-    if(S.shares<1){
-      if(!buyPlan.reenter || i+1>=bars.length) return {days:used,exited:true,to:b.t};
-      ffBuyAt(bars[i+1].o,amt,'[일봉 '+_ffD(bars[i+1].t)+'] 재진입(1차)');   // 다음 거래일 시가 재진입
-    }
+    if(S.shares<1) return {days:used,exited:true,to:b.t};   // 전량 익절 → 마무리(재진입 안 함)
   }
   return {days:used,exited:S.shares<1,to:bars[bars.length-1].t};
 }
@@ -1029,7 +1033,7 @@ function ffFinish(held, why, days, dailyDays, dailyTo){
   var sub=$('#r-title');
   if(sub){
     var dtxt=(dailyDays>0)?(' · 일봉으로 '+dailyDays+'거래일 더'):'';
-    if(!held) sub.textContent='규칙대로 전량 익절 · 1분봉 '+days+'거래일'+dtxt;
+    if(!held) sub.textContent=(why==='tp'?'전량 익절 · 마무리':'규칙대로 전량 청산')+' · 1분봉 '+days+'거래일'+dtxt;
     else if(why==='nokey') sub.textContent='아직 보유 중 — 평가손익 (다음 날 데이터 없음 · ⚙️ 키움 설정 필요)';
     else if(why==='maxdays') sub.textContent='아직 보유 중 — '+days+'거래일까지 평가손익 (손절 아님)';
     else sub.textContent='아직 보유 중 — 데이터 끝까지 평가손익 (손절 아님)'+dtxt;
