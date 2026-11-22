@@ -147,6 +147,21 @@ td.num{font-family:var(--mono)}
     <div class="sp" style="flex:1"></div>
     <button class="btn" id="kw-close">닫기</button>
   </div>
+  <div style="border-top:1px solid var(--border);margin:14px 0 10px"></div>
+  <div style="font-weight:700;font-size:14px">다른 기기로 옮기기</div>
+  <p class="note" style="margin:2px 0 8px">PC에서 코드를 발급하고 폰에서 그 코드를 넣으면 키가 넘어갑니다.
+    서버에는 <b>코드로 암호화된 상태</b>로만 5분간 있다가 받는 즉시 지워집니다.</p>
+  <div class="row">
+    <button class="btn" id="kw-send">📤 코드 발급</button>
+    <input id="kw-rcode" class="mono" placeholder="XXXX-XXXX" maxlength="9" style="flex:1;min-width:110px;text-transform:uppercase">
+    <button class="btn" id="kw-recv">📥 받아오기</button>
+  </div>
+  <div id="kw-codebox" hidden style="margin-top:10px;text-align:center;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px">
+    <div class="note">폰에서 이 코드를 입력하세요</div>
+    <div id="kw-code" class="mono" style="font-size:30px;font-weight:700;letter-spacing:2px;margin:4px 0"></div>
+    <div class="note" id="kw-left"></div>
+  </div>
+  <div class="msg" id="kw-xmsg"></div>
 </div></div>
 
 <script src="split10fit.js"></script>
@@ -422,6 +437,82 @@ $('#kw-test').addEventListener('click',async function(){
   saveKw(); $('#kw-msg').textContent='연결 확인 중…';
   try{ await kwToken(); $('#kw-msg').textContent='✅ 연결 성공 — 조회할 수 있습니다.'; }
   catch(e){ $('#kw-msg').textContent='❌ '+(e&&e.message||e); }
+});
+
+/* ── 기기간 전송 (일회용 코드) ─────────────────────────── */
+var SB_URL='https://swekuozzyonslloqghpc.supabase.co';
+var SB_KEY='sb_publishable_w4-fBKFRRsO3u9ApjO8shQ_KuwW002P';
+function rpc(fn,body){
+  return fetch(SB_URL+'/rest/v1/rpc/'+fn,{method:'POST',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'},
+    body:JSON.stringify(body||{})}).then(function(r){return r.json()})
+    .catch(function(){return{ok:false,msg:'서버 연결 실패'}});
+}
+var XA='ABCDEFGHJKMNPQRSTUVWXYZ23456789';   /* 헷갈리는 0,O,1,I,L 제외 */
+function newCode(){var a=new Uint8Array(8);crypto.getRandomValues(a);
+  var s='';for(var i=0;i<8;i++)s+=XA[a[i]%XA.length];return s;}
+function b64(b){var u=new Uint8Array(b),s='';for(var i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s);}
+function unb64(s){var r=atob(s),a=new Uint8Array(r.length);for(var i=0;i<r.length;i++)a[i]=r.charCodeAt(i);return a;}
+async function xKey(code,salt){
+  var base=await crypto.subtle.importKey('raw',new TextEncoder().encode(code),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt:salt,iterations:200000,hash:'SHA-256'},
+    base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function xSeal(code,obj){
+  var salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+  var k=await xKey(code,salt);
+  var ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},k,new TextEncoder().encode(JSON.stringify(obj)));
+  return {payload:b64(ct),iv:b64(iv),salt:b64(salt)};
+}
+async function xOpen(code,payload,iv,salt){
+  var k=await xKey(code,unb64(salt));
+  var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(iv)},k,unb64(payload));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+var _tick=null;
+$('#kw-send').addEventListener('click',async function(){
+  var xm=$('#kw-xmsg'); xm.textContent='';
+  saveKw();
+  var c=kwCfg();
+  if(!c.ak||!c.sk){xm.textContent='보낼 키가 없습니다. 앱키·시크릿키를 먼저 넣고 저장하세요.';return;}
+  this.disabled=true;
+  try{
+    var code=newCode(), sealed=await xSeal(code,{ak:c.ak,sk:c.sk,mode:c.mode});
+    var res=await rpc('jusikwang_kwxfer_put',{p_code:code,p_payload:sealed.payload,p_iv:sealed.iv,p_salt:sealed.salt,p_ttl_sec:300});
+    if(!res||!res.ok){xm.textContent='발급 실패: '+((res&&res.msg)||'서버 응답 오류');return;}
+    $('#kw-code').textContent=code.slice(0,4)+'-'+code.slice(4);
+    $('#kw-codebox').hidden=false;
+    var left=res.expires_in||300;
+    if(_tick)clearInterval(_tick);
+    _tick=setInterval(function(){
+      left--;
+      if(left<=0){clearInterval(_tick);$('#kw-codebox').hidden=true;$('#kw-xmsg').textContent='코드가 만료됐습니다. 다시 발급하세요.';return;}
+      $('#kw-left').textContent='남은 시간 '+Math.floor(left/60)+':'+('0'+(left%60)).slice(-2)+' · 한 번 받으면 바로 사라집니다';
+    },1000);
+  }catch(e){ xm.textContent='오류: '+(e&&e.message||e); }
+  finally{ this.disabled=false; }
+});
+$('#kw-recv').addEventListener('click',async function(){
+  var xm=$('#kw-xmsg'); xm.textContent='';
+  var code=($('#kw-rcode').value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(code.length!==8){xm.textContent='코드 8자리를 정확히 넣어주세요.';return;}
+  this.disabled=true; xm.textContent='받아오는 중…';
+  try{
+    var res=await rpc('jusikwang_kwxfer_take',{p_code:code});
+    if(!res||!res.ok){xm.textContent=(res&&res.msg)||'받기 실패';return;}
+    var obj=await xOpen(code,res.payload,res.iv,res.salt);
+    if(!obj||!obj.ak||!obj.sk){xm.textContent='내용이 올바르지 않습니다.';return;}
+    localStorage.setItem(KW_LS.ak,obj.ak);
+    localStorage.setItem(KW_LS.sk,obj.sk);
+    localStorage.setItem(KW_LS.mode,obj.mode||'real');
+    _tok={t:'',exp:0};
+    $('#kw-ak').value=obj.ak; $('#kw-sk').value=obj.sk; $('#kw-mode').value=obj.mode||'real';
+    $('#kw-rcode').value='';
+    xm.textContent='✅ 키를 가져왔습니다. 이 기기에 저장됐습니다.';
+    $('#msg1').textContent='';
+  }catch(e){
+    xm.textContent='코드가 맞지 않거나 내용을 풀 수 없습니다. PC에서 새로 발급해 주세요.';
+  }finally{ this.disabled=false; }
 });
 
 /* ── 시작 ──────────────────────────────────────────────── */
