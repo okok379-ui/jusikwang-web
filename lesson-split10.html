@@ -1,5 +1,5 @@
 <!doctype html><html data-theme="light"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>레슨 4 · 기준봉 매매</title>
+<title>레슨 4 · 10분할매수</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
 :root{
@@ -104,10 +104,10 @@ canvas{width:100%;height:100%;display:block}
 <div class="wrap">
   <div class="top">
     <span class="badge">레슨 4</span>
-    <h1>기준봉 매매 — 눌림목 분할매수</h1>
+    <h1>10분할매수 — 나눠 받고 작게 익절</h1>
     <button class="spk" id="b-home" style="margin-left:auto">🏠 처음으로</button>
     <button class="spk" id="speak" aria-label="음성 설명 켜기">🔊 듣기</button>
-    <span class="lv">심화 · PRO</span>
+    <span class="lv">심화 · 무료</span>
   </div>
   <div class="prog" id="prog"></div>
   <div style="font-size:11px;color:var(--muted);text-align:center;margin:-2px 0 10px;line-height:1.4">🔊 음성이 안 들리면 <b>Chrome·Safari</b>로 열어주세요 (카톡 등 인앱 브라우저는 음성이 막힙니다)</div>
@@ -116,136 +116,142 @@ canvas{width:100%;height:100%;display:block}
 
     <!-- 1 -->
     <section class="card on"><div class="panel">
-      <div class="kicker">LESSON 4 · 기준봉 매매</div>
-      <h2>급등 다음날, 눌림을 기다렸다 분할로 산다</h2>
-      <p><b class="hl-a">기준봉</b>은 거래량이 터진 <b>상한가급 장대양봉</b> — 세력이 크게 들어온 날이에요. 핵심은 <b>그날 쫓아가지 않는 것</b>입니다.</p>
-      <p>다음날 가격이 <b class="hl">눌릴 때(조정)</b>, 세력이 받칠 만한 자리에서 <b>나눠서 매수</b>하고, 아니면 <b class="hl-r">손절</b>해요. "오르는 걸 쫓지 말고, 받칠 자리에서 기다렸다 분할로 사라"가 한 줄 요약입니다.</p>
-      <p class="mut">듣기를 켜고 차트로 하나씩 보겠습니다.</p>
+      <div class="kicker">LESSON 4 · 10분할매수</div>
+      <h2>떨어질수록 나눠 사고, 평단 위에서 작게 판다</h2>
+      <p><b class="hl-a">10분할매수</b>는 한 종목을 <b>최대 10번에 나눠</b> 사는 방식이에요. 처음 산 가격에서 일정 비율씩 빠질 때마다 같은 금액을 더 넣어 <b>평단가를 끌어내리고</b>, 평단 대비 <b class="hl">작은 목표</b>에 닿으면 팝니다.</p>
+      <p>특징이 하나 있어요. <b class="hl-r">손절이 없습니다.</b> 그래서 "재료가 좋은 종목"이 아니라 <b>버티다 되돌아오는 종목</b>을 골라야 합니다. 이 차이가 이 레슨의 핵심이에요.</p>
+      <p class="mut">듣기를 켜고 숫자로 하나씩 보겠습니다.</p>
     </div></section>
 
     <!-- 2 -->
     <section class="card"><div class="panel">
-      <div class="kicker">1단계 · 기준봉 선정</div>
-      <h2>기준봉 5대 조건</h2>
+      <div class="kicker">1단계 · 진입</div>
+      <h2>1차는 그냥 산다</h2>
       <div class="steps">
-        <div class="step a"><div class="n">1</div><div class="t"><b>시가총액 1,000억 이상</b> — 세력 자금이 들어올 규모</div></div>
-        <div class="step a"><div class="n">2</div><div class="t"><b>당일 +20% 이상</b> 급등 (상한가급)</div></div>
-        <div class="step a"><div class="n">3</div><div class="t"><b>거래량 500만 주 이상</b></div></div>
-        <div class="step a"><div class="n">4</div><div class="t"><b>거래대금 500억 원 이상</b></div></div>
-        <div class="step a"><div class="n">5</div><div class="t"><b>양봉이 10일선 위</b>에 완전히 위치</div></div>
+        <div class="step a"><div class="n">1</div><div class="t"><b>매매일 장 시작</b>에 1회 매수금만큼 매수</div></div>
+        <div class="step a"><div class="n">2</div><div class="t">이때 체결된 가격이 <b>최초 매수가</b> — 앞으로 모든 분할 기준</div></div>
+        <div class="step a"><div class="n">3</div><div class="t">1회 매수금은 <b>전 차수 균등</b>. 100만원이면 2차도 3차도 100만원</div></div>
       </div>
-      <div class="note"><b>왜?</b> 이 조건을 다 만족한 날 = 세력·수급이 확실히 들어온 날. 이 봉 하나가 다음날 매매의 <b>'기준'</b>이 됩니다.</div>
+      <div class="note"><b>타이밍을 재지 않습니다.</b> 눌림목 매매는 "언제 사느냐"가 전부지만, 이 전략은 <b>산 뒤에 어떻게 받치느냐</b>로 승부합니다. 그래서 1차 진입은 고민하지 않아요.</div>
     </div></section>
 
     <!-- 3 -->
     <section class="card"><div class="panel">
-      <div class="kicker">2단계 · 지지선 산출</div>
-      <h2>기준봉 몸통을 등분해 '세력 평단'을 추정</h2>
-      <div class="chartbox"><canvas data-demo="levels"></canvas></div>
-      <div class="steps">
-        <div class="step"><div class="n">1</div><div class="t"><b>1차 지지선</b> = 몸통의 <b>1/2</b> 지점 (종가 − 몸통×0.5)</div></div>
-        <div class="step"><div class="n">2</div><div class="t"><b>2차 지지선</b> = 몸통의 <b>3/4</b> 지점 (종가 − 몸통×0.75)</div></div>
-        <div class="step"><div class="n">3</div><div class="t"><b>3차 지지선</b> = <b>기준봉 시가</b> (몸통 바닥)</div></div>
-        <div class="step r"><div class="n">✕</div><div class="t"><b>손절선</b> = <b>기준봉 저가</b> (이탈 시 전량 손절)</div></div>
-      </div>
-      <p class="mut">몸통을 나누는 이유: 세력이 매집한 평균가격(평단)이 보통 몸통 안에 있어서, 그 가격대에서 다시 받칠 확률이 높기 때문이에요.</p>
+      <div class="kicker">2단계 · 분할매수</div>
+      <h2>최초 매수가에서 3%씩 빠질 때마다 추가</h2>
+      <p>2차부터 9차까지, <b>최초 매수가 대비</b> −3%, −6%, −9% … −24%에 도달하면 같은 금액을 더 삽니다.</p>
+      <div class="note"><b>왜 평단이 아니라 최초 매수가 기준일까요?</b><br>
+        평단은 살 때마다 내려갑니다. 평단 기준으로 −3%를 잡으면 기준선이 계속 따라 내려와서 <b>끝없이 사게 돼요.</b>
+        최초 매수가는 고정이라 <b>9차에서 반드시 멈춥니다.</b> 이게 "물타기"와 <b class="hl">계획된 분할매수</b>를 가르는 지점입니다.</div>
+      <p class="mut">한 번에 여러 단계를 지나칠 만큼 급락하면, 지나간 차수를 모두 체결합니다.</p>
     </div></section>
 
     <!-- 4 -->
     <section class="card"><div class="panel">
-      <div class="kicker">3단계 · 분할매수</div>
-      <h2>한 번에 사지 않고, 지지선마다 나눠서</h2>
-      <div class="chartbox"><canvas data-demo="split"></canvas></div>
-      <div class="steps">
-        <div class="step"><div class="n">30</div><div class="t"><b>1차 지지선</b>에서 총액의 <b>30%</b> 매수</div></div>
-        <div class="step"><div class="n">30</div><div class="t"><b>2차 지지선</b>에서 <b>30%</b> 추가</div></div>
-        <div class="step"><div class="n">40</div><div class="t"><b>3차 지지선</b>(시가)에서 <b>40%</b> — 아래로 갈수록 크게</div></div>
-      </div>
-      <div class="note"><b>핵심</b> — 아래로 갈수록 비중을 키우면, 더 싸게 산 물량이 많아져 <b>평단가가 낮아져요</b>. 한 번에 다 사면 조정에서 버티기 어렵습니다. (기본 30/30/40, 조절 가능)</div>
+      <div class="kicker">숫자로 보기</div>
+      <h2>차수마다 평단은 이렇게 내려간다</h2>
+      <p class="mut">1회 100만원 · 3% 간격 · 최초 매수가를 100으로 둔 경우</p>
+      <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:var(--mono)">
+        <thead><tr style="color:var(--muted);font-size:11px">
+          <th style="text-align:left;padding:6px 4px">차수</th><th style="text-align:right;padding:6px 4px">최초가 대비</th>
+          <th style="text-align:right;padding:6px 4px">평단</th><th style="text-align:right;padding:6px 4px">평가손익</th>
+          <th style="text-align:right;padding:6px 4px">익절까지</th></tr></thead>
+        <tbody>
+        <tr><td style="padding:5px 4px">1차</td><td style="text-align:right">0%</td><td style="text-align:right">100.00</td><td style="text-align:right">0.00%</td><td style="text-align:right">+3.0%</td></tr>
+        <tr><td style="padding:5px 4px">3차</td><td style="text-align:right">−6%</td><td style="text-align:right">96.94</td><td style="text-align:right;color:var(--down)">−3.03%</td><td style="text-align:right">+6.2%</td></tr>
+        <tr><td style="padding:5px 4px">5차</td><td style="text-align:right">−12%</td><td style="text-align:right">93.81</td><td style="text-align:right;color:var(--down)">−6.19%</td><td style="text-align:right">+9.8%</td></tr>
+        <tr><td style="padding:5px 4px">7차</td><td style="text-align:right">−18%</td><td style="text-align:right">90.60</td><td style="text-align:right;color:var(--down)">−9.50%</td><td style="text-align:right">+13.8%</td></tr>
+        <tr style="font-weight:700"><td style="padding:5px 4px">9차</td><td style="text-align:right">−24%</td><td style="text-align:right">87.31</td><td style="text-align:right;color:var(--down)">−12.96%</td><td style="text-align:right">+18.3%</td></tr>
+        </tbody></table></div>
+      <div class="note">주가가 <b>−24%</b>인데 내 평가손익은 <b>−13%</b>입니다. 분할매수가 손실을 절반으로 눌러준 거예요.
+        대신 <b>900만원이 다 들어가 있고</b>, 익절하려면 바닥에서 <b class="hl">+18.3%</b> 올라야 합니다.</div>
     </div></section>
 
     <!-- 5 -->
     <section class="card"><div class="panel">
-      <div class="kicker">4단계 · 지지 확인</div>
-      <h2>지지선 닿았다고 바로 사지 않는다 — '확인' 후 매수</h2>
-      <div class="chartbox"><canvas data-demo="confirm"></canvas></div>
+      <div class="kicker">3단계 · 분할매도</div>
+      <h2>평단 대비 목표에 닿으면 남은 것의 일부를 판다</h2>
       <div class="steps">
-        <div class="step"><div class="n">1</div><div class="t">판정봉(예: 5분봉) 저가가 지지선을 <b>살짝 하회(흔들기)</b></div></div>
-        <div class="step"><div class="n">2</div><div class="t">그 봉의 <b>종가는 지지선 위로 회복</b> (긴 아랫꼬리)</div></div>
-        <div class="step"><div class="n">3</div><div class="t">다음 봉이 그 저점을 안 깨면 → <b class="hl">지지 확인</b> → 매수</div></div>
+        <div class="step"><div class="n">1</div><div class="t">평단 <b>+3%</b> → 잔량의 <b>50%</b> 매도</div></div>
+        <div class="step"><div class="n">2</div><div class="t">평단 <b>+4%</b> → 남은 것의 <b>30%</b> 매도</div></div>
+        <div class="step"><div class="n">3</div><div class="t">평단 <b>+5%</b> → <b>전량</b> 매도</div></div>
       </div>
-      <div class="note"><b>확인 실패</b>면? 종가가 선 아래로 마감하면 <b>사지 말고</b> 다음 지지선에서 대기. (레슨 1 '지지 확인'과 같은 원리)</div>
+      <div class="note"><b>비중은 '남은 잔량' 기준</b>입니다. 100주에서 50% 팔면 50주, 그 다음 30%는 남은 50주의 30%인 15주예요.<br><br>
+        그리고 <b class="hl-r">매수가 한 번이라도 더 체결되면 매도 목표가 1차부터 리셋</b>됩니다. 평단이 내려갔으니 목표가도 새 평단 기준으로 다시 잡는 거예요.</div>
     </div></section>
 
     <!-- 6 -->
     <section class="card"><div class="panel">
-      <div class="kicker">5단계 · 손절 (철칙)</div>
-      <h2>지지가 깨지면, 미련 없이</h2>
-      <div class="chartbox"><canvas data-demo="stop"></canvas></div>
-      <div class="steps">
-        <div class="step r"><div class="n">1</div><div class="t">매수한 <b>지지선을 종가로 이탈</b> → 그 차수 손절</div></div>
-        <div class="step r"><div class="n">2</div><div class="t">최후 방어선 <b>기준봉 저가 이탈 → 전량 손절</b> (장중 즉시)</div></div>
-      </div>
-      <div class="note"><b>왜 철칙?</b> 기준봉 저가까지 깨졌다 = 세력이 지킬 의지가 없다는 뜻. 손절은 '실패'가 아니라 <b>다음 기회를 위한 비용</b>이에요.</div>
+      <div class="kicker">응용</div>
+      <h2>간격을 3%에서 5%로 넓히면?</h2>
+      <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:var(--mono)">
+        <thead><tr style="color:var(--muted);font-size:11px">
+          <th style="text-align:left;padding:6px 4px">9차까지 갔을 때</th>
+          <th style="text-align:right;padding:6px 4px">3% 간격</th><th style="text-align:right;padding:6px 4px">5% 간격</th></tr></thead>
+        <tbody>
+        <tr><td style="padding:5px 4px">그때 주가</td><td style="text-align:right">−24%</td><td style="text-align:right">−40%</td></tr>
+        <tr><td style="padding:5px 4px">평단</td><td style="text-align:right">87.31</td><td style="text-align:right">77.87</td></tr>
+        <tr><td style="padding:5px 4px">평가손익</td><td style="text-align:right;color:var(--down)">−13.0%</td><td style="text-align:right;color:var(--down)">−23.0%</td></tr>
+        <tr><td style="padding:5px 4px">익절까지 반등</td><td style="text-align:right">+18.3%</td><td style="text-align:right">+33.7%</td></tr>
+        </tbody></table></div>
+      <p><b>−24%까지는 3% 간격이 유리</b>합니다. 더 촘촘히 받아서 평단이 낮고 익절도 빨라요.</p>
+      <p><b class="hl-a">−25%보다 더 빠지면 5% 간격이 유리</b>합니다. 3% 간격은 −24%에서 탄약이 떨어져 더는 평단을 못 낮추지만, 5% 간격은 −40%까지 받칠 여력이 남아 있거든요.</p>
+      <div class="note">정답은 없습니다. <b>얕게 눌렸다 자주 반등하는 종목은 3%</b>, <b>깊게 빠지는 변동성 큰 종목은 5%</b>가 맞습니다.</div>
     </div></section>
 
     <!-- 7 -->
     <section class="card"><div class="panel">
-      <div class="kicker">6단계 · 재매수</div>
-      <h2>손절했어도 저가를 회복하면 다시 노린다</h2>
-      <div class="chartbox"><canvas data-demo="rebuy"></canvas></div>
+      <div class="kicker">가장 중요한 단계 · 종목 선정</div>
+      <h2>손절이 없으니, 되돌아올 종목만 골라야 한다</h2>
       <div class="steps">
-        <div class="step"><div class="n">1</div><div class="t">손절 후 가격이 <b>기준봉 저가를 회복</b>하면 분할로 재진입</div></div>
-        <div class="step"><div class="n">2</div><div class="t">재매수 <b>최대 3회</b>까지 (무계획 추가매수 금지)</div></div>
-        <div class="step r"><div class="n">✕</div><div class="t">기준봉 저가를 <b>8% 이상</b> 더 깨면 → 그 사이클 <b>중단</b></div></div>
+        <div class="step a"><div class="n">O</div><div class="t"><b>횡보하거나 완만히 우상향</b> — 빠져도 제자리로 돌아오는 흐름</div></div>
+        <div class="step a"><div class="n">O</div><div class="t"><b>거래대금 충분</b> — 원하는 가격에 체결돼야 분할이 의미 있음</div></div>
+        <div class="step a"><div class="n">O</div><div class="t"><b>하루 −10% 급락이 드문 종목</b> — 하루에 차수를 몰아 쓰지 않도록</div></div>
+        <div class="step r"><div class="n">X</div><div class="t"><b>장기 하락 추세</b> — 받치고 받쳐도 계속 내려가면 자금만 묶임</div></div>
+        <div class="step r"><div class="n">X</div><div class="t"><b>52주 고가 부근</b> — 1차 진입 위치가 너무 높음</div></div>
       </div>
-      <div class="note"><b>주의</b> — 재매수는 '추세가 살아있을 때'만. 횟수·무효화 기준을 정해두지 않으면 무계획 추가매수로 망가집니다.</div>
+      <div class="note"><b>함정이 하나 있습니다.</b> 떨어지는 종목에서도 이 전략은 작은 익절을 반복해서 <b>승률이 높게 나옵니다.</b>
+        승률만 보면 하락주가 좋아 보여요. 하지만 원주가가 반토막 나는 동안 자금이 계속 재투입될 뿐입니다.
+        <b class="hl-r">승률보다 추세를 먼저 보세요.</b></div>
     </div></section>
 
     <!-- 8 -->
     <section class="card"><div class="panel">
-      <div class="kicker">7단계 · 익절</div>
-      <h2>파는 기준도 미리 정한다 (3가지 중 선택)</h2>
-      <div class="chartbox"><canvas data-demo="take"></canvas></div>
+      <div class="kicker">위험</div>
+      <h2>최악을 먼저 계산해두기</h2>
+      <p>손절이 없다는 건 <b class="hl-r">잘못 고르면 빠져나올 장치가 없다</b>는 뜻입니다. 시작 전에 두 가지를 반드시 계산하세요.</p>
       <div class="steps">
-        <div class="step"><div class="n">①</div><div class="t"><b>추세 이탈</b> — 10분봉 이평 이탈 + 음봉 N개, 수익률 최소%↑에서 전량</div></div>
-        <div class="step"><div class="n">②</div><div class="t"><b>목표 수익률</b> — 예: +5% 도달 시 즉시 전량</div></div>
-        <div class="step"><div class="n">③</div><div class="t"><b>분할 익절</b> — +10%→30%, +18%→50%, +23%→전량</div></div>
+        <div class="step r"><div class="n">1</div><div class="t"><b>종목당 최대 투입금 = 1회 매수금 × 9</b><br>100만원이면 <b>900만원</b>이 한 종목에 들어갈 수 있습니다</div></div>
+        <div class="step r"><div class="n">2</div><div class="t"><b>동시에 몇 종목을 감당할 수 있나</b><br>3종목이면 2,700만원. 여유자금을 넘기면 9차를 못 채우고 전략이 깨집니다</div></div>
       </div>
-      <p class="mut">수익률 = (평가손익 + 실현손익) ÷ 투입금액 × 100. 초보는 ②(목표 수익률)가 가장 지키기 쉬워요.</p>
+      <div class="note">1회 매수금은 <b>최악의 경우 9배가 들어간다</b>는 전제로 정하세요. 반대로 말하면, 감당 가능한 금액 ÷ 9 가 1회 매수금입니다.</div>
     </div></section>
 
     <!-- 9 -->
     <section class="card"><div class="panel">
-      <div class="kicker">확인 퀴즈</div>
-      <h2>이해했는지 체크</h2>
-      <div class="quiz">
-        <div class="q">Q1. 기준봉 종가 160, 시가 100(몸통 60)이다. <b>1차 지지선</b>은?</div>
-        <button class="opt" data-ok="1">130 (종가 − 몸통×0.5)</button>
-        <button class="opt" data-ok="0">100 (기준봉 시가)</button>
-        <button class="opt" data-ok="0">160 (기준봉 종가)</button>
-        <div class="qfb"></div>
+      <div class="kicker">확인</div>
+      <h2>퀴즈로 점검</h2>
+      <p><b>Q. 분할매수 기준을 '평단 대비 −3%'로 바꾸면 어떻게 될까요?</b></p>
+      <div class="opts">
+        <button class="opt" data-ok="0">평단이 더 빨리 내려가서 유리하다</button>
+        <button class="opt" data-ok="1">기준선이 계속 따라 내려와 9차에서 멈추지 않는다</button>
+        <button class="opt" data-ok="0">매수 횟수가 줄어든다</button>
       </div>
-      <div class="quiz" style="margin-top:16px">
-        <div class="q">Q2. 분할매수 중 가격이 <b>기준봉 저가</b>를 종가로 이탈했다. 올바른 행동은?</div>
-        <button class="opt" data-ok="0">평단 낮추러 더 산다</button>
-        <button class="opt" data-ok="1">전량 손절한다</button>
-        <button class="opt" data-ok="0">그냥 버틴다</button>
-        <div class="qfb"></div>
-      </div>
+      <div class="note" id="qz-a" hidden><b>정답입니다.</b> 평단은 살 때마다 내려가므로 기준선도 같이 내려옵니다.
+        끝이 없는 추가매수가 되고, 그게 바로 피해야 할 <b>무계획 물타기</b>예요. 최초 매수가는 고정이라 <b>9차에서 반드시 끝납니다.</b></div>
     </div></section>
 
     <!-- 10 -->
     <section class="card"><div class="panel cta">
-      <div class="big">👑</div>
-      <h2>이제 실전처럼 연습하자</h2>
-      <p class="mut">주식한판에서 기준봉 다음날 차트를 재생하며,<br>지지선마다 '지지 확인' 후 분할매수 → 손절·익절을 연습하세요.</p>
-      <div class="checklist">
-        <div><span class="mk">✓</span>지지선 1/2 · 3/4 · 시가 / 손절 = 저가</div>
-        <div><span class="mk">✓</span>확인 후 30/30/40 분할매수</div>
-        <div><span class="mk">✓</span>저가 이탈 = 전량 손절, 익절은 미리 정한 기준대로</div>
-      </div>
-      <button class="go" id="cta-go">주식한판으로 연습하기 ▸</button>
+      <div class="kicker">정리</div>
+      <h2>이제 직접 돌려보세요</h2>
+      <p><b>① 적합종목부터</b> — 종목을 넣으면 과거 전 구간을 시뮬레이션해 0~100점으로 채점합니다. 익절 성공률, 9차까지 쓴 비율, 최대 평가손실을 한눈에 볼 수 있어요.</p>
+      <p><b>② 그 다음 연습</b> — 게임에서 1분봉을 재생하며 분할매수가 어떻게 걸리고 평단이 어떻게 내려가는지 눈으로 확인하세요. <b>바로 결과보기</b>를 누르면 끝까지 돌린 결과를 한 번에 볼 수도 있습니다.</p>
+      <div class="note">숫자로 먼저 확인하고, 눈으로 익히고, 그 다음에 실제 돈을 넣는 순서를 권합니다.</div>
+      <button class="go" id="cta-s10" style="margin-right:6px">🔎 10분할 적합종목 ▸</button>
+      <button class="go" id="cta-go">🎮 연습하러 가기 ▸</button>
     </div></section>
 
   </div>
@@ -271,16 +277,16 @@ var prevB=document.getElementById('prev'),nextB=document.getElementById('next'),
 /* ---------- 음성 내레이션 ---------- */
 var synth=window.speechSynthesis||null, autoRead=false, koVoice=null;
 var NAR=[
- "레슨 4, 기준봉 매매입니다. 기준봉은 거래량이 터진 상한가급 장대양봉으로, 세력이 크게 들어온 날입니다. 핵심은 그날 쫓아가지 않는 것입니다. 다음날 가격이 눌릴 때, 세력이 받칠 만한 자리에서 나눠서 매수하고, 아니면 손절합니다. 오르는 걸 쫓지 말고 받칠 자리에서 기다렸다 분할로 사라, 이것이 한 줄 요약입니다.",
- "1단계, 기준봉 선정입니다. 다섯 가지 조건을 모두 만족해야 합니다. 시가총액 천억 이상, 당일 이십 퍼센트 이상 급등, 거래량 오백만 주 이상, 거래대금 오백억 이상, 그리고 양봉이 십일선 위에 위치. 이 조건을 다 만족한 날이 세력과 수급이 확실히 들어온 날이고, 이 봉 하나가 다음날 매매의 기준이 됩니다.",
- "2단계, 지지선 산출입니다. 기준봉의 몸통, 즉 시가에서 종가 사이를 등분해 세력의 평균 매수가를 추정합니다. 1차 지지선은 몸통의 이분의 일 지점, 2차는 사분의 삼 지점, 3차는 기준봉 시가입니다. 그리고 기준봉 저가가 손절선입니다. 세력의 평단이 보통 몸통 안에 있어서 그 가격대에서 다시 받칠 확률이 높습니다.",
- "3단계, 분할매수입니다. 한 번에 사지 않고 지지선마다 나눠 삽니다. 1차 지지선에서 삼십 퍼센트, 2차에서 삼십 퍼센트, 3차 시가에서 사십 퍼센트. 아래로 갈수록 비중을 키우면 더 싸게 산 물량이 많아져 평단가가 낮아집니다. 한 번에 다 사면 조정에서 버티기 어렵습니다.",
- "4단계, 지지 확인입니다. 지지선에 닿았다고 바로 사지 않습니다. 판정봉의 저가가 지지선을 살짝 하회하며 흔들고, 그 봉의 종가는 지지선 위로 회복하고, 다음 봉이 그 저점을 깨지 않으면 지지 확인입니다. 그때 매수합니다. 종가가 선 아래로 마감하면 사지 말고 다음 지지선에서 기다립니다.",
- "5단계, 손절입니다. 이것은 철칙입니다. 매수한 지지선을 종가로 이탈하면 그 차수를 손절하고, 최후 방어선인 기준봉 저가를 이탈하면 전량 손절합니다. 기준봉 저가까지 깨졌다는 건 세력이 지킬 의지가 없다는 뜻입니다. 손절은 실패가 아니라 다음 기회를 위한 비용입니다.",
- "6단계, 재매수입니다. 손절했더라도 가격이 기준봉 저가를 회복하면 분할로 다시 진입합니다. 단, 재매수는 최대 세 번까지만 하고, 기준봉 저가를 팔 퍼센트 이상 더 깨면 그 사이클은 중단합니다. 횟수와 무효화 기준을 정해두지 않으면 무계획 추가매수로 계좌가 망가집니다.",
- "7단계, 익절입니다. 파는 기준도 미리 정합니다. 첫째 추세 이탈, 십분봉 이평을 이탈하고 음봉이 몇 개 나오며 수익률이 최소치를 넘었을 때 전량. 둘째 목표 수익률, 예를 들어 오 퍼센트 도달 시 즉시 전량. 셋째 분할 익절. 초보는 목표 수익률 방식이 가장 지키기 쉽습니다.",
- "확인 퀴즈입니다. 두 문제를 풀며 점검해 보세요.",
- "이제 실전처럼 연습할 차례입니다. 주식한판에서 기준봉 다음날 차트를 재생하며 지지선마다 지지 확인 후 분할매수하고, 손절과 익절을 미리 정한 기준대로 연습하세요. 수고했습니다."
+ "레슨 4, 10분할매수입니다. 한 종목을 최대 열 번에 나눠 사는 방식입니다. 처음 산 가격에서 일정 비율씩 빠질 때마다 같은 금액을 더 넣어 평단가를 끌어내리고, 평단 대비 작은 목표에 닿으면 팝니다. 특징이 하나 있습니다. 손절이 없습니다. 그래서 재료가 좋은 종목이 아니라, 버티다 되돌아오는 종목을 골라야 합니다.",
+ "1단계, 진입입니다. 매매일 장 시작에 1회 매수금만큼 그냥 삽니다. 이때 체결된 가격이 최초 매수가이고, 앞으로 모든 분할의 기준이 됩니다. 1회 매수금은 전 차수 균등입니다. 백만원이면 2차도 3차도 백만원입니다. 이 전략은 언제 사느냐가 아니라 산 뒤에 어떻게 받치느냐로 승부하기 때문에, 1차 진입은 고민하지 않습니다.",
+ "2단계, 분할매수입니다. 2차부터 9차까지 최초 매수가 대비 마이너스 3퍼센트, 6퍼센트, 9퍼센트, 쭉 내려가 24퍼센트에 도달하면 같은 금액을 더 삽니다. 왜 평단이 아니라 최초 매수가 기준일까요. 평단은 살 때마다 내려갑니다. 평단 기준으로 잡으면 기준선이 계속 따라 내려와서 끝없이 사게 됩니다. 최초 매수가는 고정이라 9차에서 반드시 멈춥니다. 이것이 물타기와 계획된 분할매수를 가르는 지점입니다.",
+ "숫자로 보겠습니다. 1회 백만원, 3퍼센트 간격입니다. 9차까지 가면 주가는 최초가 대비 마이너스 24퍼센트인데, 평단은 87.31이라 내 평가손익은 마이너스 13퍼센트입니다. 분할매수가 손실을 절반으로 눌러준 것입니다. 대신 구백만원이 다 들어가 있고, 익절하려면 바닥에서 18.3퍼센트 올라야 합니다.",
+ "3단계, 분할매도입니다. 평단 플러스 3퍼센트에서 잔량의 50퍼센트, 4퍼센트에서 남은 것의 30퍼센트, 5퍼센트에서 전량을 팝니다. 비중은 남은 잔량 기준입니다. 그리고 매수가 한 번이라도 더 체결되면 매도 목표가 1차부터 리셋됩니다. 평단이 내려갔으니 목표가도 새 평단 기준으로 다시 잡는 것입니다.",
+ "응용입니다. 간격을 3퍼센트에서 5퍼센트로 넓히면 어떻게 될까요. 9차까지 갔을 때 3퍼센트 간격은 주가 마이너스 24퍼센트에 평가손익 마이너스 13퍼센트, 5퍼센트 간격은 주가 마이너스 40퍼센트에 평가손익 마이너스 23퍼센트입니다. 마이너스 24퍼센트까지는 3퍼센트 간격이 유리하고, 그보다 더 빠지면 5퍼센트 간격이 유리합니다. 3퍼센트 간격은 마이너스 24퍼센트에서 탄약이 떨어지기 때문입니다. 얕게 눌렸다 반등하는 종목은 3퍼센트, 깊게 빠지는 종목은 5퍼센트가 맞습니다.",
+ "가장 중요한 단계, 종목 선정입니다. 손절이 없으니 되돌아올 종목만 골라야 합니다. 횡보하거나 완만히 우상향하는 종목, 거래대금이 충분한 종목, 하루 마이너스 10퍼센트 급락이 드문 종목이 좋습니다. 장기 하락 추세와 52주 고가 부근은 피하세요. 함정이 하나 있습니다. 떨어지는 종목에서도 이 전략은 작은 익절을 반복해 승률이 높게 나옵니다. 하지만 원주가가 반토막 나는 동안 자금만 계속 재투입될 뿐입니다. 승률보다 추세를 먼저 보세요.",
+ "위험입니다. 손절이 없다는 건 잘못 고르면 빠져나올 장치가 없다는 뜻입니다. 두 가지를 먼저 계산하세요. 첫째, 종목당 최대 투입금은 1회 매수금 곱하기 9입니다. 백만원이면 구백만원이 한 종목에 들어갑니다. 둘째, 동시에 몇 종목을 감당할 수 있는지 보세요. 세 종목이면 이천칠백만원입니다. 여유자금을 넘기면 9차를 못 채우고 전략이 깨집니다. 감당 가능한 금액 나누기 9가 1회 매수금입니다.",
+ "확인 퀴즈입니다. 분할매수 기준을 평단 대비 마이너스 3퍼센트로 바꾸면 어떻게 될까요. 생각해보고 답을 골라보세요.",
+ "정리입니다. 먼저 적합종목에서 종목을 채점해 보세요. 과거 전 구간을 시뮬레이션해 익절 성공률과 최대 평가손실을 보여줍니다. 그 다음 게임에서 1분봉을 재생하며 분할매수가 어떻게 걸리는지 눈으로 익히세요. 숫자로 확인하고, 눈으로 익히고, 그 다음에 실제 돈을 넣는 순서를 권합니다. 수고했습니다."
 ];
 function pickVoice(){ if(!synth)return; var vs=synth.getVoices()||[]; koVoice=vs.filter(function(v){return /ko(-|_)?KR/i.test(v.lang)})[0]||vs.filter(function(v){return /korean|한국/i.test(v.name)})[0]||null; }
 if(synth){ pickVoice(); synth.onvoiceschanged=pickVoice; }
