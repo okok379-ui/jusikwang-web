@@ -1822,6 +1822,9 @@ $('#case-search').addEventListener('input',function(){
 });
 $('#case-date').addEventListener('input',function(){ _s10Picks=null; renderCases(); });
 $('#case-date').addEventListener('focus',hideSuggest);
+/* ---------- wire up ---------- */
+$('#b-play').addEventListener('click',toggle);
+$('#b-step').addEventListener('click',step);
 $('#case-play').addEventListener('click',tryDirectPlay);
 $('#case-find').addEventListener('click',findS10);
 $('#case-search').addEventListener('keydown',function(e){if(e.key==='Enter')tryDirectPlay();});
