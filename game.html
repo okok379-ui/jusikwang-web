@@ -368,7 +368,6 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
     </div>
     <div id="r-recent"></div>
     <button class="play" id="r-review" style="width:100%;margin-bottom:9px;justify-content:center">🔍 차트로 복기하기</button>
-    <button class="btn ghost" id="r-ideal-view" style="width:100%;margin-bottom:9px">📖 교과서 매매 보기</button>
     <button class="play" id="r-continue" hidden style="width:100%;margin-bottom:9px;justify-content:center;background:var(--sup);color:#fff">▶ 다음 날 계속 ▸</button>
     <div class="modal-btns">
       <button class="btn ghost" id="r-retry">같은 종목 재도전</button>
@@ -1995,16 +1994,6 @@ $('#r-retry').addEventListener('click',function(){   // 실데이터면 같은 �
   if(d&&d.real&&src){ loadRealCase(src); toast('같은 종목 재도전: '+(d.name||'')); } else { newRound(S.seed); }
 });   // 실데이터면 같은 종목·같은 날 처음부터
 $('#case-random').addEventListener('click',function(){ $('#case-overlay').hidden=true; newRound(); });
-$('#r-ideal-view').addEventListener('click',function(){
-  if(!S)return;
-  zoom1=zoom3=zoomD=1; $('#overlay').hidden=true; $('#back-result').hidden=false; draw();
-  var r=S.rule;
-  if(r){ var sign=(r.ret>=0?'+':'');
-    toast('교과서 매매: 3분봉 10이평 올라탈 때 매수('+won(r.buyP)+') → '+r.how+' 매도('+won(r.sellP)+') = '+sign+r.ret.toFixed(1)+'% (3분봉 주황 영역)');
-  } else {
-    toast('이 종목은 매수 조건(3분봉 10이평 상향 돌파)이 나오지 않았습니다 — 관망 자리였어요.');
-  }
-});
 // 복기: 결과창을 닫고 내 매수·매도 위치 + 마무리 이후 흐름까지 전체 차트로 보기
 function enterReview(){
   if(!S||!S.finished)return;
