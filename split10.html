@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>10분할 적합종목 — 주식한판</title>
+<link rel="icon" href="favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef1f5;--panel:#fff;--panel2:#f2f5f9;--fg:#121820;--muted:#5a6675;--border:#d6dce5;
+  --up:#e03131;--down:#1c64f2;--accent:#b9770a;--accent-ink:#fff;--sup:#0f8f81;--ma:#8e3fc9;
+  --shadow:0 1px 2px rgba(20,30,45,.06),0 12px 26px rgba(20,30,45,.1);
+  --sans:"IBM Plex Sans KR",system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.6}
+.wrap{max-width:1020px;margin:0 auto;padding:0 16px 60px}
+header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.hd{max-width:1020px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:10px}
+.logo{font-weight:700;font-size:17px;cursor:pointer}
+.sp{flex:1}
+.btn{border:1px solid var(--border);background:var(--panel);color:var(--fg);border-radius:10px;padding:9px 14px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.btn:hover{background:var(--panel2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.sm{padding:6px 10px;font-size:13px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+h1{font-size:25px;margin:26px 0 6px}
+h2{font-size:18px;margin:26px 0 8px}
+.lead{color:var(--muted);font-size:14px;margin:0 0 14px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld label{font-size:12px;color:var(--muted);font-weight:600}
+input,select{background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);
+  font-family:inherit;font-size:14px;padding:9px 10px}
+input.mono{font-family:var(--mono)}
+.tabs{display:flex;gap:6px;margin:18px 0 12px;border-bottom:1px solid var(--border)}
+.tab{border:0;background:none;color:var(--muted);font-family:inherit;font-size:15px;font-weight:700;
+  padding:10px 14px;cursor:pointer;border-bottom:2px solid transparent}
+.tab.on{color:var(--fg);border-bottom-color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{padding:9px 8px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+th:nth-child(2),td:nth-child(2){text-align:left}
+th{color:var(--muted);font-size:12px;font-weight:600}
+td.num{font-family:var(--mono)}
+.gr{display:inline-block;min-width:22px;text-align:center;border-radius:6px;padding:1px 6px;font-weight:700;font-size:12px}
+.gr.A{background:#0f8f81;color:#fff}.gr.B{background:#1c64f2;color:#fff}
+.gr.C{background:#b9770a;color:#fff}.gr.D{background:#8a6d3b;color:#fff}.gr.E{background:#aa2e2e;color:#fff}
+.bar{height:8px;background:var(--panel2);border-radius:5px;overflow:hidden;margin-top:8px}
+.bar>i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}
+.msg{font-size:13px;color:var(--muted);margin-top:8px;white-space:pre-wrap}
+.warn{background:#fff7e6;border:1px solid #f0d9a8;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:10px}
+:root[data-theme=dark] .warn{background:#2a2213;border-color:#5a4a22}
+.ov{position:fixed;inset:0;background:rgba(10,14,20,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.ov[hidden]{display:none}
+.ov .bx{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;max-width:420px;width:100%}
+.note{font-size:12.5px;color:var(--muted)}
+.sc{display:grid;grid-template-columns:1fr auto auto;gap:4px 10px;font-size:13px;margin-top:10px}
+.sc b{font-family:var(--mono)}
+.big{font-size:34px;font-weight:700;font-family:var(--mono);line-height:1.1}
+.kv{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:10px;font-size:13px}
+.kv div{color:var(--muted)}.kv b{color:var(--fg);font-family:var(--mono);margin-left:4px}
+@media(max-width:620px){.hd .hide{display:none}h1{font-size:21px}td,th{padding:8px 5px;font-size:12.5px}}
+</style>
+</head>
+<body>
+<header><div class="hd">
+  <div class="logo" onclick="location.href='index.html'">🎮 주식한판</div>
+  <div class="sp"></div>
+  <button class="btn sm" id="b-kw">⚙️ 키움 설정</button>
+  <button class="btn sm hide" onclick="location.href='index.html'">홈</button>
+</div></header>
+
+<div class="wrap">
+  <h1>10분할 적합종목</h1>
+  <p class="lead">손절 없이 분할매수로 버티는 전략이라, 중요한 건 재료가 아니라 <b>버티다 평단 위로 되돌아오는가</b>입니다.
+    과거 일봉을 전 구간 시뮬레이션해 0~100점으로 채점합니다.</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="fld" style="min-width:140px"><label>기준일</label><input type="date" id="f-date"></div>
+      <div class="fld"><label>1회 매수금(원)</label><input class="mono" id="f-once" value="1000000" style="width:120px"></div>
+      <div class="fld"><label>분할 간격</label>
+        <select id="f-step">
+          <option value="3">3% 간격 (−24%까지)</option>
+          <option value="5">5% 간격 (−40%까지)</option>
+          <option value="4">4% 간격 (−32%까지)</option>
+        </select></div>
+      <div class="fld"><label>익절(평단 대비 %)</label><input class="mono" id="f-tp" value="3" style="width:70px"></div>
+      <div class="fld"><label>기한(거래일)</label><input class="mono" id="f-days" value="120" style="width:70px"></div>
+    </div>
+    <div class="note" style="margin-top:10px">기준일을 과거로 두면 <b>그 날짜까지의 일봉만</b> 써서 채점합니다(이후 데이터는 보지 않음).</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" data-t="one">종목 검색</button>
+    <button class="tab" data-t="top">기준일 TOP 10</button>
+  </div>
+
+  <!-- 종목 검색 -->
+  <section id="p-one">
+    <div class="card">
+      <div class="row">
+        <div class="fld" style="flex:1;min-width:200px"><label>종목명 또는 6자리 코드</label>
+          <input id="f-code" placeholder="예) 삼성전자 또는 005930"></div>
+        <button class="btn primary" id="b-one">적합도 검사</button>
+      </div>
+      <div class="bar" id="bar1" hidden><i></i></div>
+      <div class="msg" id="msg1"></div>
+    </div>
+    <div id="res1"></div>
+  </section>
+
+  <!-- TOP 10 -->
+  <section id="p-top" hidden>
+    <div class="card">
+      <div class="row">
+        <div class="fld"><label>후보 종목 수(거래대금 상위)</label>
+          <select id="f-uni"><option>30</option><option selected>50</option><option>80</option><option>120</option></select></div>
+        <button class="btn primary" id="b-top">적합종목 10개 찾기</button>
+      </div>
+      <div class="bar" id="bar2" hidden><i></i></div>
+      <div class="msg" id="msg2"></div>
+      <div class="note" style="margin-top:8px">후보는 <b>오늘</b> 거래대금 상위에서 뽑고, 채점만 기준일 시점으로 합니다.
+        과거 날짜를 고르면 그날 실제 거래대금 순위와는 다를 수 있습니다.</div>
+    </div>
+    <div id="res2"></div>
+  </section>
+</div>
+
+<!-- 키움 설정 -->
+<div class="ov" id="kw-ov" hidden><div class="bx">
+  <h2 style="margin:0 0 4px">⚙️ 키움 API 설정</h2>
+  <p class="note" style="margin:0 0 12px">본인 키움 REST 앱키로 조회합니다. 키는 <b>이 브라우저에만</b> 저장되고 서버로 보내지 않습니다.</p>
+  <label class="note">앱키</label>
+  <input id="kw-ak" class="mono" autocomplete="off" style="width:100%;margin:4px 0 10px">
+  <label class="note">시크릿키</label>
+  <input id="kw-sk" class="mono" type="password" autocomplete="off" style="width:100%;margin:4px 0 10px">
+  <label class="note">서버</label>
+  <select id="kw-mode" style="width:100%;margin:4px 0 12px"><option value="real">실전</option><option value="mock">모의</option></select>
+  <div class="msg" id="kw-msg"></div>
+  <div class="row" style="margin-top:10px">
+    <button class="btn primary" id="kw-save">저장</button>
+    <button class="btn" id="kw-test">연결 테스트</button>
+    <div class="sp" style="flex:1"></div>
+    <button class="btn" id="kw-close">닫기</button>
+  </div>
+</div></div>
+
+<script src="split10fit.js"></script>
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s)};
+var F=window.Split10Fit;
+
+/* ── 로그인 확인 (허브 세션 공유) ───────────────────────── */
+function session(){try{return JSON.parse(localStorage.getItem('jusikwang_hub')||'{}')}catch(e){return{}}}
+if(!session().user){ location.href='index.html'; return; }
+
+/* ── 키움 호출 (game.html 과 동일한 방식·동일한 키) ─────── */
+var KW_LS={ak:'jusikwang_kw_appkey',sk:'jusikwang_kw_secret',mode:'jusikwang_kw_mode',codes:'jusikwang_kw_codes'};
+function kwCfg(){return{ak:(localStorage.getItem(KW_LS.ak)||'').trim(),sk:(localStorage.getItem(KW_LS.sk)||'').trim(),mode:localStorage.getItem(KW_LS.mode)||'real'};}
+function kwBase(m){return m==='mock'?'https://mockapi.kiwoom.com':'https://api.kiwoom.com';}
+var _tok={t:'',exp:0};
+async function kwToken(){
+  var c=kwCfg(); if(!c.ak||!c.sk) throw new Error('키움 앱키/시크릿키가 없습니다 — ⚙️ 키움 설정에서 넣어주세요');
+  if(_tok.t&&Date.now()<_tok.exp) return _tok.t;
+  var r=await fetch(kwBase(c.mode)+'/oauth2/token',{method:'POST',headers:{'Content-Type':'application/json;charset=UTF-8'},
+    body:JSON.stringify({grant_type:'client_credentials',appkey:c.ak,secretkey:c.sk})});
+  var d=await r.json();
+  if(d.return_code!=null&&d.return_code!==0) throw new Error('토큰 발급 실패: '+(d.return_msg||d.return_code));
+  var t=d.token||d.access_token; if(!t) throw new Error('토큰 응답 오류');
+  _tok={t:t,exp:Date.now()+5*3600*1000}; return t;
+}
+async function kwPost(path,apiId,body,cont,nk){
+  var c=kwCfg(),tok=await kwToken();
+  var r=await fetch(kwBase(c.mode)+path,{method:'POST',headers:{'Content-Type':'application/json;charset=UTF-8',
+    'authorization':'Bearer '+tok,'api-id':apiId,'cont-yn':cont||'N','next-key':nk||''},body:JSON.stringify(body)});
+  var d; try{d=await r.json();}catch(e){throw new Error(apiId+' 응답 파싱 실패');}
+  if(d.return_code!=null&&d.return_code!==0) throw new Error(apiId+' 실패: '+(d.return_msg||d.return_code));
+  d._cont=r.headers.get('cont-yn')||'N'; d._next=r.headers.get('next-key')||''; return d;
+}
+function kwNum(v){var s=(''+(v==null?'':v)).replace(/[,+]/g,'').trim();if(s===''||s==='-')return 0;var n=parseFloat(s);return isFinite(n)?Math.abs(Math.trunc(n)):0;}
+function kwRows(d){var best=null;for(var k in d){var v=d[k];if(Array.isArray(v)&&v.length&&typeof v[0]==='object'){if(!best||v.length>best.length)best=v;}}return best||[];}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms)});}
+function dMinus(ds,days){var y=+ds.slice(0,4),m=+ds.slice(4,6)-1,d2=+ds.slice(6,8);var d=new Date(y,m,d2);d.setDate(d.getDate()-days);
+  return ''+(d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate());}
+
+/* 기준일까지의 일봉 — base_dt 로 과거 기준 조회(이후 데이터 안 들어옴) */
+async function dayBars(code,asof,minBars){
+  var start=dMinus(asof,Math.round((minBars+60)*1.55)), all=[],cont='N',nk='';
+  for(var p=0;p<6;p++){
+    var d=await kwPost('/api/dostk/chart','ka10081',{stk_cd:code,base_dt:asof,upd_stkpc_tp:'1'},cont,nk);
+    var rows=kwRows(d),oldest='';
+    rows.forEach(function(r){
+      var c=kwNum(r.cur_prc||r.close||0); if(c<=0)return;
+      var t=(''+(r.dt||r.date||'')).slice(0,8); if(!t)return;
+      if(!oldest||t<oldest)oldest=t;
+      all.push({time:t,open:kwNum(r.open_pric||r.open)||c,high:kwNum(r.high_pric||r.high)||c,
+                low:kwNum(r.low_pric||r.low)||c,close:c,vol:kwNum(r.trde_qty||r.volume||0)});
+    });
+    cont=''+(d._cont||'N'); nk=''+(d._next||'');
+    if(oldest&&oldest<=start)break;
+    if(cont!=='Y'||!nk)break;
+    await sleep(170);
+  }
+  var seen={},out=[];
+  all.sort(function(a,b){return a.time<b.time?-1:a.time>b.time?1:0});
+  all.forEach(function(x){if(x.time<=asof&&x.time>=start&&!seen[x.time]){seen[x.time]=1;out.push(x);}});
+  return out;
+}
+
+/* 종목명 → 코드 (ka10099, 브라우저 캐시) */
+async function codeMap(force){
+  if(!force){var c=localStorage.getItem(KW_LS.codes);if(c){try{var m=JSON.parse(c);if(m&&m.list&&m.list.length)return m;}catch(e){}}}
+  var list=[],mks=['0','10'];
+  for(var i=0;i<mks.length;i++){
+    var cont='N',nk='';
+    for(var p=0;p<80;p++){
+      var d=await kwPost('/api/dostk/stkinfo','ka10099',{mrkt_tp:mks[i]},cont,nk);
+      var rows=null;['list','output','data','stk_list'].forEach(function(k){if(!rows&&Array.isArray(d[k]))rows=d[k];});
+      if(!rows)rows=kwRows(d);
+      (rows||[]).forEach(function(r){var cd=(''+(r.code||r.stk_cd||'')).replace(/^[A_]/,'');
+        var nm=(''+(r.name||r.stk_nm||'')).trim(); if(cd&&nm)list.push([cd,nm]);});
+      cont=''+(d._cont||'N'); nk=''+(d._next||'');
+      if(cont!=='Y'||!nk)break; await sleep(120);
+    }
+  }
+  var m={list:list,ts:Date.now()}; try{localStorage.setItem(KW_LS.codes,JSON.stringify(m));}catch(e){}
+  return m;
+}
+async function resolveCode(q){
+  q=(q||'').trim(); if(!q)return null;
+  if(/^\d{6}$/.test(q)){var nm='';try{var cm=await codeMap(false);var f0=cm.list.find(function(x){return x[0]===q});if(f0)nm=f0[1];}catch(e){}
+    return {code:q,name:nm||q};}
+  var m=await codeMap(false),ql=q.toLowerCase();
+  var f=m.list.find(function(x){return x[1].toLowerCase()===ql})
+      ||m.list.find(function(x){return x[1].toLowerCase().indexOf(ql)===0})
+      ||m.list.find(function(x){return x[1].toLowerCase().indexOf(ql)>=0});
+  return f?{code:f[0],name:f[1]}:null;
+}
+
+/* ETF/ETN·우선주 제외 (scanner.py 와 같은 규칙) */
+var ETF_B=['KODEX','TIGER','KBSTAR','ARIRANG','KINDEX','HANARO','SOL ','ACE ','PLUS ','RISE ','KOACT','TIMEFOLIO','마이티','히어로즈','FOCUS','파워','TREX','WON ','BNK ','KCGI '];
+var ETF_W=['ETN','레버리지','인버스','선물','채권','국고채','콜옵션','ETF','KIS','TR)','커버드콜','액티브'];
+function isEtf(nm){var n=(nm||''),u=n.toUpperCase();
+  for(var i=0;i<ETF_B.length;i++)if(u.indexOf(ETF_B[i].trim())===0)return true;
+  for(var j=0;j<ETF_W.length;j++)if(n.indexOf(ETF_W[j])>=0||u.indexOf(ETF_W[j])>=0)return true;
+  return false;}
+function isPref(code,nm){var c=''+(code||'');if(c&&'KLM'.indexOf(c.slice(-1))>=0)return true;
+  var n=(''+(nm||'')).trim();return (/우[0-9]*[A-C]?$/.test(n)||n.indexOf('우B')>=0)&&!!c&&c.slice(-1)!=='0';}
+
+/* 사전필터 (split10_screener.py 와 같은 기준) */
+function prefilter(bars,once,minBars){
+  var n=bars.length;
+  if(n<minBars) return '일봉 부족('+n+'봉)';
+  var cur=bars[n-1].close, q=Math.floor(once/cur);
+  if(q<1) return '1회 매수금으로 1주도 못 삼';
+  var rec=bars.slice(-60),amt=0; rec.forEach(function(b){amt+=b.close*b.vol}); amt/=Math.max(1,rec.length);
+  if(amt<5e8) return '평균 거래대금 '+(amt/1e8).toFixed(1)+'억';
+  var bi=Math.max(0,n-250),p0=bars[bi].close,tr=p0?((cur-p0)/p0*100):0;
+  if(tr<-35) return '장기추세 '+tr.toFixed(0)+'%';
+  return '';
+}
+
+/* ── 설정 읽기 ─────────────────────────────────────────── */
+function stepDrops(s){var out=[];for(var i=1;i<=8;i++)out.push(s*i);return out;}
+function cfg(){
+  var s=parseFloat($('#f-step').value)||3;
+  return {once:Math.max(10000,parseInt($('#f-once').value,10)||1000000),
+          drops:stepDrops(s), tp:parseFloat($('#f-tp').value)||3,
+          max_days:Math.max(20,parseInt($('#f-days').value,10)||120), daily_max:3};
+}
+function asof(){var v=$('#f-date').value||'';return v.replace(/-/g,'');}
+function minBars(c){return c.max_days+61;}
+
+/* ── 출력 ──────────────────────────────────────────────── */
+function esc(s){return (''+s).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
+function n1(v){return (Math.round(v*10)/10).toFixed(1)}
+function eok(v){return (v/1e8)>=10000?(v/1e12).toFixed(1)+'조':Math.round(v/1e8).toLocaleString()+'억'}
+
+function cardOne(name,code,m,warns,c){
+  var parts=m.score_parts.map(function(p){
+    return '<div>'+esc(p[0])+'</div><b>'+n1(p[1])+' / '+p[2]+'</b><div style="color:var(--muted)">'+esc(p[3])+'</div>';
+  }).join('');
+  return '<div class="card">'
+    +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">'
+    +'<div><div style="font-size:17px;font-weight:700">'+esc(name)+' <span class="note">'+esc(code)+'</span></div>'
+    +'<div class="big">'+n1(m.score)+' <span class="gr '+m.grade+'">'+m.grade+'</span></div>'
+    +'<div class="note">'+esc(m.comment)+'</div></div>'
+    +'<div style="flex:1;min-width:260px"><div class="sc">'+parts+'</div></div></div>'
+    +(m.capped?'<div class="warn"><b>점수 상한 적용</b> — '+esc(m.cap_why)+'<br><span class="note">그리드는 하락 중에도 작은 익절을 반복해 성공률이 높게 나옵니다. 그래서 미회복률·평가손실·추세가 나쁘면 등급을 올리지 않습니다.</span></div>':'')
+    +'<div class="kv">'
+    +'<div>익절 성공률<b>'+n1(m.win_rate)+'%</b></div>'
+    +'<div>평균/중앙 소요일<b>'+n1(m.avg_days)+' / '+n1(m.med_days)+'일</b></div>'
+    +'<div>9차 소진율<b>'+n1(m.full9_rate)+'%</b></div>'
+    +'<div>최대 평가손실<b>'+n1(m.worst_dd)+'%</b></div>'
+    +'<div>장기추세<b>'+(m.trend>=0?'+':'')+n1(m.trend)+'%</b></div>'
+    +'<div>평균 거래대금<b>'+eok(m.avg_amt)+'</b></div>'
+    +'<div>현재가<b>'+m.cur.toLocaleString()+'원</b></div>'
+    +'<div>1회 '+(c.once/10000)+'만원<b>'+m.qty1+'주</b></div>'
+    +'<div>최대 투입<b>'+Math.round(m.max_cost).toLocaleString()+'원</b></div>'
+    +'<div>구간<b>'+m.from+'~'+m.to+' ('+m.trials+'회 시뮬)</b></div>'
+    +'</div>'
+    +(warns.length?'<div class="warn"><b>확인하세요</b><ul style="margin:6px 0 0;padding-left:18px">'
+      +warns.map(function(w){return '<li>'+esc(w)+'</li>'}).join('')+'</ul></div>':'')
+    +'</div>';
+}
+
+/* ── 종목 1개 검사 ─────────────────────────────────────── */
+$('#b-one').addEventListener('click',async function(){
+  var q=$('#f-code').value.trim(), d=asof(), c=cfg();
+  var msg=$('#msg1'), res=$('#res1'); res.innerHTML=''; msg.textContent='';
+  if(!q){msg.textContent='종목명이나 코드를 넣어주세요.';return;}
+  if(!d){msg.textContent='기준일을 골라주세요.';return;}
+  this.disabled=true; msg.textContent='종목 확인 중…';
+  try{
+    var hit=await resolveCode(q);
+    if(!hit){msg.textContent='"'+q+'" 종목을 찾지 못했습니다.';return;}
+    msg.textContent=hit.name+'('+hit.code+') 일봉 받는 중…';
+    var bars=await dayBars(hit.code,d,minBars(c));
+    if(bars.length<minBars(c)){
+      msg.textContent='일봉이 '+bars.length+'봉뿐입니다 — 채점에 최소 '+minBars(c)+'봉이 필요합니다.\n기한(거래일)을 줄이거나 기준일을 최근으로 바꿔보세요.';
+      return;
+    }
+    msg.textContent='채점 중…';
+    var m=F.run(bars,c);
+    if(!m.ok){msg.textContent=m.msg;return;}
+    msg.textContent='';
+    res.innerHTML=cardOne(hit.name,hit.code,m,F.warnings(m,c),c);
+  }catch(e){ msg.textContent='오류: '+(e&&e.message||e); }
+  finally{ this.disabled=false; }
+});
+
+/* ── 기준일 TOP 10 ─────────────────────────────────────── */
+$('#b-top').addEventListener('click',async function(){
+  var d=asof(), c=cfg(), uni=parseInt($('#f-uni').value,10)||50;
+  var msg=$('#msg2'),res=$('#res2'),bar=$('#bar2'),fill=bar.querySelector('i');
+  res.innerHTML=''; msg.textContent='';
+  if(!d){msg.textContent='기준일을 골라주세요.';return;}
+  this.disabled=true; bar.hidden=false; fill.style.width='0%';
+  try{
+    msg.textContent='거래대금 상위 목록 받는 중…';
+    var rk=await kwPost('/api/dostk/rkinfo','ka10032',{mrkt_tp:'000',mang_stk_incls:'0',stex_tp:'3'});
+    var rows=kwRows(rk), cand=[];
+    rows.forEach(function(r){
+      var cd=(''+(r.stk_cd||r.code||'')).replace(/^A/,'').replace(/_AL|_NX/g,'').trim();
+      var nm=(''+(r.stk_nm||r.name||'')).trim();
+      if(!/^\d{6}$/.test(cd))return;
+      if(isEtf(nm)||isPref(cd,nm))return;
+      cand.push({code:cd,name:nm||cd});
+    });
+    cand=cand.slice(0,uni);
+    if(!cand.length){msg.textContent='거래대금 상위 목록이 비었습니다.';return;}
+
+    var done=0,scored=[],skipped=0;
+    for(var i=0;i<cand.length;i++){
+      var s=cand[i];
+      msg.textContent='('+(i+1)+'/'+cand.length+') '+s.name+' 채점 중…  통과 '+scored.length+'개';
+      try{
+        var bars=await dayBars(s.code,d,minBars(c));
+        var why=prefilter(bars,c.once,minBars(c));
+        if(why){skipped++;}
+        else{
+          var m=F.run(bars,c);
+          if(m.ok) scored.push({code:s.code,name:s.name,m:m});
+          else skipped++;
+        }
+      }catch(e){ skipped++; }
+      done++; fill.style.width=Math.round(done/cand.length*100)+'%';
+      await sleep(200);
+    }
+    scored.sort(function(a,b){return b.m.score-a.m.score});
+    var top=scored.slice(0,10);
+    msg.textContent='완료 — 후보 '+cand.length+'개 중 '+scored.length+'개 채점, '+skipped+'개 제외';
+    if(!top.length){res.innerHTML='<div class="card">조건을 넘긴 종목이 없습니다. 후보 수를 늘리거나 기준일을 바꿔보세요.</div>';return;}
+    var html='<div class="card" style="overflow-x:auto"><table><thead><tr>'
+      +'<th>순위</th><th>종목</th><th>점수</th><th>등급</th><th>성공률</th><th>소요일</th>'
+      +'<th>9차</th><th>최대손실</th><th>추세</th><th>거래대금</th><th>현재가</th></tr></thead><tbody>';
+    top.forEach(function(r,i){
+      var m=r.m;
+      html+='<tr><td class="num">'+(i+1)+'</td>'
+        +'<td>'+esc(r.name)+' <span class="note">'+r.code+'</span></td>'
+        +'<td class="num"><b>'+n1(m.score)+'</b></td>'
+        +'<td><span class="gr '+m.grade+'">'+m.grade+'</span></td>'
+        +'<td class="num">'+n1(m.win_rate)+'%</td>'
+        +'<td class="num">'+n1(m.avg_days)+'일</td>'
+        +'<td class="num">'+n1(m.full9_rate)+'%</td>'
+        +'<td class="num">'+n1(m.worst_dd)+'%</td>'
+        +'<td class="num">'+(m.trend>=0?'+':'')+n1(m.trend)+'%</td>'
+        +'<td class="num">'+eok(m.avg_amt)+'</td>'
+        +'<td class="num">'+m.cur.toLocaleString()+'</td></tr>';
+    });
+    html+='</tbody></table><div class="note" style="margin-top:10px">'+esc(d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8))
+      +' 기준 · 1회 '+(c.once/10000)+'만원 · 분할 '+c.drops.join(',')+'% · 익절 평단+'+c.tp+'% · 기한 '+c.max_days+'거래일</div></div>';
+    res.innerHTML=html;
+  }catch(e){ msg.textContent='오류: '+(e&&e.message||e); }
+  finally{ this.disabled=false; bar.hidden=true; }
+});
+
+/* ── 탭 ────────────────────────────────────────────────── */
+document.querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click',function(){
+    document.querySelectorAll('.tab').forEach(function(x){x.classList.toggle('on',x===t)});
+    $('#p-one').hidden = t.dataset.t!=='one';
+    $('#p-top').hidden = t.dataset.t!=='top';
+  });
+});
+
+/* ── 키움 설정 ─────────────────────────────────────────── */
+function openKw(){var c=kwCfg();$('#kw-ak').value=c.ak;$('#kw-sk').value=c.sk;$('#kw-mode').value=c.mode;$('#kw-msg').textContent='';$('#kw-ov').hidden=false;}
+function saveKw(){localStorage.setItem(KW_LS.ak,$('#kw-ak').value.trim());
+  localStorage.setItem(KW_LS.sk,$('#kw-sk').value.trim());
+  localStorage.setItem(KW_LS.mode,$('#kw-mode').value); _tok={t:'',exp:0};}
+$('#b-kw').addEventListener('click',openKw);
+$('#kw-close').addEventListener('click',function(){$('#kw-ov').hidden=true});
+$('#kw-save').addEventListener('click',function(){saveKw();$('#kw-msg').textContent='저장했습니다.';});
+$('#kw-test').addEventListener('click',async function(){
+  saveKw(); $('#kw-msg').textContent='연결 확인 중…';
+  try{ await kwToken(); $('#kw-msg').textContent='✅ 연결 성공 — 조회할 수 있습니다.'; }
+  catch(e){ $('#kw-msg').textContent='❌ '+(e&&e.message||e); }
+});
+
+/* ── 시작 ──────────────────────────────────────────────── */
+(function init(){
+  var t=new Date(), ds=t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2);
+  $('#f-date').value=ds; $('#f-date').max=ds;
+  if(!kwCfg().ak){ $('#msg1').textContent='먼저 ⚙️ 키움 설정에서 앱키·시크릿키를 넣어주세요.'; }
+})();
+})();
+</script>
+</body>
+</html>
