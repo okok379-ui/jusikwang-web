@@ -233,14 +233,17 @@ canvas{width:100%;height:100%;display:block}
     <section class="card"><div class="panel">
       <div class="kicker">확인</div>
       <h2>퀴즈로 점검</h2>
-      <p><b>Q. 분할매수 기준을 '평단 대비 −3%'로 바꾸면 어떻게 될까요?</b></p>
-      <div class="opts">
-        <button class="opt" data-ok="0">평단이 더 빨리 내려가서 유리하다</button>
-        <button class="opt" data-ok="1">기준선이 계속 따라 내려와 9차에서 멈추지 않는다</button>
-        <button class="opt" data-ok="0">매수 횟수가 줄어든다</button>
+      <div class="quiz">
+        <p><b>Q. 분할매수 기준을 '평단 대비 −3%'로 바꾸면 어떻게 될까요?</b></p>
+        <div class="opts">
+          <button class="opt" data-ok="0">평단이 더 빨리 내려가서 유리하다</button>
+          <button class="opt" data-ok="1">기준선이 계속 따라 내려와 9차에서 멈추지 않는다</button>
+          <button class="opt" data-ok="0">매수 횟수가 줄어든다</button>
+        </div>
+        <div class="qfb" style="margin-top:10px;font-size:13px;line-height:1.55"></div>
       </div>
-      <div class="note" id="qz-a" hidden><b>정답입니다.</b> 평단은 살 때마다 내려가므로 기준선도 같이 내려옵니다.
-        끝이 없는 추가매수가 되고, 그게 바로 피해야 할 <b>무계획 물타기</b>예요. 최초 매수가는 고정이라 <b>9차에서 반드시 끝납니다.</b></div>
+      <div class="note" style="margin-top:12px">평단은 살 때마다 내려가므로 기준선도 같이 내려옵니다. 끝이 없는 추가매수가 되고,
+        그게 바로 피해야 할 <b>무계획 물타기</b>예요. 최초 매수가는 고정이라 <b class="hl">9차에서 반드시 끝납니다.</b></div>
     </div></section>
 
     <!-- 10 -->
@@ -493,7 +496,7 @@ function drawIn(card){
     var ok=op.getAttribute('data-ok')==='1';
     op.classList.add(ok?'ok':'no');
     if(!ok){opts.forEach(function(o2){if(o2.getAttribute('data-ok')==='1')o2.classList.add('ok');});}
-    fb.textContent=ok?'정확해요 — 캔들 모양과 거래량을 같이 보면 신뢰도가 올라갑니다.':'다시 생각해보기 — 정답은 초록색으로 표시했어요.';
+    fb.textContent=ok?'정확해요 — 기준이 고정이어야 9차에서 멈춥니다.':'다시 생각해보기 — 정답은 초록색으로 표시했어요.';
     fb.style.color=ok?SUP():'';
   });});
 });
