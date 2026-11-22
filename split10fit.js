@@ -80,13 +80,25 @@
     return Math.max(0, Math.min(1, r)) * pts;
   }
 
+  /* 장기 추세 배점(15점). 내려간 종목도, 너무 많이 오른 종목도 깎는다.
+     손절이 없는 전략이라 급등 뒤 되돌림은 -24% 로 끝나지 않는다.
+       ~ -50%:0점   -50~0%: 선형   0~+60%: 만점
+       +60~+150%: 15→7.5   +150~+300%: 7.5→0   +300%~: 0점 */
+  function trendPts(tr) {
+    if (tr < 0) return band(tr, 0, -50, 15);
+    if (tr <= 60) return 15;
+    if (tr <= 150) return 15 - 7.5 * (tr - 60) / 90;
+    if (tr <= 300) return Math.max(0, 7.5 - 7.5 * (tr - 150) / 150);
+    return 0;
+  }
+
   function score(m, cfg) {
     var parts = [
       ['익절 성공률', band(m.win_rate, 97, 70, 40), 40, m.win_rate.toFixed(1) + '%'],
       ['익절 소요일', band(-m.avg_days, -5, -35, 15), 15, '평균 ' + m.avg_days.toFixed(1) + '일'],
       ['9차 소진율', band(-m.full9_rate, 0, -25, 10), 10, m.full9_rate.toFixed(1) + '%'],
       ['최대 평가손실', band(m.worst_dd, -12, -45, 15), 15, m.worst_dd.toFixed(1) + '%'],
-      ['장기 추세', band(m.trend, 0, -50, 15), 15,
+      ['장기 추세', trendPts(m.trend), 15,
         m.trend_days + '봉 ' + (m.trend >= 0 ? '+' : '') + m.trend.toFixed(0) + '%'],
       ['유동성·가격대', band(Math.min(m.avg_amt / 1e8, 50), 20, 2, 3) + band(Math.min(m.qty1, 50), 10, 1, 2), 5,
         (m.avg_amt / 1e8).toFixed(0) + '억 · ' + m.qty1 + '주']
@@ -100,6 +112,10 @@
     };
     if (m.fail_rate >= 15 || m.worst_dd <= -50 || m.trend <= -60) { cap = 39; capWhy = why(); }
     else if (m.fail_rate >= 8 || m.worst_dd <= -35 || m.trend <= -35) { cap = 54; capWhy = why(); }
+    /* 과열 상한 — 많이 오른 종목은 평균 지표가 좋아도 등급을 올려주지 않는다 */
+    var ohw = function () { return '장기 추세 ' + (m.trend >= 0 ? '+' : '') + m.trend.toFixed(0) + '% — 과열(되돌림 위험)'; };
+    if (m.trend >= 400 && cap > 54) { cap = 54; capWhy = ohw(); }
+    else if (m.trend >= 200 && cap > 70) { cap = 70; capWhy = ohw(); }
     var capped = total > cap;
     total = Math.min(total, cap);
     var g, c;
@@ -203,6 +219,9 @@
     if (m.trend <= -30)
       out.push('최근 ' + m.trend_days + '봉 주가가 ' + (m.trend >= 0 ? '+' : '') + m.trend.toFixed(0) +
                '% — 성공률이 높게 나와도 떨어지는 종목에 계속 재진입하는 것일 수 있습니다');
+    if (m.trend >= 200)
+      out.push('최근 ' + m.trend_days + '봉 주가가 ' + (m.trend >= 0 ? '+' : '') + m.trend.toFixed(0) +
+               '% — 급등 뒤 되돌림이 오면 분할매수 9차(-' + cfg.drops[cfg.drops.length - 1] + '%)로도 안 끝날 수 있습니다');
     if (m.pos52 >= 85)
       out.push('52주 고가 대비 상단 ' + m.pos52.toFixed(0) + '% 자리 — 1차 진입 위치가 높습니다');
     return out;
