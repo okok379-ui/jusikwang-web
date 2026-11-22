@@ -1779,6 +1779,7 @@ async function s10DayBars(code,asof,minBars){
   var raw=await kwChartRange('/api/dostk/chart','ka10081',
           {stk_cd:code,base_dt:asof,upd_stkpc_tp:'1'},start,asof,6);
   var out=(raw||[]).map(function(b){return {time:b.t,open:b.o,high:b.h,low:b.l,close:b.c,vol:b.v};});
+  if(out.length>minBars+60) out=out.slice(-(minBars+60));   // efree2 와 같은 구간(최근 241봉)
   if(out.length && window.BarCache) BarCache.put(ck,{asof:today,rows:BarCache.packBars(out)});
   return out;
 }
@@ -1790,6 +1791,13 @@ function s10Pre(bars,once,minBars){
   if(amt<5e8) return '거래대금 부족';
   var bi=Math.max(0,n-250),p0=bars[bi].close,tr=p0?((cur-p0)/p0*100):0;
   if(tr<-35) return '하락추세';
+  var d10=0,i;
+  for(i=1;i<n;i++){var pv=bars[i-1].close; if(pv>0 && (bars[i].close-pv)/pv*100<=-10) d10++;}
+  if(d10/Math.max(1,n-1)*100>2) return '급락 잦음';
+  var yr=(n>=250)?bars.slice(-250):bars, hi=-Infinity, lo=Infinity;
+  for(i=0;i<yr.length;i++){if(yr[i].high>hi)hi=yr[i].high; if(yr[i].low<lo)lo=yr[i].low;}
+  var pos=(hi>lo)?((cur-lo)/(hi-lo)*100):50;
+  if(pos>95) return '52주 상단';
   return '';
 }
 /* 날짜별 거래대금 상위(그 시점 기준) — universe.json 이 있으면 그걸 쓰고, 없으면 오늘 순위로 폴백 */
@@ -1843,7 +1851,8 @@ async function findS10(){
     }
     scored.sort(function(a,b){return b.m.score-a.m.score;});
     _s10Picks=scored.slice(0,10);
-    msg.textContent=srcTxt+' '+cand.length+'개 중 '+scored.length+'개 채점 · 상위 '+_s10Picks.length+'개';
+    msg.textContent=srcTxt+' '+cand.length+'개 중 '+scored.length+'개 채점 · 상위 '+_s10Picks.length+'개'
+      +' · 1회 매수금 '+cfg.once.toLocaleString()+'원 기준';
     if(!_s10Picks.length){ box.innerHTML='<div style="color:var(--muted);padding:18px;text-align:center">조건을 넘긴 종목이 없습니다. 날짜를 바꿔보세요.</div>'; return; }
     var html='';
     _s10Picks.forEach(function(r,idx){
@@ -1851,8 +1860,8 @@ async function findS10(){
       html+='<button class="s10row" data-code="'+r.code+'" data-name="'+r.name+'" style="width:100%;text-align:left;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:6px;font-family:inherit;color:var(--fg);cursor:pointer;display:flex;align-items:center;gap:10px">'
         +'<span style="font-family:var(--mono);font-size:12px;color:var(--muted);width:16px">'+(idx+1)+'</span>'
         +'<span style="flex:1;min-width:0"><b style="font-size:14px">'+r.name+'</b> <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">'+r.code+'</span>'
-        +'<br><span style="font-size:11.5px;color:var(--muted)">익절 '+m.win_rate.toFixed(0)+'% · 평균 '+m.avg_days.toFixed(0)+'일 · 최대손실 '+m.worst_dd.toFixed(0)+'% · 추세 '+(m.trend>=0?'+':'')+m.trend.toFixed(0)+'%</span></span>'
-        +'<span style="font-family:var(--mono);font-weight:700;font-size:15px;color:'+col+'">'+m.score.toFixed(0)+'<span style="font-size:11px"> '+m.grade+'</span></span>'
+        +'<br><span style="font-size:11.5px;color:var(--muted)">익절 '+m.win_rate.toFixed(0)+'% · 평균 '+m.avg_days.toFixed(0)+'일 · 최대손실 '+m.worst_dd.toFixed(0)+'% · MA20 '+(m.ma20_slope>=0?'+':'')+m.ma20_slope.toFixed(1)+'%'+(m.aligned?' 정배열':'')+'</span></span>'
+        +'<span style="font-family:var(--mono);font-weight:700;font-size:15px;color:'+col+'">'+m.score.toFixed(1)+'<span style="font-size:11px"> '+m.grade+'</span></span>'
         +'</button>';
     });
     box.innerHTML=html;
