@@ -915,7 +915,7 @@ async function fastResult(){
   if(S.shares<1 && !buyPlan.reenter){ buyPlan.reenter=true; applied.push('1차 자동 진입'); }
 
   _ff=true;
-  var startI=S.i, days=1, guard=0, why='';
+  var startI=S.i, days=1, guard=0, why='', dailyDays=0, dailyTo='';
   try{
     while(guard++ < 400000){
       if(S.i < S.maxMin){ adv(); checkBuyPlan(); checkSellPlan(); checkReentry(); continue; }
@@ -925,7 +925,12 @@ async function fastResult(){
       if(btn) btn.textContent='⏭ '+(days+1)+'일차 받는 중…';
       var nx=null; try{ nx=await fetchNextDay(); }catch(e){ nx=null; }
       if(nx && applyNextDay(nx)){ days++; continue; }        // 이월해서 계속
-      why=(_nextWhy==='nokey')?'nokey':'nodata'; break;
+      if(_nextWhy==='nokey'){ why='nokey'; break; }
+      if(btn) btn.textContent='⏭ 일봉으로 이어서…';            // 1분봉 한도 초과 → 일봉으로
+      var dr=null; try{ dr=await ffDailyRun(); }catch(e){ dr=null; }
+      if(dr){ dailyDays=dr.days; dailyTo=dr.to; why=dr.exited?'flat':'dailyend'; }
+      else why='nodata';
+      break;
     }
   }catch(e){ toast('계산 중 오류: '+(e&&e.message||e)); }
   _ff=false;
@@ -936,10 +941,83 @@ async function fastResult(){
   render(); draw();
   toast('1분봉 '+(S.i-startI)+'개 · '+days+'거래일 · 체결 '+S.trades.length+'건'
         +(applied.length?' · '+applied.join('·')+' 적용(설정은 그대로)':''));
-  ffFinish(held, why, days);
+  ffFinish(S.shares>0, why, days, dailyDays, dailyTo);
+}
+/* ── 1분봉이 없는 과거 구간은 일봉으로 이어서 계산 ──────────────────
+   키움은 과거 1분봉을 최근 몇 달치만 준다. 1분봉으로 더 못 가면 그 다음부터는
+   일봉 OHLC 로 같은 규칙을 돌린다(저가로 분할매수 → 고가로 분할매도, 갭은 시가 체결).
+   PC 스크리너(split10_fit)와 같은 체결 가정이다. */
+function _ffD(t){var x=String(t||'').slice(0,8);return x.slice(4,6)+'/'+x.slice(6,8);}
+function ffBuyAt(p,amount,tag){
+  p=Math.round(p); if(!(p>0))return false;
+  var qty=Math.floor(amount/(p*(1+BUYFEE))); if(qty<1)return false;
+  var cost=qty*p, fee=Math.round(cost*BUYFEE);
+  if(cost+fee>S.cash){ qty=Math.floor(S.cash/(p*(1+BUYFEE))); cost=qty*p; fee=Math.round(cost*BUYFEE); }
+  if(qty<1)return false;
+  var fresh=(S.shares<1), ns=S.shares+qty;
+  S.avg=Math.round((S.avg*S.shares+p*qty)/ns); S.shares=ns; S.cash-=(cost+fee);
+  S.peakShares=Math.max(S.peakShares||0,S.shares);
+  S.spDone=[false,false,false];
+  if(fresh){ S.bpBase=p; S.bpDone=[]; S.cycleReal=0; S.cycleCost=0; }
+  S.cycleCost=(S.cycleCost||0)+cost+fee;
+  S.trades.push({m:S.maxMin,side:'B',price:p,qty:qty,daily:true,tag:tag});
+  return true;
+}
+function ffSellAt(p,qty,tag){
+  p=Math.round(p); qty=Math.min(qty,S.shares); if(qty<1||!(p>0))return false;
+  var proceeds=qty*p, fee=Math.round(proceeds*SELLFEE);
+  var r=Math.round((p-S.avg)*qty)-fee;
+  S.realized+=r; S.cycleReal=(S.cycleReal||0)+r; S.cash+=(proceeds-fee);
+  S.shares-=qty; if(S.shares<1)S.avg=0;
+  S.trades.push({m:S.maxMin,side:'S',price:p,qty:qty,daily:true,tag:tag});
+  return true;
+}
+async function ffDailyRun(){
+  var d=S&&S.day; if(!d||!d.code) return null;
+  var kc=kwCfg(); if(!kc.ak||!kc.sk) return null;
+  var from=nextTradeDay(digits(d.date)), today=_ymd(new Date());
+  if(!from||from>today) return null;
+  var bars=null;
+  try{ bars=await kwChartRange('/api/dostk/chart','ka10081',
+        {stk_cd:d.code,base_dt:today,upd_stkpc_tp:'1'},from,today,8); }catch(e){ bars=null; }
+  if(!bars||!bars.length) return null;
+  var amt=buyPlan.amount||1000000, used=0;
+  for(var i=0;i<bars.length;i++){
+    var b=bars[i]; used++;
+    if(buyPlan.on && S.shares>0 && S.bpBase!=null){        // 분할매수 — 저가가 기준선을 깨면 체결
+      if(!S.bpDone)S.bpDone=[];
+      for(var k=0;k<buyPlan.rows.length;k++){
+        var row=buyPlan.rows[k]; if(!row||!(row.drop>0)||S.bpDone[k])continue;
+        var trig=S.bpBase*(1-row.drop/100);
+        if(b.l<=trig){
+          var fill=(b.o>0)?Math.min(trig,b.o):trig;        // 갭하락이면 시가 체결
+          if(ffBuyAt(fill,amt,'[일봉 '+_ffD(b.t)+'] 분할매수 '+(k+2)+'차 (-'+row.drop+'%)')) S.bpDone[k]=true;
+        }
+      }
+    }
+    if(sellPlan.on && S.shares>0 && S.avg){                 // 분할매도 — 고가가 목표에 닿으면 체결
+      if(!S.spDone)S.spDone=[false,false,false];
+      for(var j=0;j<sellPlan.rows.length;j++){
+        var r2=sellPlan.rows[j]; if(!r2||S.spDone[j]||!(r2.pct>0)||r2.roi==null)continue;
+        var tgt=S.avg*(1+r2.roi/100);
+        if(b.h>=tgt){
+          var fp=(b.o>0)?Math.max(tgt,b.o):tgt;             // 갭상승이면 시가 체결
+          var q=(r2.pct>=100)?S.shares:Math.min(S.shares,Math.max(1,Math.round(S.shares*r2.pct/100)));
+          ffSellAt(fp,q,'[일봉 '+_ffD(b.t)+'] '+(j+1)+'차 목표 '+r2.roi+'%');
+          S.spDone[j]=true;
+          if(S.shares<1)break;
+        }
+      }
+    }
+    if(S.shares<1){
+      if(!buyPlan.reenter || i+1>=bars.length) return {days:used,exited:true,to:b.t};
+      ffBuyAt(bars[i+1].o,amt,'[일봉 '+_ffD(bars[i+1].t)+'] 재진입(1차)');   // 다음 거래일 시가 재진입
+    }
+  }
+  return {days:used,exited:S.shares<1,to:bars[bars.length-1].t};
 }
 /* 빨리감기 종료 처리 — 손절이 아님을 분명히 표시한다 */
-function ffFinish(held, why, days){
+function ffFinish(held, why, days, dailyDays, dailyTo){
   stop(); S.finished=true;
   var pf=S.day.min1[S.maxMin].c;
   if(S.shares>0){
@@ -950,10 +1028,11 @@ function ffFinish(held, why, days){
   }
   var sub=$('#r-title');
   if(sub){
-    if(!held) sub.textContent='규칙대로 전량 익절 · '+days+'거래일';
+    var dtxt=(dailyDays>0)?(' · 일봉으로 '+dailyDays+'거래일 더'):'';
+    if(!held) sub.textContent='규칙대로 전량 익절 · 1분봉 '+days+'거래일'+dtxt;
     else if(why==='nokey') sub.textContent='아직 보유 중 — 평가손익 (다음 날 데이터 없음 · ⚙️ 키움 설정 필요)';
     else if(why==='maxdays') sub.textContent='아직 보유 중 — '+days+'거래일까지 평가손익 (손절 아님)';
-    else sub.textContent='아직 보유 중 — 데이터 끝까지 평가손익 (손절 아님)';
+    else sub.textContent='아직 보유 중 — 데이터 끝까지 평가손익 (손절 아님)'+dtxt;
   }
   var ret=(S.cash-START)/START*100;
   showResult(ret); saveStat(ret); saveRecord(); draw();
