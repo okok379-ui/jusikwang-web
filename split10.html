@@ -124,8 +124,8 @@ td.num{font-family:var(--mono)}
       </div>
       <div class="bar" id="bar2" hidden><i></i></div>
       <div class="msg" id="msg2"></div>
-      <div class="note" style="margin-top:8px">후보는 <b>오늘</b> 거래대금 상위에서 뽑고, 채점만 기준일 시점으로 합니다.
-        과거 날짜를 고르면 그날 실제 거래대금 순위와는 다를 수 있습니다.</div>
+      <div class="note" style="margin-top:8px">후보는 <b>그 날짜 기준</b> 거래대금 상위에서 뽑습니다(universe.json).
+        해당 날짜 자료가 없으면 오늘 순위로 대체하며, 그때는 결과에 그렇게 표시됩니다.</div>
     </div>
     <div id="res2"></div>
   </section>
@@ -385,6 +385,29 @@ $('#b-one').addEventListener('click',async function(){
   finally{ this.disabled=false; }
 });
 
+/* 날짜별 거래대금 상위(그 시점 기준) — universe.json 우선, 없으면 오늘 순위 폴백 */
+var _univ=null,_univTried=false;
+async function loadUniv(){
+  if(_univTried) return _univ;
+  _univTried=true;
+  try{ var r=await fetch('universe.json'); if(r.ok) _univ=await r.json(); }catch(e){ _univ=null; }
+  return _univ;
+}
+async function universeFor(dt){
+  var u=await loadUniv();
+  if(u&&u.days&&u.days[dt]&&u.days[dt].length)
+    return {src:'pit', list:u.days[dt].map(function(c){return {code:c,name:(u.names&&u.names[c])||c};})};
+  var rk=await kwPost('/api/dostk/rkinfo','ka10032',{mrkt_tp:'000',mang_stk_incls:'0',stex_tp:'3'});
+  var out=[];
+  kwRows(rk).forEach(function(r){
+    var cd=(''+(r.stk_cd||r.code||'')).replace(/^A/,'').replace(/_AL|_NX/g,'').trim();
+    var nm=(''+(r.stk_nm||r.name||'')).trim();
+    if(!/^\d{6}$/.test(cd))return;
+    if(isEtf(nm)||isPref(cd,nm))return;
+    out.push({code:cd,name:nm||cd});
+  });
+  return {src:'today', list:out};
+}
 /* ── 기준일 TOP 10 ─────────────────────────────────────── */
 $('#b-top').addEventListener('click',async function(){
   var d=asof(), c=cfg(), uni=parseInt($('#f-uni').value,10)||50;
@@ -393,17 +416,9 @@ $('#b-top').addEventListener('click',async function(){
   if(!d){msg.textContent='기준일을 골라주세요.';return;}
   this.disabled=true; bar.hidden=false; fill.style.width='0%';
   try{
-    msg.textContent='거래대금 상위 목록 받는 중…';
-    var rk=await kwPost('/api/dostk/rkinfo','ka10032',{mrkt_tp:'000',mang_stk_incls:'0',stex_tp:'3'});
-    var rows=kwRows(rk), cand=[];
-    rows.forEach(function(r){
-      var cd=(''+(r.stk_cd||r.code||'')).replace(/^A/,'').replace(/_AL|_NX/g,'').trim();
-      var nm=(''+(r.stk_nm||r.name||'')).trim();
-      if(!/^\d{6}$/.test(cd))return;
-      if(isEtf(nm)||isPref(cd,nm))return;
-      cand.push({code:cd,name:nm||cd});
-    });
-    cand=cand.slice(0,uni);
+    msg.textContent='후보 목록 준비 중…';
+    var U=await universeFor(d), cand=U.list.slice(0,uni);
+    var srcTxt=(U.src==='pit')?(d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8)+' 기준 거래대금 상위'):'오늘 거래대금 상위(그날 순위 아님)';
     if(!cand.length){msg.textContent='거래대금 상위 목록이 비었습니다.';return;}
 
     var done=0,scored=[],skipped=0;
@@ -425,7 +440,7 @@ $('#b-top').addEventListener('click',async function(){
     }
     scored.sort(function(a,b){return b.m.score-a.m.score});
     var top=scored.slice(0,10);
-    msg.textContent='완료 — 후보 '+cand.length+'개 중 '+scored.length+'개 채점, '+skipped+'개 제외';
+    msg.textContent='완료 — '+srcTxt+' '+cand.length+'개 중 '+scored.length+'개 채점, '+skipped+'개 제외';
     if(!top.length){res.innerHTML='<div class="card">조건을 넘긴 종목이 없습니다. 후보 수를 늘리거나 기준일을 바꿔보세요.</div>';return;}
     var html='<div class="card" style="overflow-x:auto"><table><thead><tr>'
       +'<th>순위</th><th>종목</th><th>점수</th><th>등급</th><th>성공률</th><th>소요일</th>'

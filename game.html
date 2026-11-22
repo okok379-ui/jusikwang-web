@@ -1705,6 +1705,30 @@ function s10Pre(bars,once,minBars){
   if(tr<-35) return '하락추세';
   return '';
 }
+/* 날짜별 거래대금 상위(그 시점 기준) — universe.json 이 있으면 그걸 쓰고, 없으면 오늘 순위로 폴백 */
+var _univ=null,_univTried=false;
+async function loadUniv(){
+  if(_univTried) return _univ;
+  _univTried=true;
+  try{ var r=await fetch('universe.json'); if(r.ok) _univ=await r.json(); }catch(e){ _univ=null; }
+  return _univ;
+}
+async function universeFor(dt){
+  var u=await loadUniv();
+  if(u&&u.days&&u.days[dt]&&u.days[dt].length){
+    return {src:'pit', list:u.days[dt].map(function(c){return {code:c,name:(u.names&&u.names[c])||c};})};
+  }
+  var rk=await kwPost('/api/dostk/rkinfo','ka10032',{mrkt_tp:'000',mang_stk_incls:'0',stex_tp:'3'});
+  var out=[];
+  kwRows(rk).forEach(function(r){
+    var cd=(''+(r.stk_cd||r.code||'')).replace(/^A/,'').replace(/_AL|_NX/g,'').trim();
+    var nm=(''+(r.stk_nm||r.name||'')).trim();
+    if(!/^\d{6}$/.test(cd)) return;
+    if(s10IsEtf(nm)||s10IsPref(cd,nm)) return;
+    out.push({code:cd,name:nm||cd});
+  });
+  return {src:'today', list:out};
+}
 async function findS10(){
   var dt=digits($('#case-date')?$('#case-date').value:'');
   if(!/^\d{8}$/.test(dt)){ toast('먼저 매매 시작일을 골라주세요'); return; }
@@ -1715,17 +1739,9 @@ async function findS10(){
   bar.hidden=false; fill.style.width='0%'; box.innerHTML=''; _s10Picks=null;
   var cfg=s10Cfg(), minBars=cfg.max_days+61;
   try{
-    msg.textContent='거래대금 상위 목록 받는 중…';
-    var rk=await kwPost('/api/dostk/rkinfo','ka10032',{mrkt_tp:'000',mang_stk_incls:'0',stex_tp:'3'});
-    var cand=[];
-    kwRows(rk).forEach(function(r){
-      var cd=(''+(r.stk_cd||r.code||'')).replace(/^A/,'').replace(/_AL|_NX/g,'').trim();
-      var nm=(''+(r.stk_nm||r.name||'')).trim();
-      if(!/^\d{6}$/.test(cd)) return;
-      if(s10IsEtf(nm)||s10IsPref(cd,nm)) return;
-      cand.push({code:cd,name:nm||cd});
-    });
-    cand=cand.slice(0,50);
+    msg.textContent='후보 목록 준비 중…';
+    var uni=await universeFor(dt), cand=uni.list.slice(0,50);
+    var srcTxt=(uni.src==='pit')?(fmtDate(dt)+' 기준 거래대금 상위'):'오늘 거래대금 상위(그날 순위 아님)';
     if(!cand.length){ msg.textContent='거래대금 상위 목록이 비었습니다.'; return; }
     var scored=[],skip=0;
     for(var i=0;i<cand.length;i++){
@@ -1740,7 +1756,7 @@ async function findS10(){
     }
     scored.sort(function(a,b){return b.m.score-a.m.score;});
     _s10Picks=scored.slice(0,10);
-    msg.textContent='후보 '+cand.length+'개 중 '+scored.length+'개 채점 · 상위 '+_s10Picks.length+'개';
+    msg.textContent=srcTxt+' '+cand.length+'개 중 '+scored.length+'개 채점 · 상위 '+_s10Picks.length+'개';
     if(!_s10Picks.length){ box.innerHTML='<div style="color:var(--muted);padding:18px;text-align:center">조건을 넘긴 종목이 없습니다. 날짜를 바꿔보세요.</div>'; return; }
     var html='';
     _s10Picks.forEach(function(r,idx){
