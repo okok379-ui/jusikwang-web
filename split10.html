@@ -120,6 +120,9 @@ td.num{font-family:var(--mono)}
       <div class="row">
         <div class="fld"><label>후보 종목 수(거래대금 상위)</label>
           <select id="f-uni"><option>30</option><option selected>50</option><option>80</option><option>120</option></select></div>
+        <div class="fld"><label>&nbsp;</label>
+          <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" id="f-buyable" checked> 매수 가능 종목만</label></div>
         <button class="btn primary" id="b-top">적합종목 10개 찾기</button>
       </div>
       <div class="bar" id="bar2" hidden><i></i></div>
@@ -259,6 +262,7 @@ async function dayBars(code,asof,minBars){
   var seen={},out=[];
   all.sort(function(a,b){return a.time<b.time?-1:a.time>b.time?1:0});
   all.forEach(function(x){if(x.time<=asof&&x.time>=start&&!seen[x.time]){seen[x.time]=1;out.push(x);}});
+  if(out.length>minBars+60) out=out.slice(-(minBars+60));   // efree2 와 같은 구간(최근 minBars+60봉)
   if(out.length && window.BarCache) BarCache.put(ck,{asof:today,rows:BarCache.packBars(out)});
   return out;
 }
@@ -308,11 +312,18 @@ function prefilter(bars,once,minBars){
   var n=bars.length;
   if(n<minBars) return '일봉 부족('+n+'봉)';
   var cur=bars[n-1].close, q=Math.floor(once/cur);
-  if(q<1) return '1회 매수금으로 1주도 못 삼';
+  if(q<1) return '1주도 못 삼';
   var rec=bars.slice(-60),amt=0; rec.forEach(function(b){amt+=b.close*b.vol}); amt/=Math.max(1,rec.length);
-  if(amt<5e8) return '평균 거래대금 '+(amt/1e8).toFixed(1)+'억';
+  if(amt<5e8) return '거래대금 '+(amt/1e8).toFixed(1)+'억';
   var bi=Math.max(0,n-250),p0=bars[bi].close,tr=p0?((cur-p0)/p0*100):0;
-  if(tr<-35) return '장기추세 '+tr.toFixed(0)+'%';
+  if(tr<-35) return '추세 '+(tr>=0?'+':'')+tr.toFixed(0)+'%';
+  var d10=0,i;
+  for(i=1;i<n;i++){var pv=bars[i-1].close; if(pv>0 && (bars[i].close-pv)/pv*100<=-10) d10++;}
+  if(d10/Math.max(1,n-1)*100>2) return '급락 '+d10+'회';
+  var yr=(n>=250)?bars.slice(-250):bars, hi=-Infinity, lo=Infinity;
+  for(i=0;i<yr.length;i++){if(yr[i].high>hi)hi=yr[i].high; if(yr[i].low<lo)lo=yr[i].low;}
+  var pos=(hi>lo)?((cur-lo)/(hi-lo)*100):50;
+  if(pos>95) return '52주 상단 '+pos.toFixed(0)+'%';
   return '';
 }
 
@@ -439,9 +450,21 @@ $('#b-top').addEventListener('click',async function(){
       await sleep(40);
     }
     scored.sort(function(a,b){return b.m.score-a.m.score});
-    var top=scored.slice(0,10);
-    msg.textContent='완료 — '+srcTxt+' '+cand.length+'개 중 '+scored.length+'개 채점, '+skipped+'개 제외';
-    if(!top.length){res.innerHTML='<div class="card">조건을 넘긴 종목이 없습니다. 후보 수를 늘리거나 기준일을 바꿔보세요.</div>';return;}
+    /* 매수 가능 = 지금 1차 진입 조건을 넘는 종목 (MA20 기울기 ≥ 0% · 정배열).
+       efree2 10분할매수 탭의 '이평이 오르는 중일 때만 1차 진입' 과 같은 기준. */
+    var nbuy=scored.filter(function(r){return r.m.ma20_slope>=0 && r.m.aligned;}).length;
+    var only=$('#f-buyable').checked;
+    var list=only?scored.filter(function(r){return r.m.ma20_slope>=0 && r.m.aligned;}):scored;
+    var top=list.slice(0,10);
+    msg.textContent='완료 — '+srcTxt+' '+cand.length+'개 중 '+scored.length+'개 채점, '+skipped
+      +'개 제외 · 매수 가능 '+nbuy+'개(MA20 ≥ 0%·정배열)';
+    if(!top.length){
+      res.innerHTML='<div class="card">'+(only&&scored.length
+        ? scored.length+'개를 채점했지만 <b>지금 1차 진입 조건</b>(MA20 기울기 ≥ 0% · 정배열)을 넘는 종목이 없습니다.<br>'
+          +'<span class="muted">[매수 가능 종목만] 체크를 풀면 점수순 전체가 보입니다. '
+          +'장 전반이 조정일 때는 없는 게 정상입니다.</span>'
+        : '조건을 넘긴 종목이 없습니다. 후보 수를 늘리거나 기준일을 바꿔보세요.')+'</div>';
+      return;}
     var html='<div class="card" style="overflow-x:auto"><table><thead><tr>'
       +'<th>순위</th><th>종목</th><th>점수</th><th>등급</th><th>성공률</th><th>소요일</th>'
       +'<th>9차</th><th>최대손실</th><th>추세</th><th>거래대금</th><th>현재가</th></tr></thead><tbody>';
