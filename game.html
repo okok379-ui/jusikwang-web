@@ -313,6 +313,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
   <div class="panel playbar">
     <button class="play" id="b-play">▶ 시작</button>
     <button class="pbtn" id="b-step">다음 1분봉 ▸</button>
+    <button class="pbtn" id="b-fast" title="재생 없이 규칙대로 끝까지 돌린 뒤 결과를 바로 보여줍니다">⏭ 바로 결과보기</button>
     <button class="pbtn" id="b-finish" title="현재가로 전량 청산하고 결과 보기">🏁 매매 마무리</button>
     <button class="pbtn" id="b-cases" title="종목을 직접 선택">📅 종목 선택</button>
     <button class="pbtn" id="b-history" title="이번 세션의 매수·매도 내역">📒 거래내역</button>
@@ -715,6 +716,7 @@ function sellQty(qty,label){
 /* ---------- 전량 익절 시 계속/마무리 묻기 ---------- */
 var _askWasPlaying=false;
 function maybeAskExit(){
+  if(_ff)return;                                        // 바로 결과보기 중에는 묻지 않고 규칙대로 계속
   if(!S||S.finished||S.shares>0)return;
   var cr=S.cycleReal||0; if(cr<=0)return;               // 수익으로 끝난 사이클(익절)만
   var cost=S.cycleCost||0, pct=cost?cr/cost*100:0;
@@ -893,6 +895,32 @@ function endRound(){
  var pf=S.day.min1[S.maxMin].c;
  if(S.shares>0){var proceeds=S.shares*pf,fee=Math.round(proceeds*SELLFEE);S.realized+=Math.round((pf-S.avg)*S.shares)-fee;S.cash+=(proceeds-fee);S.trades.push({m:S.maxMin,side:'S',price:pf,qty:S.shares,liq:true,tag:'장 마감 청산'});S.shares=0;S.avg=0;}
  var ret=(S.cash-START)/START*100; showResult(ret); saveStat(ret); saveRecord(); draw();
+}
+/* 바로 결과보기 — 화면을 그리지 않고 규칙만 끝까지 돌린 뒤 마지막 봉 종가로 청산 */
+var _ff=false;
+function fastResult(){
+  if(!S||S.finished){toast('이미 끝난 판입니다. 결과창의 [다시 도전]을 눌러주세요.');return;}
+  stop();
+  var ab=$('#ask-bar'); if(ab)ab.hidden=true;
+  $('#ask-overlay').hidden=true;
+  var btn=$('#b-fast'); if(btn){btn.disabled=true;btn.textContent='⏭ 계산 중…';}
+  _ff=true;
+  var startI=S.i, days=1, guard=0;
+  try{
+    while(guard++ < 200000){
+      if(S.i < S.maxMin){
+        adv(); checkBuyPlan(); checkSellPlan(); checkReentry();
+      } else {
+        if(rollInline()){ days++; continue; }            // 미리 받아둔 다음 거래일이 있으면 이어서
+        break;                                           // 없으면 가진 데이터 끝까지 한 것
+      }
+    }
+  }catch(e){ toast('계산 중 오류: '+(e&&e.message||e)); }
+  _ff=false;
+  if(btn){btn.disabled=false;btn.textContent='⏭ 바로 결과보기';}
+  render(); draw();
+  toast('1분봉 '+(S.i-startI)+'개'+(days>1?' · '+days+'거래일':'')+'를 규칙대로 돌렸습니다');
+  endRound();                                            // 마지막 봉 종가로 청산 + 결과
 }
 function finishNow(){
  if(!S||S.finished)return; stop(); S.finished=true;
@@ -1530,6 +1558,7 @@ $('#b-clearline').addEventListener('click',function(){userLines=[];pendingPt=nul
 $('#b-phase').addEventListener('click',function(){phaseOn=!phaseOn;$('#b-phase').classList.toggle('on',phaseOn);if(S)draw();toast(phaseOn?'구간 표시 ON · 🩷상승(매수) 🩵하락(매도) ⚪지지(관망) — 10이평 기울기 기준':'구간 표시 OFF');});
 $('#b-autosr').addEventListener('click',function(){autoSROn=!autoSROn;$('#b-autosr').classList.toggle('on',autoSROn);if(S)draw();toast(autoSROn?'자동 지지저항 ON · 고점·저점이 반복된 가격대를 표시(초록=지지, 분홍=저항)':'자동 지지저항 OFF');});
 $('#b-finish').addEventListener('click',finishNow);
+$('#b-fast').addEventListener('click',fastResult);
 function askContinue(){$('#ask-overlay').hidden=true;$('#ask-bar').hidden=true; play();}
 function askEnd(){$('#ask-overlay').hidden=true;$('#ask-bar').hidden=true; finishNow();}
 $('#ask-cont').addEventListener('click',askContinue);
