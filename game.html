@@ -358,8 +358,10 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
     </div>
     <div class="comment" id="r-comment"></div>
     <div class="rstats">
-      <div class="rstat"><div class="k">내 수익</div><div class="v num" id="r-mine">—</div></div>
+      <div class="rstat"><div class="k">내 수익(투입 대비)</div><div class="v num" id="r-mine">—</div></div>
       <div class="rstat"><div class="k">교과서 매매(원칙)</div><div class="v num" id="r-ideal">—</div></div>
+      <div class="rstat"><div class="k">수익금액</div><div class="v num" id="r-profit">—</div></div>
+      <div class="rstat"><div class="k">투입금액(최대)</div><div class="v num" id="r-invest">—</div></div>
       <div class="rstat"><div class="k">평균 매수가</div><div class="v num" id="r-buy">—</div></div>
       <div class="rstat"><div class="k">이 종목 패턴</div><div class="v" id="r-pat" style="font-family:var(--sans);font-size:12.5px">—</div></div>
     </div>
@@ -895,7 +897,7 @@ function endRound(){
  var _rt=$('#r-title'); if(_rt)_rt.textContent='장 마감 · 종가 청산';
  var pf=S.day.min1[S.maxMin].c;
  if(S.shares>0){var proceeds=S.shares*pf,fee=Math.round(proceeds*SELLFEE);S.realized+=Math.round((pf-S.avg)*S.shares)-fee;S.cash+=(proceeds-fee);S.trades.push({m:S.maxMin,side:'S',price:pf,qty:S.shares,liq:true,tag:'장 마감 청산'});S.shares=0;S.avg=0;}
- var ret=(S.cash-START)/START*100; showResult(ret); saveStat(ret); saveRecord(); draw();
+ var ret=myRet(); showResult(ret); saveStat(ret); saveRecord(); draw();
 }
 /* 바로 결과보기 — 화면 갱신 없이 규칙만 끝까지 돌린다.
    이 전략은 손절도 종가청산도 없고 다음 거래일로 이월하므로, 데이터가 있는 한 날짜를 넘겨가며 계속 돌린다.
@@ -1038,7 +1040,7 @@ function ffFinish(held, why, days, dailyDays, dailyTo){
     else if(why==='maxdays') sub.textContent='아직 보유 중 — '+days+'거래일까지 평가손익 (손절 아님)';
     else sub.textContent='아직 보유 중 — 데이터 끝까지 평가손익 (손절 아님)'+dtxt;
   }
-  var ret=(S.cash-START)/START*100;
+  var ret=myRet();
   showResult(ret); saveStat(ret); saveRecord(); draw();
   if(held) toast('이 전략은 손절이 없습니다 — 마이너스로 보이는 건 아직 안 끝난 판의 평가손익입니다');
 }
@@ -1047,10 +1049,25 @@ function finishNow(){
  var _rt=$('#r-title'); if(_rt)_rt.textContent='매매 마무리 · 현재가 청산';
  var pf=price();
  if(S.shares>0){var proceeds=S.shares*pf,fee=Math.round(proceeds*SELLFEE);S.realized+=Math.round((pf-S.avg)*S.shares)-fee;S.cash+=(proceeds-fee);S.trades.push({m:S.i,side:'S',price:pf,qty:S.shares,liq:true,tag:'매매 마무리 청산'});S.shares=0;S.avg=0;}
- var ret=(S.cash-START)/START*100; showResult(ret); saveStat(ret); saveRecord(); draw();
+ var ret=myRet(); showResult(ret); saveStat(ret); saveRecord(); draw();
 }
 
 /* ---------- result ---------- */
+/* 실제로 넣은 돈 = 한 번에 들어가 있던 최대 매수금(수수료 포함).
+   시드머니가 아니라 이 금액을 기준으로 수익률을 낸다(교과서 매매 %와 같은 잣대). */
+function investedPeak(){
+  var cost=0, peak=0, shares=0;
+  (S&&S.trades||[]).forEach(function(t){
+    if(t.side==='B'){
+      var c=t.price*t.qty; cost+=c+Math.round(c*BUYFEE); shares+=t.qty;
+      if(cost>peak)peak=cost;
+    }else{
+      if(shares>0){ var frac=Math.min(1,t.qty/shares); cost=Math.round(cost*(1-frac)); shares-=t.qty; if(shares<0)shares=0; }
+    }
+  });
+  return peak;
+}
+function myRet(){ var inv=investedPeak(); return inv>0 ? (S.cash-START)/inv*100 : 0; }
 function showResult(ret){
  var id=S.ideal,arch=S.day.arch;
  var buys=S.trades.filter(function(t){return t.side==='B'});
@@ -1074,6 +1091,10 @@ function showResult(ret){
  var rr=$('#r-ret'); rr.textContent=signpct(ret); rr.className='result-ret num '+cls(ret);
  $('#r-comment').textContent=comment;
  $('#r-mine').textContent=signpct(ret); $('#r-mine').className='v num '+cls(ret);
+ var _pf=Math.round(S.cash-START), _iv=investedPeak();
+ $('#r-profit').textContent=(_pf>=0?'+':'-')+won(Math.abs(_pf))+'원';
+ $('#r-profit').className='v num '+cls(_pf);
+ $('#r-invest').textContent=_iv?won(_iv)+'원':'—';
  $('#r-ideal').textContent=S.rule?((S.rule.ret>=0?'+':'')+S.rule.ret.toFixed(1)+'%'):'관망';
  $('#r-ideal').className='v num '+(S.rule?cls(S.rule.ret):'flat');
  $('#r-buy').textContent=buyVwap?won(buyVwap):'—';
@@ -1903,7 +1924,7 @@ if(window.matchMedia)window.matchMedia('(prefers-color-scheme:dark)').addEventLi
 
 function boot(data){
  renderStat(); fit(); syncFromServer();
- if(data&&data.S&&data.S.day&&data.S.day.min1){S=data.S;speed=data.speed||260;curMode=S.mode||'manual';if(S.i==null)S.i=(S.idx!=null?S.idx*3+2:8);if(S.maxMin==null)S.maxMin=S.day.N*3-1;if(!S.eng)S.eng={ratios:[.1,.2,.4],bought:[false,false,false],shake:[null,null,null],peak:0,armed:false,done:true,lines:[0,0,0]};document.querySelectorAll('.md').forEach(function(x){x.classList.toggle('on',x.getAttribute('data-mode')===curMode)});$('#h-name').textContent=S.day.name;$('#h-code').textContent=S.day.code;$('#h-cap').textContent='시총 '+capText(S.day.mktcapEok||0);$('#h-reason').innerHTML=(S.day.direct||S.day.real)?('<b style="color:var(--sup)">실데이터</b> · '+baseLine(S.day)+(S.day.reason?' · '+S.day.reason:'')):('전일 <b>상한가(+30%)</b> · 사유: '+(S.day.reason||''));$('#q-prev').textContent=won(S.day.prevClose);$('#q-open').textContent=won(S.day.open);render();draw();if(S.finished)showResult((S.cash-START)/START*100);}
+ if(data&&data.S&&data.S.day&&data.S.day.min1){S=data.S;speed=data.speed||260;curMode=S.mode||'manual';if(S.i==null)S.i=(S.idx!=null?S.idx*3+2:8);if(S.maxMin==null)S.maxMin=S.day.N*3-1;if(!S.eng)S.eng={ratios:[.1,.2,.4],bought:[false,false,false],shake:[null,null,null],peak:0,armed:false,done:true,lines:[0,0,0]};document.querySelectorAll('.md').forEach(function(x){x.classList.toggle('on',x.getAttribute('data-mode')===curMode)});$('#h-name').textContent=S.day.name;$('#h-code').textContent=S.day.code;$('#h-cap').textContent='시총 '+capText(S.day.mktcapEok||0);$('#h-reason').innerHTML=(S.day.direct||S.day.real)?('<b style="color:var(--sup)">실데이터</b> · '+baseLine(S.day)+(S.day.reason?' · '+S.day.reason:'')):('전일 <b>상한가(+30%)</b> · 사유: '+(S.day.reason||''));$('#q-prev').textContent=won(S.day.prevClose);$('#q-open').textContent=won(S.day.open);render();draw();if(S.finished)showResult(myRet());}
  else newRound();
 }
 if(window.claude&&window.claude.hot){window.claude.hot.snapshot(function(){return {S:S,speed:speed}});window.claude.hot.ready?window.claude.hot.ready(boot):boot(window.claude.hot.data||{});}
