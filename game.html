@@ -1353,6 +1353,22 @@ function draw(){
    return a;
  }
  var y=2;
+ var DMODE=(d.gran==='D');
+ if(DMODE){
+   // 과거 날짜 → 분봉이 없다. 두 칸을 안내문으로 대체하고 일봉에 자리를 넘긴다.
+   var nh=unitH*2+uGap, nx=x0, ny=y;
+   ctx.save();
+   ctx.fillStyle=C.panel2||'#f2f5f9'; ctx.strokeStyle=C.grid; ctx.lineWidth=1;
+   ctx.beginPath(); ctx.rect(nx,ny,w,nh); ctx.fill(); ctx.stroke();
+   ctx.fillStyle=C.muted; ctx.textAlign='center';
+   ctx.font='700 14px IBM Plex Sans KR,sans-serif';
+   ctx.fillText('⏸ 1분봉 · 3분봉 정지', nx+w/2, ny+nh/2-16);
+   ctx.font='12px IBM Plex Sans KR,sans-serif';
+   ctx.fillText('과거 날짜라 분봉 데이터가 제공되지 않습니다', nx+w/2, ny+nh/2+6);
+   ctx.fillText('아래 일봉으로 하루씩 진행합니다', nx+w/2, ny+nh/2+24);
+   ctx.restore();
+   y += nh + uGap;
+ } else {
  // 1분봉
  pan1=Math.max(0,Math.min(pan1,mRev-8)); var e1=mRev-pan1;   // pan: 오른쪽에서 숨긴 봉 수(과거 보기)
  var w1=winOf(e1,120,zoom1);
@@ -1365,26 +1381,37 @@ function draw(){
  candlePanel(bars3,e3,{x:x0,y:y,w:w,h:candleH},{label:'3분봉',labelText:(d.gran==='D'?'3일봉':'3분봉'),grid:2,maxCW:14,winStart:w3.winStart,slots:w3.slots,levels:baseLevels(true,true),ma:maSeeded(bars3,e3,10,d.prevClose),maLabel:'10',phase:true,phaseMarks:true,autosr:true,markers:S.trades.filter(function(t){return Math.floor(t.m/3)<e3}).map(function(t){return {i:Math.floor(t.m/3),side:t.side,px:t.price,tag:t.tag}}),labelMk:true,ideal:true,prevClose:d.prevClose,vline:(S.reviewEnd!=null?Math.floor(S.reviewEnd/3):null)});
  volPanel(bars3,e3,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:14,winStart:w3.winStart,slots:w3.slots,perHour:20,tick:30});
  y+=unitH+uGap;
+ }
  // 일봉 + 오늘 형성중 봉 + 10일선
  var cs=(d.curStart!=null?d.curStart:0); if(cs>mRev-1)cs=0;   // 현재 날 구간만 형성봉으로 집계
  var th=-Infinity,tl=Infinity,tv=0,tc=d.min1[mRev-1].c;
  for(i=cs;i<mRev;i++){var m=d.min1[i];if(m.h>th)th=m.h;if(m.l<tl)tl=m.l;tv+=m.v;}
- var dBars=d.daily.concat([{o:(d.curOpen!=null?d.curOpen:d.open),h:th,l:tl,c:tc,v:tv}]);
+ var dBars=DMODE ? d.daily.concat(d.min1.slice(0,mRev))
+                 : d.daily.concat([{o:(d.curOpen!=null?d.curOpen:d.open),h:th,l:tl,c:tc,v:tv}]);
+ var dCandleH=DMODE?(candleH+unitH*0.70):candleH, dVolH=DMODE?(volH+unitH*0.26):volH;
  var dma=null;
  panD=Math.max(0,Math.min(panD,dBars.length-5)); if(panD>0){dBars=dBars.slice(0,dBars.length-panD);}
  dma=maArray(dBars,dBars.length,10);
  var VIEW=Math.max(5,Math.min(dBars.length,Math.round(dBars.length/zoomD))), stt=Math.max(0,dBars.length-VIEW);
  // 일봉 매수/매도 마크(거래가 일어난 날의 일봉에 표시, 캔들·방향별 1개로 집계)
  var ds=d.dayStarts||[0], nseg=ds.length, dSeen={}, dMarks=[];
- for(i=0;i<S.trades.length;i++){var t=S.trades[i],seg=0,q;for(q=0;q<ds.length;q++){if(t.m>=ds[q])seg=q;else break;}
-   var di=(dBars.length-1+panD)-((nseg-1)-seg)-stt; if(di<0||di>=dBars.length-stt)continue;
+ for(i=0;i<S.trades.length;i++){var t=S.trades[i],seg=0,q,di;
+   if(DMODE){ di=d.daily.length+t.m-stt; }          // 일봉모드: 체결된 그 날 봉에 표시
+   else { for(q=0;q<ds.length;q++){if(t.m>=ds[q])seg=q;else break;}
+          di=(dBars.length-1+panD)-((nseg-1)-seg)-stt; }
+   if(di<0||di>=dBars.length-stt)continue;
    var key=di+t.side; if(dSeen[key])continue; dSeen[key]=1; dMarks.push({i:di,side:t.side});}
- candlePanel(dBars.slice(stt),dBars.length-stt,{x:x0,y:y,w:w,h:candleH},{label:'일봉',grid:2,maxCW:16,minSlots:VIEW,ma:dma.slice(stt),maLabel:'10일',autosr:true,prevClose:d.prevClose,markers:dMarks});
- var dDates=dailyDatesOf(d); if(dDates&&panD>0)dDates=dDates.slice(0,dDates.length-panD);
- volPanel(dBars.slice(stt),dBars.length-stt,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:16,minSlots:VIEW,dates:dDates?dDates.slice(stt):null});
+ candlePanel(dBars.slice(stt),dBars.length-stt,{x:x0,y:y,w:w,h:dCandleH},{label:'일봉',labelText:(DMODE?'일봉 (하루씩 진행 중)':'일봉'),grid:2,maxCW:16,minSlots:VIEW,ma:dma.slice(stt),maLabel:'10일',autosr:true,prevClose:d.prevClose,markers:dMarks});
+ var dDates;
+ if(DMODE){ var pd=(d.dailyDates&&d.dailyDates.length===d.daily.length)?d.dailyDates.slice():[];
+   while(pd.length<d.daily.length) pd.unshift('');
+   dDates=pd.concat((d.barDates||[]).slice(0,mRev)); }
+ else dDates=dailyDatesOf(d);
+ if(dDates&&panD>0)dDates=dDates.slice(0,dDates.length-panD);
+ volPanel(dBars.slice(stt),dBars.length-stt,{x:x0,y:y+dCandleH+inGap,w:w,h:dVolH},{maxCW:16,minSlots:VIEW,dates:dDates?dDates.slice(stt):null});
  // 패널 구분선(검은색)
  ctx.save();ctx.strokeStyle='#111827';ctx.lineWidth=1.2;ctx.setLineDash([]);
- [2+unitH+uGap-4, 2+2*unitH+2*uGap-4].forEach(function(yy){ctx.beginPath();ctx.moveTo(x0,yy);ctx.lineTo(x0+w,yy);ctx.stroke();});
+ (DMODE?[2+unitH*2+uGap+uGap-4]:[2+unitH+uGap-4, 2+2*unitH+2*uGap-4]).forEach(function(yy){ctx.beginPath();ctx.moveTo(x0,yy);ctx.lineTo(x0+w,yy);ctx.stroke();});
  ctx.restore();
 }
 
