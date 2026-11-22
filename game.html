@@ -892,49 +892,76 @@ function engineStep(g){
 
 function endRound(){
  stop(); S.finished=true;
+ var _rt=$('#r-title'); if(_rt)_rt.textContent='장 마감 · 종가 청산';
  var pf=S.day.min1[S.maxMin].c;
  if(S.shares>0){var proceeds=S.shares*pf,fee=Math.round(proceeds*SELLFEE);S.realized+=Math.round((pf-S.avg)*S.shares)-fee;S.cash+=(proceeds-fee);S.trades.push({m:S.maxMin,side:'S',price:pf,qty:S.shares,liq:true,tag:'장 마감 청산'});S.shares=0;S.avg=0;}
  var ret=(S.cash-START)/START*100; showResult(ret); saveStat(ret); saveRecord(); draw();
 }
-/* 바로 결과보기 — 화면을 그리지 않고 규칙만 끝까지 돌린 뒤 마지막 봉 종가로 청산 */
+/* 바로 결과보기 — 화면 갱신 없이 규칙만 끝까지 돌린다.
+   이 전략은 손절도 종가청산도 없고 다음 거래일로 이월하므로, 데이터가 있는 한 날짜를 넘겨가며 계속 돌린다.
+   데이터가 떨어졌을 때 아직 보유 중이면 그건 '손절'이 아니라 '아직 안 끝난 판'이므로 그렇게 표시한다. */
 var _ff=false;
-function fastResult(){
+var FF_MAX_DAYS=15;
+async function fastResult(){
   if(!S||S.finished){toast('이미 끝난 판입니다. 결과창의 [다시 도전]을 눌러주세요.');return;}
   stop();
   var ab=$('#ask-bar'); if(ab)ab.hidden=true;
   $('#ask-overlay').hidden=true;
   var btn=$('#b-fast'); if(btn){btn.disabled=true;btn.textContent='⏭ 계산 중…';}
 
-  /* 규칙이 꺼져 있으면 돌릴 게 없어 '관망'으로 끝난다.
-     이번 실행에 한해서만 자동 진입을 적용하고, 사용자가 저장한 설정은 건드리지 않는다. */
+  /* 규칙이 꺼져 있으면 돌릴 게 없다. 이번 실행에만 적용하고 끝나면 되돌린다(저장값은 그대로). */
   var oMode=curMode, oRe=buyPlan.reenter, applied=[];
   if(curMode!=='auto'){ curMode='auto'; applied.push('자동 모드'); }
   if(S.shares<1 && !buyPlan.reenter){ buyPlan.reenter=true; applied.push('1차 자동 진입'); }
 
   _ff=true;
-  var startI=S.i, days=1, guard=0;
+  var startI=S.i, days=1, guard=0, why='';
   try{
-    while(guard++ < 200000){
-      if(S.i < S.maxMin){
-        adv(); checkBuyPlan(); checkSellPlan(); checkReentry();
-      } else {
-        if(rollInline()){ days++; continue; }            // 미리 받아둔 다음 거래일이 있으면 이어서
-        break;                                           // 없으면 가진 데이터 끝까지 한 것
-      }
+    while(guard++ < 400000){
+      if(S.i < S.maxMin){ adv(); checkBuyPlan(); checkSellPlan(); checkReentry(); continue; }
+      if(S.shares<1){ why='flat'; break; }                  // 규칙대로 전량 청산된 상태 — 여기서 끝
+      if(days>=FF_MAX_DAYS){ why='maxdays'; break; }
+      if(rollInline()){ days++; continue; }                 // 미리 받아둔 다음 거래일
+      if(btn) btn.textContent='⏭ '+(days+1)+'일차 받는 중…';
+      var nx=null; try{ nx=await fetchNextDay(); }catch(e){ nx=null; }
+      if(nx && applyNextDay(nx)){ days++; continue; }        // 이월해서 계속
+      why=(_nextWhy==='nokey')?'nokey':'nodata'; break;
     }
   }catch(e){ toast('계산 중 오류: '+(e&&e.message||e)); }
   _ff=false;
-  curMode=oMode; buyPlan.reenter=oRe;                    // 원래 설정 복구(저장값은 그대로)
+  curMode=oMode; buyPlan.reenter=oRe;
 
   if(btn){btn.disabled=false;btn.textContent='⏭ 바로 결과보기';}
+  var held=S.shares>0;
   render(); draw();
-  var n=S.trades.length;
-  toast('1분봉 '+(S.i-startI)+'개'+(days>1?' · '+days+'거래일':'')+' · 체결 '+n+'건'
+  toast('1분봉 '+(S.i-startI)+'개 · '+days+'거래일 · 체결 '+S.trades.length+'건'
         +(applied.length?' · '+applied.join('·')+' 적용(설정은 그대로)':''));
-  endRound();                                            // 마지막 봉 종가로 청산 + 결과
+  ffFinish(held, why, days);
+}
+/* 빨리감기 종료 처리 — 손절이 아님을 분명히 표시한다 */
+function ffFinish(held, why, days){
+  stop(); S.finished=true;
+  var pf=S.day.min1[S.maxMin].c;
+  if(S.shares>0){
+    var proceeds=S.shares*pf, fee=Math.round(proceeds*SELLFEE);
+    S.realized+=Math.round((pf-S.avg)*S.shares)-fee; S.cash+=(proceeds-fee);
+    S.trades.push({m:S.maxMin,side:'S',price:pf,qty:S.shares,liq:true,tag:'데이터 끝 · 평가(손절 아님)'});
+    S.shares=0; S.avg=0;
+  }
+  var sub=$('#r-title');
+  if(sub){
+    if(!held) sub.textContent='규칙대로 전량 익절 · '+days+'거래일';
+    else if(why==='nokey') sub.textContent='아직 보유 중 — 평가손익 (다음 날 데이터 없음 · ⚙️ 키움 설정 필요)';
+    else if(why==='maxdays') sub.textContent='아직 보유 중 — '+days+'거래일까지 평가손익 (손절 아님)';
+    else sub.textContent='아직 보유 중 — 데이터 끝까지 평가손익 (손절 아님)';
+  }
+  var ret=(S.cash-START)/START*100;
+  showResult(ret); saveStat(ret); saveRecord(); draw();
+  if(held) toast('이 전략은 손절이 없습니다 — 마이너스로 보이는 건 아직 안 끝난 판의 평가손익입니다');
 }
 function finishNow(){
  if(!S||S.finished)return; stop(); S.finished=true;
+ var _rt=$('#r-title'); if(_rt)_rt.textContent='매매 마무리 · 현재가 청산';
  var pf=price();
  if(S.shares>0){var proceeds=S.shares*pf,fee=Math.round(proceeds*SELLFEE);S.realized+=Math.round((pf-S.avg)*S.shares)-fee;S.cash+=(proceeds-fee);S.trades.push({m:S.i,side:'S',price:pf,qty:S.shares,liq:true,tag:'매매 마무리 청산'});S.shares=0;S.avg=0;}
  var ret=(S.cash-START)/START*100; showResult(ret); saveStat(ret); saveRecord(); draw();
