@@ -488,6 +488,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
 <div class="toast" id="toast"></div>
 <script src="caselib.js"></script>
 
+<script src="barcache.js"></script>
 <script>
 (function(){
 "use strict";
@@ -988,9 +989,18 @@ async function ffDailyRun(){
   var kc=kwCfg(); if(!kc.ak||!kc.sk) return null;
   var from=nextTradeDay(digits(d.date)), today=_ymd(new Date());
   if(!from||from>today) return null;
-  var bars=null;
-  try{ bars=await kwChartRange('/api/dostk/chart','ka10081',
-        {stk_cd:d.code,base_dt:today,upd_stkpc_tp:'1'},from,today,8); }catch(e){ bars=null; }
+  var bars=null, ck='dayAll:'+d.code;
+  if(window.BarCache){                                  // 같은 종목 일봉은 하루에 한 번만 받는다
+    var c0=BarCache.get(ck);
+    if(c0&&c0.asof===today&&c0.rows) bars=c0.rows.map(function(r){return {t:r[0],o:r[1],h:r[2],l:r[3],c:r[4],v:r[5]};});
+  }
+  if(!bars){
+    try{ bars=await kwChartRange('/api/dostk/chart','ka10081',
+          {stk_cd:d.code,base_dt:today,upd_stkpc_tp:'1'},'',today,8); }catch(e){ bars=null; }
+    if(bars&&bars.length&&window.BarCache)
+      BarCache.put(ck,{asof:today,rows:bars.map(function(b){return [b.t,b.o,b.h,b.l,b.c,b.v];})});
+  }
+  if(bars) bars=bars.filter(function(b){return b.t>=from&&b.t<=today;});
   if(!bars||!bars.length) return null;
   var amt=buyPlan.amount||1000000, used=0;
   for(var i=0;i<bars.length;i++){
@@ -1827,7 +1837,10 @@ async function fetchNextDay(){   // 현재 S.day 기준 다음 거래일 케이�
   var today=_ymd(new Date()), found=null, cur=base, lastErr='';
   for(var k=0;k<4&&!found;k++){
     cur=nextTradeDay(cur); if(cur>today){ if(!lastErr)_nextWhy='future'; break; }
+    var ck='m1:'+d.code+':'+cur;                       // 저장해 둔 게 있으면 조회 없이 바로
+    if(window.BarCache){ var hit=BarCache.get(ck); if(hit){ found=hit; break; } }
     try{ found=await kwBuildCase(d.code,cur); }catch(e){ found=null; lastErr=(e&&e.message)||'조회 실패'; }
+    if(found&&window.BarCache) BarCache.put(ck,found);  // 과거 데이터라 변하지 않음
   }
   if(!found&&!_nextWhy){ _nextWhy='kwfail'; if(lastErr)console.warn('키움 다음날 조회 실패:',lastErr); }
   return found;

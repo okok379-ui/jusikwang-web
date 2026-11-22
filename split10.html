@@ -163,8 +163,15 @@ td.num{font-family:var(--mono)}
     <div class="note" id="kw-left"></div>
   </div>
   <div class="msg" id="kw-xmsg"></div>
+  <div style="border-top:1px solid var(--border);margin:14px 0 10px"></div>
+  <div class="row" style="align-items:center">
+    <div class="note" id="kw-cache" style="flex:1">받아온 봉 데이터 저장량 —</div>
+    <button class="btn sm" id="kw-cclear">캐시 비우기</button>
+  </div>
+  <p class="note" style="margin:6px 0 0">한 번 받은 종목은 저장해 두고 다음부터는 조회 없이 바로 계산합니다.</p>
 </div></div>
 
+<script src="barcache.js"></script>
 <script src="split10fit.js"></script>
 <script>
 (function(){
@@ -207,7 +214,14 @@ function dMinus(ds,days){var y=+ds.slice(0,4),m=+ds.slice(4,6)-1,d2=+ds.slice(6,
 
 /* 기준일까지의 일봉 — base_dt 로 과거 기준 조회(이후 데이터 안 들어옴) */
 async function dayBars(code,asof,minBars){
-  var start=dMinus(asof,Math.round((minBars+60)*1.55)), all=[],cont='N',nk='';
+  var start=dMinus(asof,Math.round((minBars+60)*1.55));
+  var today=(function(){var t=new Date();return ''+(t.getFullYear()*10000+(t.getMonth()+1)*100+t.getDate());})();
+  var ck='s10:'+code+':'+asof+':'+start;
+  if(window.BarCache){                       // 받아둔 게 있으면 조회 없이
+    var hit=BarCache.get(ck);
+    if(hit && (asof<today || hit.asof===today)) return BarCache.unpackBars(hit.rows);
+  }
+  var all=[],cont='N',nk='';
   for(var p=0;p<6;p++){
     var d=await kwPost('/api/dostk/chart','ka10081',{stk_cd:code,base_dt:asof,upd_stkpc_tp:'1'},cont,nk);
     var rows=kwRows(d),oldest='';
@@ -226,6 +240,7 @@ async function dayBars(code,asof,minBars){
   var seen={},out=[];
   all.sort(function(a,b){return a.time<b.time?-1:a.time>b.time?1:0});
   all.forEach(function(x){if(x.time<=asof&&x.time>=start&&!seen[x.time]){seen[x.time]=1;out.push(x);}});
+  if(out.length && window.BarCache) BarCache.put(ck,{asof:today,rows:BarCache.packBars(out)});
   return out;
 }
 
@@ -431,7 +446,16 @@ function openKw(){var c=kwCfg();$('#kw-ak').value=c.ak;$('#kw-sk').value=c.sk;$(
 function saveKw(){localStorage.setItem(KW_LS.ak,$('#kw-ak').value.trim());
   localStorage.setItem(KW_LS.sk,$('#kw-sk').value.trim());
   localStorage.setItem(KW_LS.mode,$('#kw-mode').value); _tok={t:'',exp:0};}
-$('#b-kw').addEventListener('click',openKw);
+function cacheInfo(){
+  var el=$('#kw-cache'); if(!el)return;
+  if(!window.BarCache){ el.textContent='봉 데이터 저장 기능 없음'; return; }
+  var st=BarCache.stats();
+  el.textContent='저장된 봉 데이터 '+st.count+'건 · '+st.kb.toLocaleString()+'KB';
+}
+$('#kw-cclear').addEventListener('click',function(){
+  if(window.BarCache){ BarCache.clear(); cacheInfo(); $('#kw-xmsg').textContent='저장된 봉 데이터를 지웠습니다.'; }
+});
+$('#b-kw').addEventListener('click',function(){ openKw(); cacheInfo(); });
 $('#kw-close').addEventListener('click',function(){$('#kw-ov').hidden=true});
 $('#kw-save').addEventListener('click',function(){saveKw();$('#kw-msg').textContent='저장했습니다.';});
 $('#kw-test').addEventListener('click',async function(){
