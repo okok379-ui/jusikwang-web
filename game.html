@@ -670,6 +670,7 @@ function loadRealCase(json){
   var clockMin=[]; for(var ci=0;ci<min1.length;ci++)clockMin[ci]=startMin+ci;   // 연속 차트용 분단위 시계(날별 09:00 재시작)
   var day={bars:bars,min1:min1,daily:daily,prevClose:prevClose,open:open,N:bars.length,real:true,startMin:startMin,
     clockMin:clockMin,curStart:0,curOpen:open,dayStarts:[0],dayDates:[j.date||''],
+    gran:(j.gran==='D'?'D':'M'),barDates:(j.barDates&&j.barDates.length===min1.length)?j.barDates.slice():null,
     limitDate:(j.limitDate||'').toString(),dailyDates:(j.dailyDates&&j.dailyDates.length===daily.length)?j.dailyDates.slice():null,
     arch:{name:(j.name||'실데이터')+' ('+(j.date||'')+')'},
     name:j.name||j.code||'실데이터 종목',code:(j.code||'').toString(),date:j.date||'',
@@ -821,7 +822,9 @@ if(_bpSave)_bpSave.addEventListener('click',function(){
 initBuyPlan();
 
 /* ---------- 거래내역 ---------- */
-function histTime(m){var cm=S&&S.day&&S.day.clockMin;if(cm&&cm[m]!=null){var v=cm[m],hh=Math.floor(v/60)%24,mn=v%60;return (hh<10?'0':'')+hh+':'+(mn<10?'0':'')+mn;}return '-';}
+function histTime(m){
+  if(S&&S.day&&S.day.gran==='D'){var bd=S.day.barDates&&S.day.barDates[m];return bd?fmtDate(bd).slice(5):'-';}
+  var cm=S&&S.day&&S.day.clockMin;if(cm&&cm[m]!=null){var v=cm[m],hh=Math.floor(v/60)%24,mn=v%60;return (hh<10?'0':'')+hh+':'+(mn<10?'0':'')+mn;}return '-';}
 function histDate(m){var d=S&&S.day;if(!d)return '';var ds=d.dayStarts||[0],seg=0;for(var k=0;k<ds.length;k++){if(m>=ds[k])seg=k;else break;}var dd=(d.dayDates&&d.dayDates[seg])||d.date||'';return (dd&&dd.length>=8)?(dd.slice(4,6)+'/'+dd.slice(6,8)):'';}
 function renderHistory(){
   var body=$('#hist-body'); if(!body)return;
@@ -1180,8 +1183,13 @@ function render(){
  var b=curBar(),p=b.c,chg=(p/S.day.prevClose-1)*100,chgOpen=(p/S.day.open-1)*100;
  $('#q-px').textContent=won(p); $('#q-px').className='px num '+cls(chg);
  $('#q-chg').textContent=pct(chg)+' (전일比) · '+pct(chgOpen)+' (시가比)'; $('#q-chg').className='chg num '+cls(chg);
- var tot=(S.day.startMin||540)+S.i,hh=Math.floor(tot/60),mm=tot%60;
- $('#q-time').textContent=(hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm;
+ if(S.day.gran==='D'){
+   var bd=(S.day.barDates&&S.day.barDates[S.i])||'';
+   $('#q-time').textContent=bd?fmtDate(bd).slice(5):('D+'+S.i);
+ } else {
+   var tot=(S.day.startMin||540)+S.i,hh=Math.floor(tot/60),mm=tot%60;
+   $('#q-time').textContent=(hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm;
+ }
  $('#st-avg').textContent=S.shares?won(S.avg):'—';
  $('#st-qty').textContent=fmt(S.shares);
  $('#st-val').textContent=S.shares?won(S.shares*price()):'—';
@@ -1302,7 +1310,7 @@ function candlePanel(bars,rev,R,opts){
  ctx.restore();
  if(rev>0){var lb=bars[rev-1],ly=Y(lb.c),ref=opts.prevClose!=null?opts.prevClose:lb.o,lcol=lb.c>=ref?C.up:C.down;ctx.fillStyle=lcol;ctx.fillRect(R.x+R.w,ly-7,GUT-2,14);ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='9px IBM Plex Mono,monospace';ctx.fillText(fmt(lb.c),R.x+R.w+(GUT-2)/2,ly);}
  if(opts.label){
-   ctx.fillStyle=C.muted;ctx.textAlign='left';ctx.font='10px IBM Plex Sans KR,sans-serif';ctx.fillText(opts.label,R.x+5,R.y+11);
+   ctx.fillStyle=C.muted;ctx.textAlign='left';ctx.font='10px IBM Plex Sans KR,sans-serif';ctx.fillText(opts.labelText||opts.label,R.x+5,R.y+11);
    PANELS.push({label:opts.label,x:R.x,y:R.y,w:R.w,h:R.h,lo:lo,hi:hi,bw:bw,winStart:winStart,rev:rev});
  }
 }
@@ -1348,13 +1356,13 @@ function draw(){
  // 1분봉
  pan1=Math.max(0,Math.min(pan1,mRev-8)); var e1=mRev-pan1;   // pan: 오른쪽에서 숨긴 봉 수(과거 보기)
  var w1=winOf(e1,120,zoom1);
- candlePanel(d.min1,e1,{x:x0,y:y,w:w,h:candleH},{label:'1분봉',grid:2,maxCW:8,winStart:w1.winStart,slots:w1.slots,levels:baseLevels(false,true),ma:maSeeded(d.min1,e1,10,d.prevClose),maLabel:'10',phase:true,markers:S.trades.filter(function(t){return t.m<e1}).map(function(t){return {i:t.m,side:t.side}}),prevClose:d.prevClose,vline:(S.reviewEnd!=null?S.reviewEnd:null)});
+ candlePanel(d.min1,e1,{x:x0,y:y,w:w,h:candleH},{label:'1분봉',labelText:(d.gran==='D'?'일봉(하루=한 봉)':'1분봉'),grid:2,maxCW:8,winStart:w1.winStart,slots:w1.slots,levels:baseLevels(false,true),ma:maSeeded(d.min1,e1,10,d.prevClose),maLabel:'10',phase:true,markers:S.trades.filter(function(t){return t.m<e1}).map(function(t){return {i:t.m,side:t.side}}),prevClose:d.prevClose,vline:(S.reviewEnd!=null?S.reviewEnd:null)});
  volPanel(d.min1,e1,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:8,winStart:w1.winStart,slots:w1.slots,perHour:60,tick:15});
  y+=unitH+uGap;
  // 3분봉
  pan3=Math.max(0,Math.min(pan3,tRev-8)); var e3=tRev-pan3;
  var w3=winOf(e3,60,zoom3);
- candlePanel(bars3,e3,{x:x0,y:y,w:w,h:candleH},{label:'3분봉',grid:2,maxCW:14,winStart:w3.winStart,slots:w3.slots,levels:baseLevels(true,true),ma:maSeeded(bars3,e3,10,d.prevClose),maLabel:'10',phase:true,phaseMarks:true,autosr:true,markers:S.trades.filter(function(t){return Math.floor(t.m/3)<e3}).map(function(t){return {i:Math.floor(t.m/3),side:t.side,px:t.price,tag:t.tag}}),labelMk:true,ideal:true,prevClose:d.prevClose,vline:(S.reviewEnd!=null?Math.floor(S.reviewEnd/3):null)});
+ candlePanel(bars3,e3,{x:x0,y:y,w:w,h:candleH},{label:'3분봉',labelText:(d.gran==='D'?'3일봉':'3분봉'),grid:2,maxCW:14,winStart:w3.winStart,slots:w3.slots,levels:baseLevels(true,true),ma:maSeeded(bars3,e3,10,d.prevClose),maLabel:'10',phase:true,phaseMarks:true,autosr:true,markers:S.trades.filter(function(t){return Math.floor(t.m/3)<e3}).map(function(t){return {i:Math.floor(t.m/3),side:t.side,px:t.price,tag:t.tag}}),labelMk:true,ideal:true,prevClose:d.prevClose,vline:(S.reviewEnd!=null?Math.floor(S.reviewEnd/3):null)});
  volPanel(bars3,e3,{x:x0,y:y+candleH+inGap,w:w,h:volH},{maxCW:14,winStart:w3.winStart,slots:w3.slots,perHour:20,tick:30});
  y+=unitH+uGap;
  // 일봉 + 오늘 형성중 봉 + 10일선
@@ -1506,6 +1514,58 @@ async function kwResolveCode(q){
      ||m.list.find(function(x){return x[1].toLowerCase().indexOf(ql)>=0;});
   return f?{code:f[0],name:f[1]}:null;
 }
+/* ── 일봉 모드 케이스 ────────────────────────────────────────────────
+   키움 1분봉은 과거 조회가 안 되고 최근부터 거꾸로 페이징해야 해서, 몇 달 전
+   날짜는 수백 번 호출해도 닿지 않는다. 10분할매수는 며칠~몇 주를 보는 전략이라
+   그런 날짜는 1분봉을 포기하고 '하루 = 한 봉'으로 재생한다. */
+var DAILY_AFTER_DAYS=70;        // 오늘로부터 이만큼(달력일) 넘게 지난 날짜는 일봉으로
+function daysAgo(ymd){
+  var y=+ymd.slice(0,4),m=+ymd.slice(4,6)-1,d=+ymd.slice(6,8);
+  return Math.round((Date.now()-new Date(y,m,d).getTime())/86400000);
+}
+async function kwBuildCaseDaily(nameOrCode,dateStr){
+  var date=(''+dateStr).replace(/[^0-9]/g,'');
+  if(!/^\d{8}$/.test(date))throw new Error('날짜를 YYYYMMDD로 입력하세요');
+  var rc=await kwResolveCode(nameOrCode);
+  if(!rc)throw new Error('종목을 찾지 못했어요: '+nameOrCode);
+  var code=rc.code, today=_ymd(new Date());
+  var ck='dayAll:'+code, all=null;
+  if(window.BarCache){
+    var c0=BarCache.get(ck);
+    if(c0&&c0.asof===today&&c0.rows) all=c0.rows.map(function(r){return {t:r[0],o:r[1],h:r[2],l:r[3],c:r[4],v:r[5]};});
+  }
+  if(!all){
+    all=await kwChartRange('/api/dostk/chart','ka10081',{stk_cd:code,base_dt:today,upd_stkpc_tp:'1'},'',today,10);
+    if(all&&all.length&&window.BarCache)
+      BarCache.put(ck,{asof:today,rows:all.map(function(b){return [b.t,b.o,b.h,b.l,b.c,b.v];})});
+  }
+  if(!all||!all.length)throw new Error('일봉을 받지 못했어요');
+  var past=all.filter(function(b){return b.t<date;});
+  var fwd =all.filter(function(b){return b.t>=date;});
+  if(fwd.length<30)throw new Error(fmtDate(date)+' 이후 일봉이 '+fwd.length+'개뿐이에요. 더 이전 날짜를 고르세요');
+  if(past.length<10)throw new Error('이전 일봉이 부족해요('+past.length+'개). 더 최근 날짜를 고르세요');
+  var d15=past.slice(-15), toArr=function(a){return a.map(function(x){return [x.o,x.h,x.l,x.c,x.v];});};
+  var prevClose=d15[d15.length-1].c, prev2=d15.length>=2?d15[d15.length-2].c:prevClose;
+  var mcap=await kwMktcapEok(code);
+  return {name:rc.name||code,code:code,date:date,limitDate:d15[d15.length-1].t.slice(0,8),
+    prevClose:prevClose,open:fwd[0].o,limitPct:prev2?Math.round((prevClose/prev2-1)*1000)/10:0,
+    mktcapEok:mcap,reason:'키움 직접 조회 · 일봉',direct:true,gran:'D',
+    min1Start:'0900',min1:toArr(fwd),barDates:fwd.map(function(x){return x.t.slice(0,8);}),
+    daily:toArr(d15),dailyDates:d15.map(function(x){return x.t.slice(0,8);})};
+}
+/* 날짜에 맞는 방식으로 케이스를 만든다 — 최근이면 1분봉, 오래됐거나 1분봉이 없으면 일봉 */
+async function buildCaseAuto(nameOrCode,date,onMsg){
+  var old=daysAgo(date)>DAILY_AFTER_DAYS;
+  if(!old){
+    try{
+      if(onMsg)onMsg('1분봉 받는 중…');
+      return await kwBuildCase(nameOrCode,date);
+    }catch(e){
+      if(onMsg)onMsg('1분봉이 없어 일봉으로 받는 중…');
+    }
+  } else if(onMsg) onMsg('오래된 날짜라 일봉으로 받는 중…');
+  return await kwBuildCaseDaily(nameOrCode,date);
+}
 async function kwBuildCase(nameOrCode,dateStr){
   var date=(''+dateStr).replace(/[^0-9]/g,'');
   if(!/^\d{8}$/.test(date))throw new Error('날짜를 YYYYMMDD로 입력하세요 (예: 20260315)');
@@ -1629,7 +1689,7 @@ async function tryDirectPlay(){
   if(btn){btn.disabled=true;btn.textContent='키움에서 받는 중…';}
   try{
     toast('키움에서 '+nm.trim()+' '+fmtDate(digits(dt))+' 받는 중…');
-    var cs=await kwBuildCase(stockArg,digits(dt));                 // 입력한 날짜가 곧 매매 시작일
+    var cs=await buildCaseAuto(stockArg,digits(dt),function(t){ if(btn)btn.textContent=t; });
     $('#case-overlay').hidden=true;
     loadRealCase(cs);
   }catch(e){ toast(e&&e.message?e.message:'조회 실패'); }
@@ -1777,9 +1837,9 @@ async function findS10(){
 }
 async function startS10(code,name,dt){
   var btn=$('#case-find'); if(btn){btn.disabled=true;}
-  $('#case-msg').textContent=name+' 1분봉 받는 중…';
+  $('#case-msg').textContent=name+' 받는 중…';
   try{
-    var cs=await kwBuildCase(code,dt);        // 선택한 날짜가 곧 매매 시작일
+    var cs=await buildCaseAuto(code,dt,function(t){ $('#case-msg').textContent=name+' '+t; });
     $('#case-overlay').hidden=true;
     loadRealCase(cs);
     toast(name+' · '+fmtDate(dt)+' 매매 시작');
