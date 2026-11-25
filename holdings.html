@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>내 보유종목 분석 — 주식한판</title>
+<link rel="icon" href="favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef1f5;--panel:#fff;--panel2:#f2f5f9;--fg:#121820;--muted:#5a6675;--border:#d6dce5;
+  --up:#e03131;--dn:#1c7ed6;--down:#1c64f2;--accent:#b9770a;--accent-ink:#fff;--sup:#0f8f81;--ma:#8e3fc9;
+  --shadow:0 1px 2px rgba(20,30,45,.06),0 12px 26px rgba(20,30,45,.1);
+  --sans:"IBM Plex Sans KR",system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.6}
+.wrap{max-width:1020px;margin:0 auto;padding:0 16px 60px}
+header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.hd{max-width:1020px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:10px}
+.logo{font-weight:700;font-size:17px;cursor:pointer}
+.sp{flex:1}
+.btn{border:1px solid var(--border);background:var(--panel);color:var(--fg);border-radius:10px;padding:9px 14px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.btn:hover{background:var(--panel2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.sm{padding:6px 10px;font-size:13px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+h1{font-size:25px;margin:26px 0 6px}
+h2{font-size:18px;margin:26px 0 8px}
+.lead{color:var(--muted);font-size:14px;margin:0 0 14px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld label{font-size:12px;color:var(--muted);font-weight:600}
+input,select{background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);
+  font-family:inherit;font-size:14px;padding:9px 10px}
+input.mono{font-family:var(--mono)}
+.tabs{display:flex;gap:6px;margin:18px 0 12px;border-bottom:1px solid var(--border)}
+.tab{border:0;background:none;color:var(--muted);font-family:inherit;font-size:15px;font-weight:700;
+  padding:10px 14px;cursor:pointer;border-bottom:2px solid transparent}
+.tab.on{color:var(--fg);border-bottom-color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{padding:9px 8px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+th:nth-child(2),td:nth-child(2){text-align:left}
+th{color:var(--muted);font-size:12px;font-weight:600}
+td.num{font-family:var(--mono)}
+.gr{display:inline-block;min-width:22px;text-align:center;border-radius:6px;padding:1px 6px;font-weight:700;font-size:12px}
+.gr.A{background:#0f8f81;color:#fff}.gr.B{background:#1c64f2;color:#fff}
+.gr.C{background:#b9770a;color:#fff}.gr.D{background:#8a6d3b;color:#fff}.gr.E{background:#aa2e2e;color:#fff}
+.bar{height:8px;background:var(--panel2);border-radius:5px;overflow:hidden;margin-top:8px}
+.bar>i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}
+.msg{font-size:13px;color:var(--muted);margin-top:8px;white-space:pre-wrap}
+.warn{background:#fff7e6;border:1px solid #f0d9a8;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:10px}
+:root[data-theme=dark] .warn{background:#2a2213;border-color:#5a4a22}
+.ov{position:fixed;inset:0;background:rgba(10,14,20,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.ov[hidden]{display:none}
+.ov .bx{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;max-width:420px;width:100%}
+.note{font-size:12.5px;color:var(--muted)}
+.sc{display:grid;grid-template-columns:1fr auto auto;gap:4px 10px;font-size:13px;margin-top:10px}
+.sc b{font-family:var(--mono)}
+.big{font-size:34px;font-weight:700;font-family:var(--mono);line-height:1.1}
+.kv{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:10px;font-size:13px}
+.kv div{color:var(--muted)}.kv b{color:var(--fg);font-family:var(--mono);margin-left:4px}
+@media(max-width:620px){.hd .hide{display:none}h1{font-size:21px}td,th{padding:8px 5px;font-size:12.5px}}
+</style>
+</head>
+<body>
+<header><div class="hd">
+  <div class="logo" onclick="location.href='index.html'">🎮 주식한판</div>
+  <div class="sp"></div>
+  <button class="btn sm" onclick="location.href='split10.html'">🔎 적합종목</button>
+  <button class="btn sm" onclick="location.href='game.html'">🎮 게임</button>
+  <button class="btn sm" id="b-kw">⚙️ 키움 설정</button>
+  <button class="btn sm hide" onclick="location.href='index.html'">홈</button>
+</div></header>
+
+<div class="wrap">
+  <h1>내 보유종목 분석</h1>
+  <p class="lead">물려 있는 종목이 <b>돌아올지</b>를 그 종목의 과거 일봉으로 따져봅니다.
+    평단과 수량만 넣으면 익절 목표가, 남은 분할매수 자리, 그리고 과거에 같은 낙폭에서 본전+익절%까지 돌아온 비율을 계산합니다.</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="fld" style="flex:1;min-width:150px"><label>종목명 또는 코드</label>
+        <input id="h-name" placeholder="예) 삼성전자 또는 005930" autocomplete="off"></div>
+      <div class="fld"><label>평단(원)</label><input class="mono" id="h-avg" inputmode="numeric" style="width:110px"></div>
+      <div class="fld"><label>수량(주)</label><input class="mono" id="h-qty" inputmode="numeric" style="width:90px"></div>
+      <div class="fld"><label>&nbsp;</label><button class="btn primary" id="h-add">+ 추가</button></div>
+    </div>
+    <p class="muted" style="margin:8px 2px 0;font-size:12.5px">
+      입력한 내용은 <b>이 브라우저에만</b> 저장됩니다. 계좌에는 접속하지 않습니다.</p>
+  </div>
+
+  <div class="card" id="h-listcard" hidden>
+    <div class="row" style="align-items:center;margin-bottom:8px">
+      <div style="font-weight:700;flex:1" id="h-count">보유종목</div>
+      <button class="btn sm" id="h-clear">전체 지우기</button>
+    </div>
+    <div id="h-list"></div>
+    <div class="row" style="margin-top:12px;align-items:center">
+      <div class="fld"><label>익절 기준(평단 대비)</label><input class="mono" id="h-tp" value="3" style="width:60px"></div>
+      <div class="fld"><label>분할 간격</label><input class="mono" id="h-step" value="3" style="width:60px"></div>
+      <div class="fld"><label>1회 매수금(원)</label><input class="mono" id="h-once" value="1000000" style="width:120px"></div>
+      <div class="fld" style="flex:1"><label>&nbsp;</label>
+        <button class="btn primary" id="h-run" style="width:100%">📊 전체 분석</button></div>
+    </div>
+    <div class="prog" id="h-prog" hidden><i id="h-progi"></i></div>
+    <p class="muted" id="h-msg" style="margin:8px 2px 0"></p>
+  </div>
+
+  <div id="h-sum"></div>
+  <div id="h-res"></div>
+
+  <div class="card" id="h-empty">
+    <p class="muted" style="margin:0">위에 종목·평단·수량을 넣고 <b>+ 추가</b> 를 누르세요. 여러 종목을 넣을 수 있습니다.</p>
+  </div>
+</div>
+
+<!-- 키움 설정 -->
+<div class="ov" id="kw-ov" hidden><div class="bx">
+  <h2 style="margin:0 0 4px">⚙️ 키움 API 설정</h2>
+  <p class="note" style="margin:0 0 12px">본인 키움 REST 앱키로 조회합니다. 키는 <b>이 브라우저에만</b> 저장되고 서버로 보내지 않습니다.</p>
+  <label class="note">앱키</label>
+  <input id="kw-ak" class="mono" autocomplete="off" style="width:100%;margin:4px 0 10px">
+  <label class="note">시크릿키</label>
+  <input id="kw-sk" class="mono" type="password" autocomplete="off" style="width:100%;margin:4px 0 10px">
+  <label class="note">서버</label>
+  <select id="kw-mode" style="width:100%;margin:4px 0 12px"><option value="real">실전</option><option value="mock">모의</option></select>
+  <div class="msg" id="kw-msg"></div>
+  <div class="row" style="margin-top:10px">
+    <button class="btn primary" id="kw-save">저장</button>
+    <button class="btn" id="kw-test">연결 테스트</button>
+    <div class="sp" style="flex:1"></div>
+    <button class="btn" id="kw-close">닫기</button>
+  </div>
+  <div style="border-top:1px solid var(--border);margin:14px 0 10px"></div>
+  <div style="font-weight:700;font-size:14px">다른 기기로 옮기기</div>
+  <p class="note" style="margin:2px 0 8px">PC에서 코드를 발급하고 폰에서 그 코드를 넣으면 키가 넘어갑니다.
+    서버에는 <b>코드로 암호화된 상태</b>로만 5분간 있다가 받는 즉시 지워집니다.</p>
+  <div class="row">
+    <button class="btn" id="kw-send">📤 코드 발급</button>
+    <input id="kw-rcode" class="mono" placeholder="XXXX-XXXX" maxlength="9" style="flex:1;min-width:110px;text-transform:uppercase">
+    <button class="btn" id="kw-recv">📥 받아오기</button>
+  </div>
+  <div id="kw-codebox" hidden style="margin-top:10px;text-align:center;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px">
+    <div class="note">폰에서 이 코드를 입력하세요</div>
+    <div id="kw-code" class="mono" style="font-size:30px;font-weight:700;letter-spacing:2px;margin:4px 0"></div>
+    <div class="note" id="kw-left"></div>
+  </div>
+  <div class="msg" id="kw-xmsg"></div>
+  <div style="border-top:1px solid var(--border);margin:14px 0 10px"></div>
+  <div class="row" style="align-items:center">
+    <div class="note" id="kw-cache" style="flex:1">받아온 봉 데이터 저장량 —</div>
+    <button class="btn sm" id="kw-cclear">캐시 비우기</button>
+  </div>
+  <p class="note" style="margin:6px 0 0">한 번 받은 종목은 저장해 두고 다음부터는 조회 없이 바로 계산합니다.</p>
+</div></div>
+
+<script src="barcache.js"></script>
+<script src="split10fit.js"></script>
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s)};
+var F=window.Split10Fit;
+
+/* ── 로그인 확인 (허브 세션 공유) ───────────────────────── */
+function session(){try{return JSON.parse(localStorage.getItem('jusikwang_hub')||'{}')}catch(e){return{}}}
+if(!session().user){ location.href='index.html'; return; }
+
+/* ── 키움 호출 (game.html 과 동일한 방식·동일한 키) ─────── */
+var KW_LS={ak:'jusikwang_kw_appkey',sk:'jusikwang_kw_secret',mode:'jusikwang_kw_mode',codes:'jusikwang_kw_codes'};
+function kwCfg(){return{ak:(localStorage.getItem(KW_LS.ak)||'').trim(),sk:(localStorage.getItem(KW_LS.sk)||'').trim(),mode:localStorage.getItem(KW_LS.mode)||'real'};}
+function kwBase(m){return m==='mock'?'https://mockapi.kiwoom.com':'https://api.kiwoom.com';}
+var _tok={t:'',exp:0};
+async function kwToken(){
+  var c=kwCfg(); if(!c.ak||!c.sk) throw new Error('키움 앱키/시크릿키가 없습니다 — ⚙️ 키움 설정에서 넣어주세요');
+  if(_tok.t&&Date.now()<_tok.exp) return _tok.t;
+  var r=await fetch(kwBase(c.mode)+'/oauth2/token',{method:'POST',headers:{'Content-Type':'application/json;charset=UTF-8'},
+    body:JSON.stringify({grant_type:'client_credentials',appkey:c.ak,secretkey:c.sk})});
+  var d=await r.json();
+  if(d.return_code!=null&&d.return_code!==0) throw new Error('토큰 발급 실패: '+(d.return_msg||d.return_code));
+  var t=d.token||d.access_token; if(!t) throw new Error('토큰 응답 오류');
+  _tok={t:t,exp:Date.now()+5*3600*1000}; return t;
+}
+/* 키움 유량 제한 대응 — 호출을 한 줄로 세우고 간격 보장, 1700 나면 늘려가며 재시도 */
+var KW_GAP=260, _kwChain=Promise.resolve(), _kwLast=0;
+function kwGate(){
+  _kwChain=_kwChain.then(function(){
+    var w=KW_GAP-(Date.now()-_kwLast);
+    return (w>0)?new Promise(function(r){setTimeout(r,w);}):null;
+  }).then(function(){ _kwLast=Date.now(); });
+  return _kwChain;
+}
+function kwIsFlood(m){ return /유량|요청 개수|1700|too many/i.test(''+m); }
+async function kwPost(path,apiId,body,cont,nk){
+  var c=kwCfg(),tok=await kwToken(),lastMsg='';
+  for(var att=0;att<4;att++){
+    await kwGate();
+    var r=await fetch(kwBase(c.mode)+path,{method:'POST',headers:{'Content-Type':'application/json;charset=UTF-8',
+      'authorization':'Bearer '+tok,'api-id':apiId,'cont-yn':cont||'N','next-key':nk||''},body:JSON.stringify(body)});
+    var d; try{d=await r.json();}catch(e){throw new Error(apiId+' 응답 파싱 실패');}
+    if(d.return_code!=null&&d.return_code!==0){
+      lastMsg=(d.return_msg||d.return_code);
+      if(kwIsFlood(lastMsg)&&att<3){ KW_GAP=Math.min(900,KW_GAP+120);
+        await new Promise(function(r2){setTimeout(r2,700*(att+1));}); continue; }
+      throw new Error(apiId+' 실패: '+lastMsg);
+    }
+    d._cont=r.headers.get('cont-yn')||'N'; d._next=r.headers.get('next-key')||''; return d;
+  }
+  throw new Error(apiId+' 실패: '+lastMsg);
+}
+function kwNum(v){var s=(''+(v==null?'':v)).replace(/[,+]/g,'').trim();if(s===''||s==='-')return 0;var n=parseFloat(s);return isFinite(n)?Math.abs(Math.trunc(n)):0;}
+function kwRows(d){var best=null;for(var k in d){var v=d[k];if(Array.isArray(v)&&v.length&&typeof v[0]==='object'){if(!best||v.length>best.length)best=v;}}return best||[];}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms)});}
+function dMinus(ds,days){var y=+ds.slice(0,4),m=+ds.slice(4,6)-1,d2=+ds.slice(6,8);var d=new Date(y,m,d2);d.setDate(d.getDate()-days);
+  return ''+(d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate());}
+
+/* 기준일까지의 일봉 — base_dt 로 과거 기준 조회(이후 데이터 안 들어옴) */
+async function dayBars(code,asof,minBars){
+  var start=dMinus(asof,Math.round((minBars+60)*1.55));
+  var today=(function(){var t=new Date();return ''+(t.getFullYear()*10000+(t.getMonth()+1)*100+t.getDate());})();
+  var ck='s10:'+code+':'+asof+':'+start;
+  if(window.BarCache){                       // 받아둔 게 있으면 조회 없이
+    var hit=BarCache.get(ck);
+    if(hit && (asof<today || hit.asof===today)) return BarCache.unpackBars(hit.rows);
+  }
+  var all=[],cont='N',nk='';
+  for(var p=0;p<6;p++){
+    var d=await kwPost('/api/dostk/chart','ka10081',{stk_cd:code,base_dt:asof,upd_stkpc_tp:'1'},cont,nk);
+    var rows=kwRows(d),oldest='';
+    rows.forEach(function(r){
+      var c=kwNum(r.cur_prc||r.close||0); if(c<=0)return;
+      var t=(''+(r.dt||r.date||'')).slice(0,8); if(!t)return;
+      if(!oldest||t<oldest)oldest=t;
+      all.push({time:t,open:kwNum(r.open_pric||r.open)||c,high:kwNum(r.high_pric||r.high)||c,
+                low:kwNum(r.low_pric||r.low)||c,close:c,vol:kwNum(r.trde_qty||r.volume||0)});
+    });
+    cont=''+(d._cont||'N'); nk=''+(d._next||'');
+    if(oldest&&oldest<=start)break;
+    if(cont!=='Y'||!nk)break;
+    await sleep(170);
+  }
+  var seen={},out=[];
+  all.sort(function(a,b){return a.time<b.time?-1:a.time>b.time?1:0});
+  all.forEach(function(x){if(x.time<=asof&&x.time>=start&&!seen[x.time]){seen[x.time]=1;out.push(x);}});
+  if(out.length>minBars+60) out=out.slice(-(minBars+60));   // efree2 와 같은 구간(최근 minBars+60봉)
+  if(out.length && window.BarCache) BarCache.put(ck,{asof:today,rows:BarCache.packBars(out)});
+  return out;
+}
+
+/* 종목명 → 코드 (ka10099, 브라우저 캐시) */
+async function codeMap(force){
+  if(!force){var c=localStorage.getItem(KW_LS.codes);if(c){try{var m=JSON.parse(c);if(m&&m.list&&m.list.length)return m;}catch(e){}}}
+  var list=[],mks=['0','10'];
+  for(var i=0;i<mks.length;i++){
+    var cont='N',nk='';
+    for(var p=0;p<80;p++){
+      var d=await kwPost('/api/dostk/stkinfo','ka10099',{mrkt_tp:mks[i]},cont,nk);
+      var rows=null;['list','output','data','stk_list'].forEach(function(k){if(!rows&&Array.isArray(d[k]))rows=d[k];});
+      if(!rows)rows=kwRows(d);
+      (rows||[]).forEach(function(r){var cd=(''+(r.code||r.stk_cd||'')).replace(/^[A_]/,'');
+        var nm=(''+(r.name||r.stk_nm||'')).trim(); if(cd&&nm)list.push([cd,nm]);});
+      cont=''+(d._cont||'N'); nk=''+(d._next||'');
+      if(cont!=='Y'||!nk)break; await sleep(120);
+    }
+  }
+  var m={list:list,ts:Date.now()}; try{localStorage.setItem(KW_LS.codes,JSON.stringify(m));}catch(e){}
+  return m;
+}
+async function resolveCode(q){
+  q=(q||'').trim(); if(!q)return null;
+  if(/^\d{6}$/.test(q)){var nm='';try{var cm=await codeMap(false);var f0=cm.list.find(function(x){return x[0]===q});if(f0)nm=f0[1];}catch(e){}
+    return {code:q,name:nm||q};}
+  var m=await codeMap(false),ql=q.toLowerCase();
+  var f=m.list.find(function(x){return x[1].toLowerCase()===ql})
+      ||m.list.find(function(x){return x[1].toLowerCase().indexOf(ql)===0})
+      ||m.list.find(function(x){return x[1].toLowerCase().indexOf(ql)>=0});
+  return f?{code:f[0],name:f[1]}:null;
+}
+
+/* ETF/ETN·우선주 제외 (scanner.py 와 같은 규칙) */
+var ETF_B=['KODEX','TIGER','KBSTAR','ARIRANG','KINDEX','HANARO','SOL ','ACE ','PLUS ','RISE ','KOACT','TIMEFOLIO','마이티','히어로즈','FOCUS','파워','TREX','WON ','BNK ','KCGI '];
+var ETF_W=['ETN','레버리지','인버스','선물','채권','국고채','콜옵션','ETF','KIS','TR)','커버드콜','액티브'];
+function isEtf(nm){var n=(nm||''),u=n.toUpperCase();
+  for(var i=0;i<ETF_B.length;i++)if(u.indexOf(ETF_B[i].trim())===0)return true;
+  for(var j=0;j<ETF_W.length;j++)if(n.indexOf(ETF_W[j])>=0||u.indexOf(ETF_W[j])>=0)return true;
+  return false;}
+function isPref(code,nm){var c=''+(code||'');if(c&&'KLM'.indexOf(c.slice(-1))>=0)return true;
+  var n=(''+(nm||'')).trim();return (/우[0-9]*[A-C]?$/.test(n)||n.indexOf('우B')>=0)&&!!c&&c.slice(-1)!=='0';}
+
+/* 사전필터 (split10_screener.py 와 같은 기준) */
+function prefilter(bars,once,minBars){
+  var n=bars.length;
+  if(n<minBars) return '일봉 부족('+n+'봉)';
+  var cur=bars[n-1].close, q=Math.floor(once/cur);
+  if(q<1) return '1주도 못 삼';
+  var rec=bars.slice(-60),amt=0; rec.forEach(function(b){amt+=b.close*b.vol}); amt/=Math.max(1,rec.length);
+  if(amt<5e8) return '거래대금 '+(amt/1e8).toFixed(1)+'억';
+  var bi=Math.max(0,n-250),p0=bars[bi].close,tr=p0?((cur-p0)/p0*100):0;
+  if(tr<-35) return '추세 '+(tr>=0?'+':'')+tr.toFixed(0)+'%';
+  var d10=0,i;
+  for(i=1;i<n;i++){var pv=bars[i-1].close; if(pv>0 && (bars[i].close-pv)/pv*100<=-10) d10++;}
+  if(d10/Math.max(1,n-1)*100>2) return '급락 '+d10+'회';
+  var yr=(n>=250)?bars.slice(-250):bars, hi=-Infinity, lo=Infinity;
+  for(i=0;i<yr.length;i++){if(yr[i].high>hi)hi=yr[i].high; if(yr[i].low<lo)lo=yr[i].low;}
+  var pos=(hi>lo)?((cur-lo)/(hi-lo)*100):50;
+  if(pos>95) return '52주 상단 '+pos.toFixed(0)+'%';
+  return '';
+}
+
+/* ── 보유종목 저장 ──────────────────────────────────────── */
+var HK='jusikwang_holdings_v1';
+function hList(){try{return JSON.parse(localStorage.getItem(HK)||'[]')}catch(e){return[]}}
+function hSave(a){try{localStorage.setItem(HK,JSON.stringify(a))}catch(e){}}
+
+function esc(s){return (''+s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function n1(v){return (Math.round(v*10)/10).toFixed(1)}
+function won(v){return Math.round(v).toLocaleString()}
+function sgn(v){return (v>=0?'+':'')+n1(v)}
+
+/* ── 지금 그대로 버티면 — 과거 같은 낙폭에서 돌아온 비율 ──
+   과거 아무 날에 샀다고 보고, 매수가 대비 drop% 밀린 적이 있는 경우만 모은다.
+   그중 밀린 날로부터 기한 안에 매수가 +tp% 로 올라온 비율과 걸린 일수.
+   분할매수를 더 하지 않고 그대로 들고 있는 경우에 해당한다. */
+function holdStats(bars,drop,tp,maxDays){
+  var n=bars.length,reached=0,rec=0,days=[],worst=[];
+  for(var i=0;i<n-1;i++){
+    var p=bars[i].close; if(!(p>0))continue;
+    var dn=p*(1-drop/100), up=p*(1+tp/100), hit=-1, e1=Math.min(n-1,i+maxDays);
+    for(var j=i+1;j<=e1;j++){ if(bars[j].low<=dn){hit=j;break;} }
+    if(hit<0)continue;
+    reached++;
+    var e2=Math.min(n-1,hit+maxDays), lo=bars[hit].low, got=false;
+    for(var k=hit;k<=e2;k++){
+      if(bars[k].low<lo)lo=bars[k].low;
+      if(k>hit&&bars[k].high>=up){ rec++; days.push(k-hit); got=true; break; }
+    }
+    worst.push((lo-p)/p*100);
+  }
+  days.sort(function(a,b){return a-b});
+  var avg=function(a){return a.length?a.reduce(function(x,y){return x+y},0)/a.length:0};
+  return {trials:reached, recPct:reached?rec/reached*100:0,
+          avgDays:avg(days), medDays:days.length?days[Math.floor(days.length/2)]:0,
+          worstAvg:avg(worst)};
+}
+
+/* ── 추가매수 시뮬레이션 — 몇 번 더 사면 평단이 어디로 가나 ── */
+function addSim(avgP,qty,cur,once,step,tp,rows){
+  var out=[],cost=avgP*qty,sh=qty;
+  out.push({n:0,price:cur,avg:avgP,sh:sh,cost:cost});
+  for(var i=1;i<=rows;i++){
+    var buyAt=Math.round(cur*(1-step*(i-1)/100));
+    var q=Math.floor(once/buyAt); if(q<1)q=1;
+    cost+=buyAt*q; sh+=q;
+    out.push({n:i,price:buyAt,avg:cost/sh,sh:sh,cost:cost});
+  }
+  return out.map(function(r){
+    var t=r.avg*(1+tp/100);
+    return {n:r.n,buyAt:r.price,avg:r.avg,sh:r.sh,cost:r.cost,target:t,need:(t-cur)/cur*100};
+  });
+}
+
+/* ── 종목 하나 분석 ─────────────────────────────────────── */
+async function analyze(h,c){
+  var code=h.code, asofs=todayStr();
+  var bars=await dayBars(code,asofs,c.max_days+61);
+  if(!bars||bars.length<c.max_days+61) throw new Error('일봉이 '+(bars?bars.length:0)+'봉뿐입니다');
+  var cur=bars[bars.length-1].close;
+  var d=(cur-h.avg)/h.avg*100;
+  var m=F.run(bars,c);
+  var step=c.drops[0]||3, tp=c.tp;
+  var cha=d<0?Math.min(9,Math.floor(-d/step)+1):1;
+  var hs=d<0?holdStats(bars,-d,tp,c.max_days):null;
+  var sim=addSim(h.avg,h.qty,cur,c.once,step,tp,3);
+  return {h:h,bars:bars,cur:cur,d:d,m:m,cha:cha,hs:hs,sim:sim,step:step,tp:tp,
+          once:c.once,maxDays:c.max_days,
+          evalAmt:cur*h.qty, buyAmt:h.avg*h.qty, pnl:(cur-h.avg)*h.qty};
+}
+function todayStr(){var t=new Date();return ''+(t.getFullYear()*10000+(t.getMonth()+1)*100+t.getDate());}
+
+/* ── 카드 ──────────────────────────────────────────────── */
+function card(r){
+  var h=r.h,m=r.m,ok=m&&m.ok;
+  var col=r.d>=0?'var(--up)':'var(--dn)';
+  var gcol={A:'#1a7f37',B:'#2f9e5f',C:'#b58900',D:'#d4722f',E:'#d42f2f'}[ok?m.grade:'C'];
+  var s='<div class="card" style="margin-top:14px">';
+  s+='<div class="row" style="align-items:baseline;gap:8px">'
+   + '<div style="font-size:19px;font-weight:700">'+esc(h.name)+'</div>'
+   + '<div class="muted mono" style="font-size:12.5px">'+esc(h.code)+'</div>'
+   + '<div class="sp" style="flex:1"></div>'
+   + (ok?'<div class="mono" style="font-weight:700;font-size:17px;color:'+gcol+'">'+n1(m.score)+' '+m.grade+'</div>':'')
+   + '</div>';
+
+  s+='<div class="row" style="margin-top:10px;gap:18px;flex-wrap:wrap">'
+   + kv('현재가',won(r.cur)+'원') + kv('평단',won(h.avg)+'원') + kv('수량',h.qty.toLocaleString()+'주')
+   + kv('평가손익','<span style="color:'+col+'">'+(r.pnl>=0?'+':'')+won(r.pnl)+'원 ('+sgn(r.d)+'%)</span>')
+   + '</div>';
+
+  if(r.d<0){
+    s+='<p style="margin:12px 0 4px">평단 대비 <b style="color:'+col+'">'+n1(r.d)+'%</b> — '
+     + '10분할 기준으로 <b>'+r.cha+'차 구간</b>입니다.</p>';
+    if(r.hs&&r.hs.trials>=5){
+      var hs=r.hs;
+      s+='<div style="background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px;margin:10px 0">'
+       + '<div style="font-weight:700;margin-bottom:6px">이대로 버티면 — 과거 이 종목은</div>'
+       + '<p style="margin:0">같은 자리에서 <b>'+n1(hs.recPct)+'%</b>가 본전 +'+n1(r.tp)+'%까지 돌아왔습니다. '
+       + '돌아오는 데 걸린 날은 평균 <b>'+Math.round(hs.avgDays)+'일</b>(중앙값 '+hs.medDays+'일), '
+       + '그사이 더 빠진 폭은 평균 <b>'+n1(hs.worstAvg)+'%</b>였습니다.</p>'
+       + '<p class="muted" style="margin:6px 0 0;font-size:12.5px">'+hs.trials+'번의 과거 사례 · '
+       + '밀린 날부터 '+r.maxDays+'거래일 안에 · 추가매수 없이 그대로 들고 있었을 때 기준</p></div>';
+    } else {
+      s+='<p class="muted" style="margin:8px 0">과거에 이만큼 밀린 사례가 거의 없어 회복 통계를 내지 못했습니다.</p>';
+    }
+  } else {
+    s+='<p style="margin:12px 0 4px">평단 대비 <b style="color:'+col+'">+'+n1(r.d)+'%</b> — 수익 구간입니다. '
+     + '익절 기준 +'+n1(r.tp)+'%는 '+won(h.avg*(1+r.tp/100))+'원입니다.</p>';
+  }
+
+  /* 추가매수 시뮬 */
+  s+='<div style="font-weight:700;margin:14px 0 6px">더 사면 평단이 어디로 가나</div>'
+   + '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">'
+   + '<tr style="background:var(--panel2)">'
+   + th('추가매수')+th('매수가')+th('평단')+th('익절가(+'+n1(r.tp)+'%)')+th('총 투입')+th('익절까지')+'</tr>';
+  r.sim.forEach(function(x){
+    s+='<tr>'+td(x.n===0?'지금':x.n+'회')+td(x.n===0?'—':won(x.buyAt)+'원')
+     + td(won(x.avg)+'원')+td('<b>'+won(x.target)+'원</b>')+td(won(x.cost)+'원')
+     + td('<span style="color:'+(x.need<=0?'var(--up)':'inherit')+'">'+sgn(x.need)+'%</span>')+'</tr>';
+  });
+  s+='</table></div>'
+   + '<p class="muted" style="margin:6px 2px 0;font-size:12.5px">1회 매수금 '+won(r.once)
+   + '원 · 현재가에서 '+n1(r.step)+'%씩 내려간 자리에서 산다고 봤을 때입니다.</p>';
+
+  /* 적합성·이평 */
+  if(ok){
+    s+='<div class="row" style="margin-top:12px;gap:18px;flex-wrap:wrap">'
+     + kv('익절 성공률',n1(m.win_rate)+'%') + kv('미회복',n1(m.fail_rate)+'%')
+     + kv('9차 소진',n1(m.full9_rate)+'%') + kv('최대 평가손실',n1(m.worst_dd)+'%')
+     + kv('MA20',sgn(m.ma20_slope)+'%') + kv('배열',m.aligned?'정배열':'역배열')
+     + '</div>';
+    var w=[];
+    if(m.ma20_slope<0&&!m.aligned) w.push('20봉 이평이 '+n1(m.ma20_slope)+'%로 아직 내려가는 중입니다. 추가매수를 서두르면 분할매수가 빨리 소진됩니다.');
+    if(m.fail_rate>=5) w.push('과거 '+n1(m.fail_rate)+'%는 기한 안에 못 빠져나왔습니다. 손절이 없는 전략이라 이 비율이 가장 무서운 숫자입니다.');
+    if(m.full9_rate>=5) w.push('9차까지 소진된 적이 '+n1(m.full9_rate)+'% 있습니다. 1회 매수금의 9배를 감당할 수 있는지 먼저 보세요.');
+    if(r.cha>=6) w.push(r.cha+'차 구간입니다. 남은 분할매수가 '+(9-r.cha)+'번뿐이니 추가매수 간격을 넓히는 것도 방법입니다.');
+    if(w.length) s+='<div style="background:#fff8f0;border:1px solid #f0c896;border-radius:10px;padding:11px;margin-top:12px">'
+      + '<div style="font-weight:700;color:#a05014;margin-bottom:4px">확인하세요</div><ul style="margin:0;padding-left:18px">'
+      + w.map(function(x){return '<li style="margin:3px 0">'+x+'</li>'}).join('')+'</ul></div>';
+  }
+  s+='</div>';
+  return s;
+}
+function kv(k,v){return '<div><div class="muted" style="font-size:12px">'+k+'</div>'
+  +'<div class="mono" style="font-weight:700;font-size:15px">'+v+'</div></div>';}
+function th(t){return '<th style="text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);font-weight:600">'+t+'</th>';}
+function td(t){return '<td style="padding:7px 8px;border-bottom:1px solid var(--border)" class="mono">'+t+'</td>';}
+
+/* ── 목록 그리기 ───────────────────────────────────────── */
+function renderList(){
+  var a=hList();
+  $('#h-listcard').hidden = !a.length;
+  $('#h-empty').hidden = !!a.length;
+  $('#h-count').textContent='보유종목 '+a.length+'개';
+  $('#h-list').innerHTML = a.map(function(x,i){
+    return '<div class="row" style="align-items:center;gap:10px;padding:7px 2px;border-bottom:1px solid var(--border)">'
+      +'<div style="flex:1;font-weight:600">'+esc(x.name)+' <span class="muted mono" style="font-size:12px">'+esc(x.code)+'</span></div>'
+      +'<div class="mono">'+won(x.avg)+'원</div><div class="mono">'+x.qty.toLocaleString()+'주</div>'
+      +'<button class="btn sm" data-del="'+i+'">삭제</button></div>';
+  }).join('');
+  $('#h-list').querySelectorAll('[data-del]').forEach(function(b){
+    b.addEventListener('click',function(){var a2=hList();a2.splice(+b.dataset.del,1);hSave(a2);renderList();});
+  });
+}
+
+/* ── 이벤트 ────────────────────────────────────────────── */
+$('#h-add').addEventListener('click',async function(){
+  var q=$('#h-name').value.trim(), avg=parseFloat(($('#h-avg').value||'').replace(/,/g,'')),
+      qty=parseInt(($('#h-qty').value||'').replace(/,/g,''),10);
+  if(!q) return msg('종목명이나 코드를 넣어주세요.');
+  if(!(avg>0)) return msg('평단을 넣어주세요.');
+  if(!(qty>0)) return msg('수량을 넣어주세요.');
+  msg('종목 확인 중…');
+  try{
+    var r=await resolveCode(q);
+    if(!r) return msg("'"+q+"' 종목을 찾지 못했습니다.");
+    var a=hList();
+    if(a.some(function(x){return x.code===r.code})) return msg('이미 넣은 종목입니다.');
+    a.push({code:r.code,name:r.name,avg:avg,qty:qty}); hSave(a); renderList();
+    $('#h-name').value='';$('#h-avg').value='';$('#h-qty').value='';
+    msg('');
+  }catch(e){ msg(''+(e.message||e)); }
+});
+$('#h-clear').addEventListener('click',function(){
+  if(!confirm('보유종목을 전부 지울까요?'))return;
+  hSave([]); renderList(); $('#h-res').innerHTML=''; $('#h-sum').innerHTML='';
+});
+$('#h-run').addEventListener('click',async function(){
+  var a=hList(); if(!a.length)return;
+  if(!kwCfg().ak) return msg('먼저 ⚙️ 키움 설정에서 앱키·시크릿키를 넣어주세요.');
+  var tp=parseFloat($('#h-tp').value)||3, step=parseFloat($('#h-step').value)||3,
+      once=parseInt(($('#h-once').value||'').replace(/,/g,''),10)||1000000;
+  var c={once:once,drops:(function(){var o=[];for(var i=1;i<=8;i++)o.push(step*i);return o})(),
+         tp:tp,max_days:120,daily_max:3};
+  $('#h-run').disabled=true; $('#h-prog').hidden=false; $('#h-res').innerHTML=''; $('#h-sum').innerHTML='';
+  var out=[],done=0;
+  for(var i=0;i<a.length;i++){
+    msg('('+(i+1)+'/'+a.length+') '+a[i].name+' 분석 중…');
+    try{ out.push(await analyze(a[i],c)); }
+    catch(e){ $('#h-res').innerHTML+='<div class="card" style="margin-top:14px"><b>'+esc(a[i].name)
+      +'</b> — 분석 실패: '+esc(e.message||e)+'</div>'; }
+    done++; $('#h-progi').style.width=(done/a.length*100)+'%';
+  }
+  out.sort(function(x,y){return x.d-y.d});
+  var tot=out.reduce(function(s,r){return s+r.pnl},0), buy=out.reduce(function(s,r){return s+r.buyAmt},0);
+  if(out.length) $('#h-sum').innerHTML='<div class="card" style="margin-top:14px"><div class="row" style="gap:20px;flex-wrap:wrap">'
+    + kv('종목 수',out.length+'개') + kv('매입금액',won(buy)+'원')
+    + kv('평가손익','<span style="color:'+(tot>=0?'var(--up)':'var(--dn)')+'">'+(tot>=0?'+':'')+won(tot)+'원</span>')
+    + kv('수익률',buy?sgn(tot/buy*100)+'%':'—') + '</div></div>';
+  $('#h-res').innerHTML += out.map(card).join('');
+  $('#h-run').disabled=false; $('#h-prog').hidden=true; msg('');
+});
+function msg(t){$('#h-msg').textContent=t;}
+
+/* ── 키움 설정 ─────────────────────────────────────────── */
+function openKw(){var c=kwCfg();$('#kw-ak').value=c.ak;$('#kw-sk').value=c.sk;$('#kw-mode').value=c.mode;$('#kw-msg').textContent='';$('#kw-ov').hidden=false;}
+function saveKw(){localStorage.setItem(KW_LS.ak,$('#kw-ak').value.trim());
+  localStorage.setItem(KW_LS.sk,$('#kw-sk').value.trim());
+  localStorage.setItem(KW_LS.mode,$('#kw-mode').value); _tok={t:'',exp:0};}
+function cacheInfo(){
+  var el=$('#kw-cache'); if(!el)return;
+  if(!window.BarCache){ el.textContent='봉 데이터 저장 기능 없음'; return; }
+  var st=BarCache.stats();
+  el.textContent='저장된 봉 데이터 '+st.count+'건 · '+st.kb.toLocaleString()+'KB';
+}
+$('#kw-cclear').addEventListener('click',function(){
+  if(window.BarCache){ BarCache.clear(); cacheInfo(); $('#kw-xmsg').textContent='저장된 봉 데이터를 지웠습니다.'; }
+});
+$('#b-kw').addEventListener('click',function(){ openKw(); cacheInfo(); });
+$('#kw-close').addEventListener('click',function(){$('#kw-ov').hidden=true});
+$('#kw-save').addEventListener('click',function(){saveKw();$('#kw-msg').textContent='저장했습니다.';});
+$('#kw-test').addEventListener('click',async function(){
+  saveKw(); $('#kw-msg').textContent='연결 확인 중…';
+  try{ await kwToken(); $('#kw-msg').textContent='✅ 연결 성공 — 조회할 수 있습니다.'; }
+  catch(e){ $('#kw-msg').textContent='❌ '+(e&&e.message||e); }
+});
+
+/* ── 기기간 전송 (일회용 코드) ─────────────────────────── */
+var SB_URL='https://swekuozzyonslloqghpc.supabase.co';
+var SB_KEY='sb_publishable_w4-fBKFRRsO3u9ApjO8shQ_KuwW002P';
+function rpc(fn,body){
+  return fetch(SB_URL+'/rest/v1/rpc/'+fn,{method:'POST',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'},
+    body:JSON.stringify(body||{})}).then(function(r){return r.json()})
+    .catch(function(){return{ok:false,msg:'서버 연결 실패'}});
+}
+var XA='ABCDEFGHJKMNPQRSTUVWXYZ23456789';   /* 헷갈리는 0,O,1,I,L 제외 */
+function newCode(){var a=new Uint8Array(8);crypto.getRandomValues(a);
+  var s='';for(var i=0;i<8;i++)s+=XA[a[i]%XA.length];return s;}
+function b64(b){var u=new Uint8Array(b),s='';for(var i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s);}
+function unb64(s){var r=atob(s),a=new Uint8Array(r.length);for(var i=0;i<r.length;i++)a[i]=r.charCodeAt(i);return a;}
+async function xKey(code,salt){
+  var base=await crypto.subtle.importKey('raw',new TextEncoder().encode(code),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt:salt,iterations:200000,hash:'SHA-256'},
+    base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function xSeal(code,obj){
+  var salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+  var k=await xKey(code,salt);
+  var ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},k,new TextEncoder().encode(JSON.stringify(obj)));
+  return {payload:b64(ct),iv:b64(iv),salt:b64(salt)};
+}
+async function xOpen(code,payload,iv,salt){
+  var k=await xKey(code,unb64(salt));
+  var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(iv)},k,unb64(payload));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+var _tick=null;
+$('#kw-send').addEventListener('click',async function(){
+  var xm=$('#kw-xmsg'); xm.textContent='';
+  saveKw();
+  var c=kwCfg();
+  if(!c.ak||!c.sk){xm.textContent='보낼 키가 없습니다. 앱키·시크릿키를 먼저 넣고 저장하세요.';return;}
+  this.disabled=true;
+  try{
+    var code=newCode(), sealed=await xSeal(code,{ak:c.ak,sk:c.sk,mode:c.mode});
+    var res=await rpc('jusikwang_kwxfer_put',{p_code:code,p_payload:sealed.payload,p_iv:sealed.iv,p_salt:sealed.salt,p_ttl_sec:300});
+    if(!res||!res.ok){xm.textContent='발급 실패: '+((res&&res.msg)||'서버 응답 오류');return;}
+    $('#kw-code').textContent=code.slice(0,4)+'-'+code.slice(4);
+    $('#kw-codebox').hidden=false;
+    var left=res.expires_in||300;
+    if(_tick)clearInterval(_tick);
+    _tick=setInterval(function(){
+      left--;
+      if(left<=0){clearInterval(_tick);$('#kw-codebox').hidden=true;$('#kw-xmsg').textContent='코드가 만료됐습니다. 다시 발급하세요.';return;}
+      $('#kw-left').textContent='남은 시간 '+Math.floor(left/60)+':'+('0'+(left%60)).slice(-2)+' · 한 번 받으면 바로 사라집니다';
+    },1000);
+  }catch(e){ xm.textContent='오류: '+(e&&e.message||e); }
+  finally{ this.disabled=false; }
+});
+$('#kw-recv').addEventListener('click',async function(){
+  var xm=$('#kw-xmsg'); xm.textContent='';
+  var code=($('#kw-rcode').value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(code.length!==8){xm.textContent='코드 8자리를 정확히 넣어주세요.';return;}
+  this.disabled=true; xm.textContent='받아오는 중…';
+  try{
+    var res=await rpc('jusikwang_kwxfer_take',{p_code:code});
+    if(!res||!res.ok){xm.textContent=(res&&res.msg)||'받기 실패';return;}
+    var obj=await xOpen(code,res.payload,res.iv,res.salt);
+    if(!obj||!obj.ak||!obj.sk){xm.textContent='내용이 올바르지 않습니다.';return;}
+    localStorage.setItem(KW_LS.ak,obj.ak);
+    localStorage.setItem(KW_LS.sk,obj.sk);
+    localStorage.setItem(KW_LS.mode,obj.mode||'real');
+    _tok={t:'',exp:0};
+    $('#kw-ak').value=obj.ak; $('#kw-sk').value=obj.sk; $('#kw-mode').value=obj.mode||'real';
+    $('#kw-rcode').value='';
+    xm.textContent='✅ 키를 가져왔습니다. 이 기기에 저장됐습니다.';
+    $('#msg1').textContent='';
+  }catch(e){
+    xm.textContent='코드가 맞지 않거나 내용을 풀 수 없습니다. PC에서 새로 발급해 주세요.';
+  }finally{ this.disabled=false; }
+});
+
+/* ── 시작 ──────────────────────────────────────────────── */
+(function init(){
+  renderList();
+  if(!kwCfg().ak){ msg('먼저 ⚙️ 키움 설정에서 앱키·시크릿키를 넣어주세요.'); }
+})();
+})();
+</script>
+</body>
+</html>

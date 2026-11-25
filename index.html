@@ -170,6 +170,7 @@ header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 8
       <button class="btn ghost" id="cta-learn">커리큘럼 보기</button>
       <a class="btn" href="https://open.kakao.com/o/gQJzQZWi" target="_blank" rel="noopener" style="background:#FEE500;color:#191600;border-color:transparent;text-decoration:none">💬 오픈채팅방 입장</a>
       <button class="btn ghost" id="cta-split10">🔎 10분할 적합종목</button>
+      <button class="btn ghost" id="cta-hold">📁 내 보유종목 분석</button>
       <a class="btn ghost" href="guide.html" style="text-decoration:none">📸 사용법 보기</a>
     </div>
     <div class="trust">
@@ -539,6 +540,10 @@ $('#cta-play').addEventListener('click',startPractice);
 $('#cta-split10').addEventListener('click',function(){
   if(!S.user){toast('10분할 적합종목도 로그인이 필요합니다');openLogin();return;}
   location.href='split10.html';
+});
+$('#cta-hold').addEventListener('click',function(){
+  if(!S.user){toast('보유종목 분석도 로그인이 필요합니다');openLogin();return;}
+  location.href='holdings.html';
 });
 $('#game-go').addEventListener('click',startPractice);
 $('#cta-learn').addEventListener('click',function(){document.querySelector('.sec').scrollIntoView({behavior:'smooth'});});
