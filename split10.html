@@ -626,8 +626,15 @@ $('#kw-recv').addEventListener('click',async function(){
   $('#f-date').value=ds; $('#f-date').max=ds;
   (async function(){
     if(kwCfg().ak) return;
-    if(window.LocalBars && await LocalBars.ready())
-      $('#msg1').textContent='내장 일봉 '+LocalBars.info().count+'종목으로 분석합니다. ⚙️ 키움 앱키를 넣으면 전 종목·오늘 시세까지 됩니다.';
+    if(window.LocalBars && await LocalBars.ready()){
+      var n=LocalBars.info(), a=LocalBars.dash(n.t0), z=LocalBars.dash(n.t1);
+      if(z){                                   /* 기준일을 내장 일봉 범위 안으로 */
+        $('#f-date').max=z; if(a) $('#f-date').min=a;
+        if($('#f-date').value>z) $('#f-date').value=z;
+      }
+      $('#msg1').textContent='내장 일봉 '+n.count+'종목'+(z?' ('+a+' ~ '+z+')':'')
+        +'으로 분석합니다. ⚙️ 키움 앱키를 넣으면 전 종목·오늘 시세까지 됩니다.';
+    }
     else $('#msg1').textContent='내장 일봉이 아직 없습니다 — ⚙️ 키움 설정에 앱키를 넣어주세요.';
   })();
 })();

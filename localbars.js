@@ -19,7 +19,10 @@ async function ready(){
     return true;
   }catch(e){ return false; }
 }
-function info(){ return IDX?{built:IDX.built,days:IDX.days,count:IDX.count,src:IDX.src}:null; }
+function info(){ return IDX?{built:IDX.built,days:IDX.days,count:IDX.count,src:IDX.src,
+                             t0:IDX.t0||'',t1:IDX.t1||''}:null; }
+/* 'YYYYMMDD' → 'YYYY-MM-DD' (없으면 빈 문자열) */
+function dash(t){ t=''+(t||''); return t.length===8?t.slice(0,4)+'-'+t.slice(4,6)+'-'+t.slice(6):''; }
 function list(){ return IDX?(IDX.list||[]):[]; }
 
 /* 종목명/코드 → {code,name} */
@@ -106,5 +109,5 @@ async function nextCase(code,name,date){
 }
 
 window.LocalBars={ready:ready,info:info,list:list,resolve:resolve,search:search,
-                  daily:daily,caseFor:caseFor,nextCase:nextCase};
+                  daily:daily,caseFor:caseFor,nextCase:nextCase,dash:dash};
 })();

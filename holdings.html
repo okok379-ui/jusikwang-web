@@ -643,8 +643,11 @@ $('#kw-recv').addEventListener('click',async function(){
   renderList();
   (async function(){
     if(kwCfg().ak) return;
-    if(window.LocalBars && await LocalBars.ready())
-      msg('내장 일봉 '+LocalBars.info().count+'종목으로 분석합니다. ⚙️ 키움 앱키를 넣으면 전 종목·오늘 시세까지 됩니다.');
+    if(window.LocalBars && await LocalBars.ready()){
+      var ni=LocalBars.info(), nz=LocalBars.dash(ni.t1);
+      msg('내장 일봉 '+ni.count+'종목'+(nz?' (최신 '+nz+')':'')
+          +'으로 분석합니다. ⚙️ 키움 앱키를 넣으면 전 종목·오늘 시세까지 됩니다.');
+    }
     else msg('내장 일봉이 아직 없습니다 — ⚙️ 키움 설정에 앱키를 넣어주세요.');
   })();
 })();
