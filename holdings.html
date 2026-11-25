@@ -111,6 +111,7 @@ td.num{font-family:var(--mono)}
 
   <div id="h-sum"></div>
   <div id="h-res"></div>
+<p class="src-note" style="margin:16px 2px 0;font-size:12px;color:#8b94a3;line-height:1.6">시세 출처 · 일봉: 금융위원회_주식시세정보(한국거래소 제공, 공공데이터포털). 장중 분봉은 그 일봉에서 재구성한 것으로 실제 분봉이 아닙니다. ⚙️ 키움 설정에 본인 앱키를 넣으면 키움 실데이터로 바뀝니다.</p>
 
   <div class="card" id="h-empty">
     <p class="muted" style="margin:0">위에 종목·평단·수량을 넣고 <b>+ 추가</b> 를 누르세요. 여러 종목을 넣을 수 있습니다.</p>
@@ -120,7 +121,7 @@ td.num{font-family:var(--mono)}
 <!-- 키움 설정 -->
 <div class="ov" id="kw-ov" hidden><div class="bx">
   <h2 style="margin:0 0 4px">⚙️ 키움 API 설정</h2>
-  <p class="note" style="margin:0 0 12px">본인 키움 REST 앱키로 조회합니다. 키는 <b>이 브라우저에만</b> 저장되고 서버로 보내지 않습니다.</p>
+  <p class="note" style="margin:0 0 12px"><b>선택사항입니다.</b> 앱키 없이도 내장 일봉으로 연습할 수 있고, 넣으면 전 종목과 오늘 시세·실제 분봉까지 쓸 수 있습니다.<br>키는 <b>이 브라우저에만</b> 저장되고 서버로 보내지 않습니다.</p>
   <label class="note">앱키</label>
   <input id="kw-ak" class="mono" autocomplete="off" style="width:100%;margin:4px 0 10px">
   <label class="note">시크릿키</label>
@@ -512,7 +513,8 @@ $('#h-clear').addEventListener('click',function(){
 });
 $('#h-run').addEventListener('click',async function(){
   var a=hList(); if(!a.length)return;
-  if(!kwCfg().ak) return msg('먼저 ⚙️ 키움 설정에서 앱키·시크릿키를 넣어주세요.');
+  if(!kwCfg().ak && !(window.LocalBars && await LocalBars.ready()))
+    return msg('내장 일봉이 아직 없습니다 — ⚙️ 키움 설정에 앱키를 넣으면 바로 쓸 수 있어요.');
   var tp=parseFloat($('#h-tp').value)||3, step=parseFloat($('#h-step').value)||3,
       once=parseInt(($('#h-once').value||'').replace(/,/g,''),10)||1000000;
   var c={once:once,drops:(function(){var o=[];for(var i=1;i<=8;i++)o.push(step*i);return o})(),
@@ -639,7 +641,12 @@ $('#kw-recv').addEventListener('click',async function(){
 /* ── 시작 ──────────────────────────────────────────────── */
 (function init(){
   renderList();
-  if(!kwCfg().ak){ msg('먼저 ⚙️ 키움 설정에서 앱키·시크릿키를 넣어주세요.'); }
+  (async function(){
+    if(kwCfg().ak) return;
+    if(window.LocalBars && await LocalBars.ready())
+      msg('내장 일봉 '+LocalBars.info().count+'종목으로 분석합니다. ⚙️ 키움 앱키를 넣으면 전 종목·오늘 시세까지 됩니다.');
+    else msg('내장 일봉이 아직 없습니다 — ⚙️ 키움 설정에 앱키를 넣어주세요.');
+  })();
 })();
 })();
 </script>

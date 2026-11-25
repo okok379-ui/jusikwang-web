@@ -133,12 +133,13 @@ td.num{font-family:var(--mono)}
     </div>
     <div id="res2"></div>
   </section>
+<p class="src-note" style="margin:16px 2px 0;font-size:12px;color:#8b94a3;line-height:1.6">시세 출처 · 일봉: 금융위원회_주식시세정보(한국거래소 제공, 공공데이터포털). 장중 분봉은 그 일봉에서 재구성한 것으로 실제 분봉이 아닙니다. ⚙️ 키움 설정에 본인 앱키를 넣으면 키움 실데이터로 바뀝니다.</p>
 </div>
 
 <!-- 키움 설정 -->
 <div class="ov" id="kw-ov" hidden><div class="bx">
   <h2 style="margin:0 0 4px">⚙️ 키움 API 설정</h2>
-  <p class="note" style="margin:0 0 12px">본인 키움 REST 앱키로 조회합니다. 키는 <b>이 브라우저에만</b> 저장되고 서버로 보내지 않습니다.</p>
+  <p class="note" style="margin:0 0 12px"><b>선택사항입니다.</b> 앱키 없이도 내장 일봉으로 연습할 수 있고, 넣으면 전 종목과 오늘 시세·실제 분봉까지 쓸 수 있습니다.<br>키는 <b>이 브라우저에만</b> 저장되고 서버로 보내지 않습니다.</p>
   <label class="note">앱키</label>
   <input id="kw-ak" class="mono" autocomplete="off" style="width:100%;margin:4px 0 10px">
   <label class="note">시크릿키</label>
@@ -623,7 +624,12 @@ $('#kw-recv').addEventListener('click',async function(){
 (function init(){
   var t=new Date(), ds=t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2);
   $('#f-date').value=ds; $('#f-date').max=ds;
-  if(!kwCfg().ak){ $('#msg1').textContent='먼저 ⚙️ 키움 설정에서 앱키·시크릿키를 넣어주세요.'; }
+  (async function(){
+    if(kwCfg().ak) return;
+    if(window.LocalBars && await LocalBars.ready())
+      $('#msg1').textContent='내장 일봉 '+LocalBars.info().count+'종목으로 분석합니다. ⚙️ 키움 앱키를 넣으면 전 종목·오늘 시세까지 됩니다.';
+    else $('#msg1').textContent='내장 일봉이 아직 없습니다 — ⚙️ 키움 설정에 앱키를 넣어주세요.';
+  })();
 })();
 })();
 </script>
