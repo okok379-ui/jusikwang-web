@@ -159,6 +159,8 @@ td.num{font-family:var(--mono)}
 
 <script src="barcache.js"></script>
 <script src="split10fit.js"></script>
+<script src="synbars.js"></script>
+<script src="localbars.js"></script>
 <script>
 (function(){
 'use strict';
@@ -218,7 +220,17 @@ function dMinus(ds,days){var y=+ds.slice(0,4),m=+ds.slice(4,6)-1,d2=+ds.slice(6,
   return ''+(d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate());}
 
 /* 기준일까지의 일봉 — base_dt 로 과거 기준 조회(이후 데이터 안 들어옴) */
+async function hasKey(){ var c=kwCfg(); return !!(c.ak&&c.sk); }
 async function dayBars(code,asof,minBars){
+  if(window.LocalBars && !(await hasKey())){        /* 앱키 없이 — 내장 일봉 */
+    var L=await LocalBars.daily(code);
+    if(L&&L.length){
+      var out=L.filter(function(b){return b.t<=asof;})
+               .map(function(b){return {time:b.t,open:b.o,high:b.h,low:b.l,close:b.c,vol:b.v};});
+      var keep=minBars+60;
+      return out.length>keep?out.slice(-keep):out;
+    }
+  }
   var start=dMinus(asof,Math.round((minBars+60)*1.55));
   var today=(function(){var t=new Date();return ''+(t.getFullYear()*10000+(t.getMonth()+1)*100+t.getDate());})();
   var ck='s10:'+code+':'+asof+':'+start;
@@ -270,6 +282,9 @@ async function codeMap(force){
   return m;
 }
 async function resolveCode(q){
+  if(window.LocalBars && !(await hasKey())){
+    var lr=await LocalBars.resolve(q); if(lr)return lr;
+  }
   q=(q||'').trim(); if(!q)return null;
   if(/^\d{6}$/.test(q)){var nm='';try{var cm=await codeMap(false);var f0=cm.list.find(function(x){return x[0]===q});if(f0)nm=f0[1];}catch(e){}
     return {code:q,name:nm||q};}
