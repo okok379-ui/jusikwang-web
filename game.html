@@ -206,7 +206,7 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
 </style>
 
 <div class="wrap">
-<div id="src-badge" hidden style="background:#b9770a;color:#fff;border-radius:11px;padding:9px 14px;margin:14px 0 0;font-size:13.5px;font-weight:600;display:flex;gap:10px;align-items:center"><span>🔎 지금은 <b>내장 일봉</b>으로 보고 있어요 — 앱키가 없는 회원이 보는 화면 그대로예요.</span><span style="flex:1"></span><button id="src-back" style="background:#fff;color:#8a5a06;border:0;border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;font-weight:700;cursor:pointer">키움으로 되돌리기</button></div>
+<div id="src-badge" hidden style="background:#b9770a;color:#fff;border-radius:11px;padding:9px 14px;margin:14px 0 0;font-size:13.5px;font-weight:600;gap:10px;align-items:center"><span>🔎 지금은 <b>내장 일봉</b>으로 보고 있어요 — 앱키가 없는 회원이 보는 화면 그대로예요.</span><span style="flex:1"></span><button id="src-back" style="background:#fff;color:#8a5a06;border:0;border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;font-weight:700;cursor:pointer">키움으로 되돌리기</button></div>
 
   <div class="topbar">
     <div class="brand">
@@ -1548,7 +1548,9 @@ function kwSrc(){ return localStorage.getItem(KW_LS.src)||'kiwoom'; }
 /* 내장 일봉으로 보는 중임을 알리는 띠 */
 function srcBadge(){
   var el=document.getElementById('src-badge'); if(!el) return;
-  el.hidden = !(kwSrc()==='local' && kwCfg().ak);
+  var on = kwSrc()==='local' && !!kwCfg().ak;
+  el.hidden = !on;
+  el.style.display = on ? 'flex' : 'none';   /* 인라인 display 가 [hidden] 을 이기지 않게 */
 }
 
 async function hasKey(){ if(kwSrc()==='local') return false;      /* 일부러 내장 일봉으로 본다 */

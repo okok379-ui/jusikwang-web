@@ -76,7 +76,7 @@ td.num{font-family:var(--mono)}
 </div></header>
 
 <div class="wrap">
-<div id="src-badge" hidden style="background:#b9770a;color:#fff;border-radius:11px;padding:9px 14px;margin:14px 0 0;font-size:13.5px;font-weight:600;display:flex;gap:10px;align-items:center"><span>🔎 지금은 <b>내장 일봉</b>으로 보고 있습니다 — 앱키가 없는 회원이 보는 화면 그대로입니다.</span><span style="flex:1"></span><button class="btn sm" id="src-back" style="background:#fff;color:#8a5a06;border:0">키움으로 되돌리기</button></div>
+<div id="src-badge" hidden style="background:#b9770a;color:#fff;border-radius:11px;padding:9px 14px;margin:14px 0 0;font-size:13.5px;font-weight:600;gap:10px;align-items:center"><span>🔎 지금은 <b>내장 일봉</b>으로 보고 있습니다 — 앱키가 없는 회원이 보는 화면 그대로입니다.</span><span style="flex:1"></span><button class="btn sm" id="src-back" style="background:#fff;color:#8a5a06;border:0">키움으로 되돌리기</button></div>
 
   <h1>10분할 적합종목</h1>
   <p class="lead">손절 없이 분할매수로 버티는 전략이라, 중요한 건 재료가 아니라 <b>버티다 평단 위로 되돌아오는가</b>입니다.
@@ -248,7 +248,9 @@ function kwSrc(){ return localStorage.getItem(KW_LS.src)||'kiwoom'; }
 /* 내장 일봉으로 보는 중임을 알리는 띠 */
 function srcBadge(){
   var el=document.getElementById('src-badge'); if(!el) return;
-  el.hidden = !(kwSrc()==='local' && kwCfg().ak);
+  var on = kwSrc()==='local' && !!kwCfg().ak;
+  el.hidden = !on;
+  el.style.display = on ? 'flex' : 'none';   /* 인라인 display 가 [hidden] 을 이기지 않게 */
 }
 (function(){
   var b=document.getElementById('src-back');

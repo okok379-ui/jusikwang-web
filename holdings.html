@@ -76,7 +76,7 @@ td.num{font-family:var(--mono)}
 </div></header>
 
 <div class="wrap">
-<div id="src-badge" hidden style="background:#b9770a;color:#fff;border-radius:11px;padding:9px 14px;margin:14px 0 0;font-size:13.5px;font-weight:600;display:flex;gap:10px;align-items:center"><span>🔎 지금은 <b>내장 일봉</b>으로 보고 있습니다 — 앱키가 없는 회원이 보는 화면 그대로입니다.</span><span style="flex:1"></span><button class="btn sm" id="src-back" style="background:#fff;color:#8a5a06;border:0">키움으로 되돌리기</button></div>
+<div id="src-badge" hidden style="background:#b9770a;color:#fff;border-radius:11px;padding:9px 14px;margin:14px 0 0;font-size:13.5px;font-weight:600;gap:10px;align-items:center"><span>🔎 지금은 <b>내장 일봉</b>으로 보고 있습니다 — 앱키가 없는 회원이 보는 화면 그대로입니다.</span><span style="flex:1"></span><button class="btn sm" id="src-back" style="background:#fff;color:#8a5a06;border:0">키움으로 되돌리기</button></div>
   <h1>내 종목 분석</h1>
   <p class="lead">가지고 있는 종목이 <b>지금 어떤 상태인지</b>를 쉬운 말로 풀어 드립니다.
     차트가 어느 방향인지, 회사가 돈을 잘 버는지, 지금 가격이 그 종목치고 싼 편인지를 한 화면에 모았습니다.
@@ -229,7 +229,9 @@ function kwSrc(){ return localStorage.getItem(KW_LS.src)||'kiwoom'; }
 /* 내장 일봉으로 보는 중임을 알리는 띠 */
 function srcBadge(){
   var el=document.getElementById('src-badge'); if(!el) return;
-  el.hidden = !(kwSrc()==='local' && kwCfg().ak);
+  var on = kwSrc()==='local' && !!kwCfg().ak;
+  el.hidden = !on;
+  el.style.display = on ? 'flex' : 'none';   /* 인라인 display 가 [hidden] 을 이기지 않게 */
 }
 (function(){
   var b=document.getElementById('src-back');
