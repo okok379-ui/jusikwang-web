@@ -206,6 +206,8 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
 </style>
 
 <div class="wrap">
+<div id="src-badge" hidden style="background:#b9770a;color:#fff;border-radius:11px;padding:9px 14px;margin:14px 0 0;font-size:13.5px;font-weight:600;display:flex;gap:10px;align-items:center"><span>🔎 지금은 <b>내장 일봉</b>으로 보고 있어요 — 앱키가 없는 회원이 보는 화면 그대로예요.</span><span style="flex:1"></span><button id="src-back" style="background:#fff;color:#8a5a06;border:0;border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;font-weight:700;cursor:pointer">키움으로 되돌리기</button></div>
+
   <div class="topbar">
     <div class="brand">
       <h1>주식한판 🎮</h1>
@@ -440,6 +442,12 @@ canvas{width:100%;height:100%;display:block;border-radius:8px}
     <input id="kw-ak" autocomplete="off" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:var(--mono);font-size:13px;padding:10px;margin:4px 0 10px">
     <label style="font-size:12px;color:var(--muted);font-weight:600">시크릿키 (Secret Key)</label>
     <input id="kw-sk" type="password" autocomplete="off" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:var(--mono);font-size:13px;padding:10px;margin:4px 0 10px">
+    <label style="font-size:12px;color:var(--muted);font-weight:600">데이터 출처</label>
+    <select id="kw-src" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:inherit;font-size:14px;padding:10px;margin:4px 0 4px">
+      <option value="kiwoom">키움 실데이터 (앱키 사용)</option>
+      <option value="local">내장 일봉 (앱키 없는 화면 그대로 보기)</option>
+    </select>
+    <div style="font-size:11.5px;color:var(--muted);margin:0 0 12px">앱키를 넣어 둔 채로도 <b>내장 일봉</b>을 골라 두면, 앱키가 없는 회원이 보는 화면을 그대로 확인할 수 있어요.</div>
     <label style="font-size:12px;color:var(--muted);font-weight:600">모드</label>
     <select id="kw-mode" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-family:inherit;font-size:14px;padding:10px;margin:4px 0 12px">
       <option value="real">실전 (api.kiwoom.com)</option>
@@ -1427,7 +1435,7 @@ var toTimer=null;
 function toast(msg){var t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toTimer);toTimer=setTimeout(function(){t.classList.remove('show')},1400);}
 
 /* ---------- 키움 REST 직접 조회 (설정탭 앱키/시크릿키 사용, 브라우저에서 직접 호출) ---------- */
-var KW_LS={ak:'jusikwang_kw_appkey',sk:'jusikwang_kw_secret',mode:'jusikwang_kw_mode',codes:'jusikwang_kw_codes'};
+var KW_LS={ak:'jusikwang_kw_appkey',sk:'jusikwang_kw_secret',mode:'jusikwang_kw_mode',codes:'jusikwang_kw_codes',src:'jusikwang_kw_src'};
 function kwCfg(){return {ak:(localStorage.getItem(KW_LS.ak)||'').trim(),sk:(localStorage.getItem(KW_LS.sk)||'').trim(),mode:localStorage.getItem(KW_LS.mode)||'real'};}
 function kwBase(mode){return (mode==='mock')?'https://mockapi.kiwoom.com':'https://api.kiwoom.com';}
 var _kwTok={t:'',exp:0};
@@ -1536,7 +1544,15 @@ async function kwCodeMap(force){
   try{localStorage.setItem(KW_LS.codes,JSON.stringify(m));}catch(e){}
   return m;
 }
-async function hasKey(){ var c=kwCfg(); return !!(c.ak&&c.sk); }
+function kwSrc(){ return localStorage.getItem(KW_LS.src)||'kiwoom'; }
+/* 내장 일봉으로 보는 중임을 알리는 띠 */
+function srcBadge(){
+  var el=document.getElementById('src-badge'); if(!el) return;
+  el.hidden = !(kwSrc()==='local' && kwCfg().ak);
+}
+
+async function hasKey(){ if(kwSrc()==='local') return false;      /* 일부러 내장 일봉으로 본다 */
+  var c=kwCfg(); return !!(c.ak&&c.sk); }
 async function kwResolveCode(q){
   q=(q||'').trim(); if(!q)return null;
   if(!(await hasKey()) && window.LocalBars){        /* 앱키 없이 — 내장 목록 */
@@ -1649,7 +1665,7 @@ function kwFillMinutes(bars){
   }
   return out;
 }
-function openKwSettings(){var c=kwCfg();$('#kw-ak').value=c.ak;$('#kw-sk').value=c.sk;$('#kw-mode').value=c.mode;$('#kw-msg').textContent='';$('#kw-overlay').hidden=false;}
+function openKwSettings(){var c=kwCfg();$('#kw-ak').value=c.ak;$('#kw-sk').value=c.sk;$('#kw-mode').value=c.mode;$('#kw-src').value=kwSrc();$('#kw-msg').textContent='';$('#kw-overlay').hidden=false;}
 
 /* 종목 자동완성(이름→코드, 동명 선택) */
 var caseSel=null, _sugTimer=null;
@@ -2018,18 +2034,27 @@ $('#case-search').addEventListener('keydown',function(e){if(e.key==='Enter')tryD
 $('#case-date').addEventListener('keydown',function(e){if(e.key==='Enter')tryDirectPlay();});
 $('#case-settings').addEventListener('click',openKwSettings);
 $('#kw-close').addEventListener('click',function(){$('#kw-overlay').hidden=true;});
+(function(){var b=document.getElementById('src-back');
+  if(b) b.addEventListener('click',function(){localStorage.setItem(KW_LS.src,'kiwoom');location.reload();});
+  srcBadge();})();
 $('#kw-save').addEventListener('click',function(){
   localStorage.setItem(KW_LS.ak,($('#kw-ak').value||'').trim());
   localStorage.setItem(KW_LS.sk,($('#kw-sk').value||'').trim());
   localStorage.setItem(KW_LS.mode,$('#kw-mode').value);
+  localStorage.setItem(KW_LS.src,$('#kw-src').value);
   _kwTok={t:'',exp:0};
-  var mg=$('#kw-msg');mg.style.color='#2bb3a3';mg.textContent='저장됐어요. 이제 종목명+날짜로 "매매 시작"을 누르면 직접 받아와요.';
+  var mg=$('#kw-msg');mg.style.color='#2bb3a3';
+  mg.textContent = $('#kw-src').value==='local'
+    ? '저장됐어요. 지금은 앱키가 있어도 내장 일봉으로 봅니다 — 앱키 없는 회원 화면 그대로예요.'
+    : '저장됐어요. 이제 종목명+날짜로 "매매 시작"을 누르면 직접 받아와요.';
+  srcBadge();
 });
 $('#kw-test').addEventListener('click',async function(){
   var mg=$('#kw-msg');mg.style.color='var(--muted)';mg.textContent='연결 확인 중…';
   localStorage.setItem(KW_LS.ak,($('#kw-ak').value||'').trim());
   localStorage.setItem(KW_LS.sk,($('#kw-sk').value||'').trim());
-  localStorage.setItem(KW_LS.mode,$('#kw-mode').value);_kwTok={t:'',exp:0};
+  localStorage.setItem(KW_LS.mode,$('#kw-mode').value);
+  localStorage.setItem(KW_LS.src,$('#kw-src').value);_kwTok={t:'',exp:0};
   try{ await kwToken(); mg.style.color='#2bb3a3'; mg.textContent='✅ 연결 성공 — 토큰 발급 완료. 종목명+날짜로 바로 받아올 수 있어요.'; }
   catch(e){ mg.style.color='#e0533a'; mg.textContent='❌ '+(e&&e.message?e.message:'연결 실패'); }
 });
@@ -2175,7 +2200,7 @@ async function rollDay(resume){          // 선반입 미완 시 비동기 폴�
   if(rolling)return; rolling=true; stop();
   var found=null;
   if(_pfData && _pfReadyKey===_dayKey()) found=_pfData;
-  if(!found){ if(kwCfg().ak)toast('다음 거래일 데이터 받는 중… (키움)'); try{ found=await fetchNextDay(); }catch(e){ found=null; } }
+  if(!found){ if(await hasKey())toast('다음 거래일 데이터 받는 중… (키움)'); try{ found=await fetchNextDay(); }catch(e){ found=null; } }
   rolling=false;
   var ok=found?applyNextDay(found):false;
   if(!ok){ stop(); _pfKey=null; noNextDayMsg(); return; }   // 청산하지 않음 · 다음 시도 때 다시 조회
