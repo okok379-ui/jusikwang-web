@@ -68,6 +68,7 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;margin-top:30px}
   <div class="nav">
     <a href="index.html">🏠 처음으로</a>
     <a href="manual.html">📖 자세한 메뉴얼</a>
+    <a href="holdings.html">🔎 내 종목 분석</a>
     <a class="cta" href="game.html">▶ 연습게임 시작</a>
   </div>
 </div></div>
@@ -75,6 +76,9 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;margin-top:30px}
 <div class="wrap">
   <h1>화면으로 보는 연습게임 사용법</h1>
   <p class="lede">20% 이상 오른 관심종목의 <b>다음 거래일</b> 차트를 1분씩 재생하면서, 직접 사고팔아 보는 연습게임입니다. 아래 순서대로 따라 하면 5분 안에 첫 판을 할 수 있어요.</p>
+  <div class="tip green" style="margin:-4px 0 14px"><b>준비물은 없어요.</b>
+    증권사 앱키 같은 걸 넣지 않아도 바로 시작됩니다.
+    사이트에 <b>일봉 1,155종목(2023-02~2026-11)</b>이 들어 있어서, 그걸로 연습합니다.</div>
   <ul class="steps">
     <li><a href="#s1"><b>1</b>화면 구성</a></li>
     <li><a href="#s2"><b>2</b>종목 고르기</a></li>
@@ -85,6 +89,7 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;margin-top:30px}
     <li><a href="#s7"><b>7</b>마무리·복기</a></li>
     <li><a href="#s8"><b>8</b>차트 도구</a></li>
     <li><a href="#s9"><b>9</b>핸드폰</a></li>
+    <li><a href="#s10"><b>10</b>내 종목 분석</a></li>
   </ul>
 
   <!-- 1 -->
@@ -118,10 +123,14 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;margin-top:30px}
           <li><b>종목명·코드와 날짜</b>를 넣을 수 있어요. 비워두면 전체 목록이 보여요.</li>
           <li><span class="k">▶ 입력한 종목·날짜로 매매 시작</span> — 입력한 종목으로 바로 시작.</li>
           <li><span class="k">🎲 랜덤 종목으로 연습</span> — 아무 종목이나 골라 줘요. 감 잡기에 좋아요.</li>
-          <li><span class="k">⚙️ 키움 API 설정</span> — 목록에 없는 종목·날짜를 키움에서 받아올 때만 필요해요(선택).</li>
+          <li><span class="k">⚙️ 키움 API 설정</span> — <b>선택사항이에요.</b> 넣지 않아도 연습은 됩니다.
+            넣으면 상장 전 종목과 오늘 시세까지 쓸 수 있어요.</li>
           <li><b>목록</b> — 기준봉 날짜별로 묶여 있고 <b>→ 매매일</b>이 함께 보여요. 종목을 누르면 바로 시작!</li>
         </ol>
         <div class="tip green">2026년 1월~11월에 +20% 이상 오른 <b>실제 종목 500여 개</b>가 들어 있어요.</div>
+        <div class="tip">앱키가 없을 때는 사이트에 실린 일봉으로 그날 장중을 <b>되살려</b> 보여 줘요.
+          체결과 성적은 실제와 같지만 장중에 오르내린 순서와 모양은 지어낸 것이라,
+          분 단위 타이밍을 다투는 연습에는 맞지 않아요. 눌림 자리에서 사고파는 연습에는 충분합니다.</div>
       </div>
     </div>
   </section>
@@ -261,6 +270,25 @@ footer{color:var(--muted);font-size:12.5px;text-align:center;margin-top:30px}
         <div class="tip green">궁금한 점은 오른쪽 아래 <b>💬 오픈채팅방 입장</b>(카카오톡)으로 들어와 편하게 물어보세요.</div>
       </div>
     </div>
+  </section>
+
+  <!-- 10 -->
+  <section class="sec" id="s10">
+    <h2><span class="no">10</span>내 종목 분석</h2>
+    <p class="sub">연습 말고, 지금 들고 있는 종목이 어떤 상태인지 보고 싶을 때예요.
+      위쪽 <span class="k">📁 보유종목</span>을 누르면 열려요.</p>
+    <ol class="pins">
+      <li><b>종목명만 넣어도 돼요.</b> 평단과 수량은 선택이에요 — 넣으면 수익률과 본전까지 몇 %인지가 함께 나와요.</li>
+      <li><b>지금 흐름이 어떤가</b> — 평균 가격선 모양, 많이 올랐나 빠졌나, 흐름이 바뀌었나,
+        1년 중 어디쯤인가, 거래가 평소보다 많은가, 과거에 자주 멈췄던 가격.</li>
+      <li><b>회사가 돈을 잘 버나</b> — 최근 4년 매출·영업이익·순이익과,
+        100원 팔아 얼마 남기는지 · 주주 돈으로 얼마 버는지 · 빚이 얼마인지.</li>
+      <li><b>지금 가격이 싼 편인가</b> — 다른 종목과 견주지 않고 <b>그 종목 자신이 지난 몇 해 받아 온 값</b>과만 견줘요.</li>
+    </ol>
+    <div class="tip">증권사 <b>목표주가는 싣지 않아요.</b> 돈을 내고 사야 하는 자료라 옮겨 실을 수 없습니다.
+      대신 그 종목의 과거 배수에 최근 실적을 대입한 <b>참고 가격대</b>를 보여 주는데,
+      값이 들쭉날쭉하거나 지금 값과 너무 동떨어지면 숫자를 내지 않고 그렇다고 말해 줘요.</div>
+    <div class="tip green">회사 실적은 <b>연간</b>만 들어 있어요(2020~2025년, 1,081종목). 분기 실적은 없습니다.</div>
   </section>
 
   <footer>가상의 연습용 게임이며 실제 투자 판단·수익을 보장하지 않습니다. · <a href="manual.html">자세한 글 메뉴얼</a> · <a href="game.html">연습게임 시작 ▶</a></footer>
