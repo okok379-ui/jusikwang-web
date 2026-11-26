@@ -395,7 +395,7 @@ function grid(cells,min){
 
 /* ── 종목 하나 분석 ─────────────────────────────────────── */
 async function analyze(h){
-  var raw=await dayBars(h.code,todayStr(),260);
+  var raw=await dayBars(h.code,todayStr(),260);   /* 기술적 분석은 1년치가 필요하다 */
   if(!raw||raw.length<80) throw new Error('일봉이 '+(raw?raw.length:0)+'봉뿐이라 분석하기 어렵습니다');
   var bars=raw.map(function(x){return {t:x.time,o:x.open,h:x.high,l:x.low,c:x.close,v:x.vol};});
   var t=AN.technical(bars);
@@ -421,8 +421,9 @@ async function analyze(h){
   var fit=null, fitWarn=[];
   try{
     if(F && raw.length>=FIT.max_days+61){
-      /* 적합종목 화면과 같은 창(기한+61봉)으로 잘라 써야 점수가 서로 같다 */
-      var fm=F.run(raw.slice(-(FIT.max_days+61)),FIT);
+      /* 적합종목 화면과 같은 창으로 잘라 써야 점수가 서로 같다.
+         그쪽은 dayBars(code, 기준일, 기한+61) 을 부르고, dayBars 는 거기에 60봉을 더 준다. */
+      var fm=F.run(raw.slice(-(FIT.max_days+121)),FIT);
       if(fm && fm.ok){ fit=fm; fitWarn=F.warnings(fm,FIT); }
     }
   }catch(e){}
