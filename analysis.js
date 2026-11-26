@@ -227,7 +227,7 @@ function bands(fin, shares, bars){
     if(a.length<30) return null;                 /* 표본이 너무 적으면 밴드를 만들지 않는다 */
     var s=a.slice().sort(function(x,y){return x-y;});
     function q(p){ return s[Math.min(s.length-1, Math.floor(s.length*p))]; }
-    return {lo:q(0.10), mid:q(0.50), hi:q(0.90), n:s.length};
+    return {lo:q(0.10), q25:q(0.25), mid:q(0.50), q75:q(0.75), hi:q(0.90), n:s.length};
   }
   var r={series:series, per:stat(pers), pbr:stat(pbrs)};
   var lastS = series.length? series[series.length-1] : null;
@@ -248,23 +248,22 @@ function bands(fin, shares, bars){
 function fairValue(fin, shares, bd){
   if(!fin||!fin.latest||!shares||!bd) return null;
   var y=fin.latest, out={};
+  /* 밴드의 가운데 절반(25~75%)만 쓴다. 양 끝은 한두 해의 이상치인 경우가 많다. */
   if(bd.per && y.np && y.np>0){
     var eps=y.np/shares;
-    out.per={lo:Math.round(bd.per.lo*eps), mid:Math.round(bd.per.mid*eps),
-             hi:Math.round(bd.per.hi*eps), n:bd.per.n};
+    out.per={lo:Math.round(bd.per.q25*eps), mid:Math.round(bd.per.mid*eps),
+             hi:Math.round(bd.per.q75*eps), n:bd.per.n};
   }
   if(bd.pbr && y.tc && y.tc>0){
     var bps=y.tc/shares;
-    out.pbr={lo:Math.round(bd.pbr.lo*bps), mid:Math.round(bd.pbr.mid*bps),
-             hi:Math.round(bd.pbr.hi*bps), n:bd.pbr.n};
+    out.pbr={lo:Math.round(bd.pbr.q25*bps), mid:Math.round(bd.pbr.mid*bps),
+             hi:Math.round(bd.pbr.q75*bps), n:bd.pbr.n};
   }
-  var mids=[]; if(out.per) mids.push(out.per.mid); if(out.pbr) mids.push(out.pbr.mid);
-  if(!mids.length) return null;
-  out.mid=Math.round(mids.reduce(function(a,b){return a+b;},0)/mids.length);
-  var los=[],his=[];
-  if(out.per){ los.push(out.per.lo); his.push(out.per.hi); }
-  if(out.pbr){ los.push(out.pbr.lo); his.push(out.pbr.hi); }
-  out.lo=Math.round(Math.min.apply(null,los)); out.hi=Math.round(Math.max.apply(null,his));
+  var parts=[]; if(out.per) parts.push(out.per); if(out.pbr) parts.push(out.pbr);
+  if(!parts.length) return null;
+  function avg(k){ var s=0; parts.forEach(function(x){s+=x[k];}); return Math.round(s/parts.length); }
+  out.mid=avg('mid'); out.lo=avg('lo'); out.hi=avg('hi');   /* 두 잣대를 평균낸다 */
+  if(out.lo>out.hi){ var t=out.lo; out.lo=out.hi; out.hi=t; }
   out.basis = (out.per&&out.pbr)?'PER·PBR':(out.per?'PER':'PBR');
   return out;
 }

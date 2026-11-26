@@ -618,12 +618,14 @@ function card(r){
     if(vc.length) s+=grid(vc,220);
 
     if(r.fv){
-      var fv=r.fv, gap=(fv.mid/r.cur-1)*100, wide=(fv.hi/Math.max(1,fv.lo))>=3;
+      var fv=r.fv, gap=(fv.mid/r.cur-1)*100;
+      /* 폭이 너무 넓거나 지금 값과 지나치게 동떨어지면 숫자를 내지 않는다 */
+      var wide=(fv.hi/Math.max(1,fv.lo))>=3 || Math.abs(gap)>100;
       s+='<div class="warn" style="margin-top:12px">'
        + '<div style="font-weight:700;margin-bottom:4px">참고 가격대 — 증권사 목표가가 아닙니다</div>'
        + (wide
-          ? '이 종목은 그동안 받아 온 값이 '+won(fv.lo)+'원에서 '+won(fv.hi)+'원까지 너무 들쭉날쭉해서, '
-          + '참고할 만한 가격대를 뽑기 어렵습니다.'
+          ? '이 종목은 그동안 받아 온 값이 들쭉날쭉하거나 지금 값과 너무 동떨어져서, '
+          + '참고할 만한 가격대를 뽑기 어렵습니다. 실적이나 회사의 모습이 그사이 크게 달라진 경우입니다.'
           : '이 종목이 지난 몇 해 받아 온 값을 최근 실적에 그대로 대입하면 '
           + '<b class="mono">'+won(fv.mid)+'원</b> 언저리가 나옵니다. 지금보다 '+sgn(gap)+'%이고, '
           + '폭으로 보면 '+won(fv.lo)+'원에서 '+won(fv.hi)+'원 사이입니다.')
