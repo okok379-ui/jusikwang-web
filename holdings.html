@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>내 보유종목 분석 — 주식한판</title>
+<title>내 종목 분석 — 주식한판</title>
 <link rel="icon" href="favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -76,16 +76,17 @@ td.num{font-family:var(--mono)}
 </div></header>
 
 <div class="wrap">
-  <h1>내 보유종목 분석</h1>
-  <p class="lead">물려 있는 종목이 <b>돌아올지</b>를 그 종목의 과거 일봉으로 따져봅니다.
-    평단과 수량만 넣으면 익절 목표가, 남은 분할매수 자리, 그리고 과거에 같은 낙폭에서 본전+익절%까지 돌아온 비율을 계산합니다.</p>
+  <h1>내 종목 분석</h1>
+  <p class="lead">가지고 있는 종목이 <b>지금 어떤 상태인지</b>를 쉬운 말로 풀어 드립니다.
+    차트가 어느 방향인지, 회사가 돈을 잘 버는지, 지금 가격이 그 종목치고 싼 편인지를 한 화면에 모았습니다.
+    평단과 수량은 넣지 않아도 됩니다.</p>
 
   <div class="card">
     <div class="row">
       <div class="fld" style="flex:1;min-width:150px"><label>종목명 또는 코드</label>
         <input id="h-name" placeholder="예) 삼성전자 또는 005930" autocomplete="off"></div>
-      <div class="fld"><label>평단(원)</label><input class="mono" id="h-avg" inputmode="numeric" style="width:110px"></div>
-      <div class="fld"><label>수량(주)</label><input class="mono" id="h-qty" inputmode="numeric" style="width:90px"></div>
+      <div class="fld"><label>평단(원) · 선택</label><input class="mono" id="h-avg" inputmode="numeric" style="width:110px" placeholder="없어도 됨"></div>
+      <div class="fld"><label>수량(주) · 선택</label><input class="mono" id="h-qty" inputmode="numeric" style="width:90px" placeholder="없어도 됨"></div>
       <div class="fld"><label>&nbsp;</label><button class="btn primary" id="h-add">+ 추가</button></div>
     </div>
     <p class="muted" style="margin:8px 2px 0;font-size:12.5px">
@@ -99,9 +100,6 @@ td.num{font-family:var(--mono)}
     </div>
     <div id="h-list"></div>
     <div class="row" style="margin-top:12px;align-items:center">
-      <div class="fld"><label>익절 기준(평단 대비)</label><input class="mono" id="h-tp" value="3" style="width:60px"></div>
-      <div class="fld"><label>분할 간격</label><input class="mono" id="h-step" value="3" style="width:60px"></div>
-      <div class="fld"><label>1회 매수금(원)</label><input class="mono" id="h-once" value="1000000" style="width:120px"></div>
       <div class="fld" style="flex:1"><label>&nbsp;</label>
         <button class="btn primary" id="h-run" style="width:100%">📊 전체 분석</button></div>
     </div>
@@ -114,7 +112,8 @@ td.num{font-family:var(--mono)}
 <p class="src-note" style="margin:16px 2px 0;font-size:12px;color:#8b94a3;line-height:1.6">시세 출처 · 일봉: 금융위원회_주식시세정보(한국거래소 제공, 공공데이터포털). 장중 분봉은 그 일봉에서 재구성한 것으로 실제 분봉이 아닙니다. ⚙️ 키움 설정에 본인 앱키를 넣으면 키움 실데이터로 바뀝니다.</p>
 
   <div class="card" id="h-empty">
-    <p class="muted" style="margin:0">위에 종목·평단·수량을 넣고 <b>+ 추가</b> 를 누르세요. 여러 종목을 넣을 수 있습니다.</p>
+    <p class="muted" style="margin:0">위에 종목명이나 코드를 넣고 <b>+ 추가</b> 를 누르세요.
+      평단·수량을 같이 넣으면 내 수익률까지 함께 봅니다. 여러 종목을 넣을 수 있습니다.</p>
   </div>
 </div>
 
@@ -159,14 +158,15 @@ td.num{font-family:var(--mono)}
 </div></div>
 
 <script src="barcache.js"></script>
-<script src="split10fit.js"></script>
+<script src="analysis.js"></script>
+<script src="localfin.js"></script>
 <script src="synbars.js"></script>
 <script src="localbars.js"></script>
 <script>
 (function(){
 'use strict';
 var $=function(s){return document.querySelector(s)};
-var F=window.Split10Fit;
+var AN=window.Analysis;
 
 /* ── 로그인 확인 (허브 세션 공유) ───────────────────────── */
 function session(){try{return JSON.parse(localStorage.getItem('jusikwang_hub')||'{}')}catch(e){return{}}}
@@ -336,139 +336,294 @@ function n1(v){return (Math.round(v*10)/10).toFixed(1)}
 function won(v){return Math.round(v).toLocaleString()}
 function sgn(v){return (v>=0?'+':'')+n1(v)}
 
-/* ── 지금 그대로 버티면 — 과거 같은 낙폭에서 돌아온 비율 ──
-   과거 아무 날에 샀다고 보고, 매수가 대비 drop% 밀린 적이 있는 경우만 모은다.
-   그중 밀린 날로부터 기한 안에 매수가 +tp% 로 올라온 비율과 걸린 일수.
-   분할매수를 더 하지 않고 그대로 들고 있는 경우에 해당한다. */
-function holdStats(bars,drop,tp,maxDays){
-  var n=bars.length,reached=0,rec=0,days=[],worst=[];
-  for(var i=0;i<n-1;i++){
-    var p=bars[i].close; if(!(p>0))continue;
-    var dn=p*(1-drop/100), up=p*(1+tp/100), hit=-1, e1=Math.min(n-1,i+maxDays);
-    for(var j=i+1;j<=e1;j++){ if(bars[j].low<=dn){hit=j;break;} }
-    if(hit<0)continue;
-    reached++;
-    var e2=Math.min(n-1,hit+maxDays), lo=bars[hit].low, got=false;
-    for(var k=hit;k<=e2;k++){
-      if(bars[k].low<lo)lo=bars[k].low;
-      if(k>hit&&bars[k].high>=up){ rec++; days.push(k-hit); got=true; break; }
-    }
-    worst.push((lo-p)/p*100);
-  }
-  days.sort(function(a,b){return a-b});
-  var avg=function(a){return a.length?a.reduce(function(x,y){return x+y},0)/a.length:0};
-  return {trials:reached, recPct:reached?rec/reached*100:0,
-          avgDays:avg(days), medDays:days.length?days[Math.floor(days.length/2)]:0,
-          worstAvg:avg(worst)};
+/* ── 보기 좋게 ─────────────────────────────────────────── */
+function money(v){                       /* 큰 금액을 조·억으로 */
+  if(v===null||v===undefined||!isFinite(v)) return '—';
+  var a=Math.abs(v), s=v<0?'-':'';
+  if(a>=1e12) return s+(a/1e12).toFixed(a/1e12>=10?0:1)+'조원';
+  if(a>=1e8)  return s+Math.round(a/1e8).toLocaleString()+'억원';
+  return s+Math.round(a).toLocaleString()+'원';
 }
-
-/* ── 추가매수 시뮬레이션 — 몇 번 더 사면 평단이 어디로 가나 ── */
-function addSim(avgP,qty,cur,once,step,tp,rows){
-  var out=[],cost=avgP*qty,sh=qty;
-  out.push({n:0,price:cur,avg:avgP,sh:sh,cost:cost});
-  for(var i=1;i<=rows;i++){
-    var buyAt=Math.round(cur*(1-step*(i-1)/100));
-    var q=Math.floor(once/buyAt); if(q<1)q=1;
-    cost+=buyAt*q; sh+=q;
-    out.push({n:i,price:buyAt,avg:cost/sh,sh:sh,cost:cost});
-  }
-  return out.map(function(r){
-    var t=r.avg*(1+tp/100);
-    return {n:r.n,buyAt:r.price,avg:r.avg,sh:r.sh,cost:r.cost,target:t,need:(t-cur)/cur*100};
-  });
+function pill(txt,tone){
+  var c={good:'#0f8f81',bad:'#d42f2f',warn:'#b9770a',flat:'#5a6675'}[tone]||'#5a6675';
+  return '<span style="display:inline-block;background:'+c+';color:#fff;border-radius:999px;'
+       + 'padding:2px 11px;font-size:13px;font-weight:700">'+txt+'</span>';
+}
+function meter(pct,label){               /* 0~100 위치 막대 */
+  pct=Math.max(0,Math.min(100,pct||0));
+  return '<div style="margin-top:7px"><div style="position:relative;height:9px;background:var(--panel2);'
+   + 'border-radius:5px;border:1px solid var(--border)">'
+   + '<i style="position:absolute;left:calc('+pct.toFixed(1)+'% - 5px);top:-3px;width:10px;height:13px;'
+   + 'background:var(--accent);border-radius:3px;display:block"></i></div>'
+   + (label?'<div class="muted" style="font-size:11.5px;margin-top:4px">'+label+'</div>':'')+'</div>';
+}
+function box(title,body,foot){
+  return '<div style="background:var(--panel2);border:1px solid var(--border);border-radius:11px;padding:12px">'
+   + '<div class="muted" style="font-size:12px;font-weight:600;margin-bottom:5px">'+title+'</div>'
+   + '<div style="font-size:14.5px;line-height:1.55">'+body+'</div>'
+   + (foot?'<div class="muted mono" style="font-size:11.5px;margin-top:6px">'+foot+'</div>':'')
+   + '</div>';
+}
+function grid(cells,min){
+  return '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax('+(min||168)+'px,1fr));'
+       + 'gap:10px;margin-top:10px">'+cells.join('')+'</div>';
 }
 
 /* ── 종목 하나 분석 ─────────────────────────────────────── */
-async function analyze(h,c){
-  var code=h.code, asofs=todayStr();
-  var bars=await dayBars(code,asofs,c.max_days+61);
-  if(!bars||bars.length<c.max_days+61) throw new Error('일봉이 '+(bars?bars.length:0)+'봉뿐입니다');
-  var cur=bars[bars.length-1].close;
-  var d=(cur-h.avg)/h.avg*100;
-  var m=F.run(bars,c);
-  var step=c.drops[0]||3, tp=c.tp;
-  var cha=d<0?Math.min(9,Math.floor(-d/step)+1):1;
-  var hs=d<0?holdStats(bars,-d,tp,c.max_days):null;
-  var sim=addSim(h.avg,h.qty,cur,c.once,step,tp,3);
-  return {h:h,bars:bars,cur:cur,d:d,m:m,cha:cha,hs:hs,sim:sim,step:step,tp:tp,
-          once:c.once,maxDays:c.max_days,
-          evalAmt:cur*h.qty, buyAmt:h.avg*h.qty, pnl:(cur-h.avg)*h.qty};
+async function analyze(h){
+  var raw=await dayBars(h.code,todayStr(),260);
+  if(!raw||raw.length<80) throw new Error('일봉이 '+(raw?raw.length:0)+'봉뿐이라 분석하기 어렵습니다');
+  var bars=raw.map(function(x){return {t:x.time,o:x.open,h:x.high,l:x.low,c:x.close,v:x.vol};});
+  var t=AN.technical(bars);
+  if(!t) throw new Error('일봉이 모자라 분석하지 못했습니다');
+  var cur=t.close, prev=bars.length>1?bars[bars.length-2].c:cur;
+
+  var fin=null,f=null,bd=null,fv=null,shares=null;
+  try{
+    if(window.LocalFin) fin=await LocalFin.get(h.code);
+  }catch(e){}
+  var cap=null;
+  if(window.LocalBars){
+    var li=(LocalBars.info&&LocalBars.info())?null:null;
+    var meta=(LocalBars.list?LocalBars.list():[]).filter(function(x){return x.c===h.code;})[0];
+    if(meta&&meta.cap) cap=meta.cap;
+  }
+  if(fin&&cap&&cur>0){
+    shares=Math.round(cap/cur);
+    f=AN.fundamental(fin,shares,cur);
+    bd=AN.bands(fin,shares,bars);
+    if(bd) fv=AN.fairValue(fin,shares,bd);
+  }
+  var my=null;
+  if(h.avg>0){
+    my={avg:h.avg, rate:(cur-h.avg)/h.avg*100, qty:h.qty||0};
+    my.pnl=my.qty?(cur-h.avg)*my.qty:null;
+    my.need=cur>0?(h.avg/cur-1)*100:0;
+  }
+  return {h:h,bars:bars,t:t,cur:cur,prev:prev,fin:fin,f:f,bd:bd,fv:fv,shares:shares,my:my,
+          lastDate:bars[bars.length-1].t};
 }
 function todayStr(){var t=new Date();return ''+(t.getFullYear()*10000+(t.getMonth()+1)*100+t.getDate());}
 
+/* ── 한 줄 결론 ────────────────────────────────────────── */
+function headline(r){
+  var t=r.t, dir, tone, tag;
+  if(t.trend==='상승추세'){ tag='오름세'; dir='값이 올라가는 중입니다'; tone='good'; }
+  else if(t.trend==='하락추세'){ tag='내림세'; dir='값이 내려가는 중입니다'; tone='bad'; }
+  else if(t.trend==='횡보'){ tag='옆걸음'; dir='값이 한동안 제자리입니다'; tone='flat'; }
+  else if(t.trend==='회복 시도'){ tag='고개 드는 중'; dir='빠지던 값이 고개를 드는 중입니다'; tone='warn'; }
+  else { tag='밀리는 중'; dir='오르던 값이 밀리는 중입니다'; tone='warn'; }
+  var val='';
+  if(r.bd&&r.bd.perPct!==null&&r.bd.perPct!==undefined){
+    var p=r.bd.perPct;
+    val = p<=30 ? ' 가격은 이 종목치고 싼 편입니다.'
+        : p>=70 ? ' 가격은 이 종목치고 비싼 편입니다.'
+        : ' 가격은 평소와 비슷한 수준입니다.';
+  }
+  return {dir:dir, tone:tone, val:val, tag:tag};
+}
+
 /* ── 카드 ──────────────────────────────────────────────── */
 function card(r){
-  var h=r.h,m=r.m,ok=m&&m.ok;
-  var col=r.d>=0?'var(--up)':'var(--dn)';
-  var gcol={A:'#1a7f37',B:'#2f9e5f',C:'#b58900',D:'#d4722f',E:'#d42f2f'}[ok?m.grade:'C'];
+  var h=r.h, t=r.t, hd=headline(r);
+  var dch=r.prev?((r.cur/r.prev-1)*100):0;
+  var dcol=dch>=0?'var(--up)':'var(--dn)';
   var s='<div class="card" style="margin-top:14px">';
-  s+='<div class="row" style="align-items:baseline;gap:8px">'
-   + '<div style="font-size:19px;font-weight:700">'+esc(h.name)+'</div>'
+
+  /* 머리 */
+  s+='<div class="row" style="align-items:baseline;gap:9px">'
+   + '<div style="font-size:20px;font-weight:700">'+esc(h.name)+'</div>'
    + '<div class="muted mono" style="font-size:12.5px">'+esc(h.code)+'</div>'
-   + '<div class="sp" style="flex:1"></div>'
-   + (ok?'<div class="mono" style="font-weight:700;font-size:17px;color:'+gcol+'">'+n1(m.score)+' '+m.grade+'</div>':'')
+   + '<div style="flex:1"></div>'
+   + '<div class="mono" style="font-size:19px;font-weight:700">'+won(r.cur)+'원</div>'
+   + '<div class="mono" style="font-size:13.5px;color:'+dcol+'">'+sgn(dch)+'%</div>'
+   + '</div>'
+   + '<div class="muted" style="font-size:11.5px;margin-top:2px">'+r.lastDate.slice(0,4)+'-'
+   + r.lastDate.slice(4,6)+'-'+r.lastDate.slice(6)+' 종가 기준</div>';
+
+  /* 한 줄 결론 */
+  s+='<div style="margin-top:12px;padding:12px 14px;border:1px solid var(--border);border-radius:11px">'
+   + pill(hd.tag,hd.tone)
+   + '<span style="margin-left:9px;font-size:15px;font-weight:600">'+hd.dir+'.'+hd.val+'</span>'
    + '</div>';
 
-  s+='<div class="row" style="margin-top:10px;gap:18px;flex-wrap:wrap">'
-   + kv('현재가',won(r.cur)+'원') + kv('평단',won(h.avg)+'원') + kv('수량',h.qty.toLocaleString()+'주')
-   + kv('평가손익','<span style="color:'+col+'">'+(r.pnl>=0?'+':'')+won(r.pnl)+'원 ('+sgn(r.d)+'%)</span>')
-   + '</div>';
-
-  if(r.d<0){
-    s+='<p style="margin:12px 0 4px">평단 대비 <b style="color:'+col+'">'+n1(r.d)+'%</b> — '
-     + '10분할 기준으로 <b>'+r.cha+'차 구간</b>입니다.</p>';
-    if(r.hs&&r.hs.trials>=5){
-      var hs=r.hs;
-      s+='<div style="background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px;margin:10px 0">'
-       + '<div style="font-weight:700;margin-bottom:6px">이대로 버티면 — 과거 이 종목은</div>'
-       + '<p style="margin:0">같은 자리에서 <b>'+n1(hs.recPct)+'%</b>가 본전 +'+n1(r.tp)+'%까지 돌아왔습니다. '
-       + '돌아오는 데 걸린 날은 평균 <b>'+Math.round(hs.avgDays)+'일</b>(중앙값 '+hs.medDays+'일), '
-       + '그사이 더 빠진 폭은 평균 <b>'+n1(hs.worstAvg)+'%</b>였습니다.</p>'
-       + '<p class="muted" style="margin:6px 0 0;font-size:12.5px">'+hs.trials+'번의 과거 사례 · '
-       + '밀린 날부터 '+r.maxDays+'거래일 안에 · 추가매수 없이 그대로 들고 있었을 때 기준</p></div>';
-    } else {
-      s+='<p class="muted" style="margin:8px 0">과거에 이만큼 밀린 사례가 거의 없어 회복 통계를 내지 못했습니다.</p>';
-    }
-  } else {
-    s+='<p style="margin:12px 0 4px">평단 대비 <b style="color:'+col+'">+'+n1(r.d)+'%</b> — 수익 구간입니다. '
-     + '익절 기준 +'+n1(r.tp)+'%는 '+won(h.avg*(1+r.tp/100))+'원입니다.</p>';
-  }
-
-  /* 추가매수 시뮬 */
-  s+='<div style="font-weight:700;margin:14px 0 6px">더 사면 평단이 어디로 가나</div>'
-   + '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">'
-   + '<tr style="background:var(--panel2)">'
-   + th('추가매수')+th('매수가')+th('평단')+th('익절가(+'+n1(r.tp)+'%)')+th('총 투입')+th('익절까지')+'</tr>';
-  r.sim.forEach(function(x){
-    s+='<tr>'+td(x.n===0?'지금':x.n+'회')+td(x.n===0?'—':won(x.buyAt)+'원')
-     + td(won(x.avg)+'원')+td('<b>'+won(x.target)+'원</b>')+td(won(x.cost)+'원')
-     + td('<span style="color:'+(x.need<=0?'var(--up)':'inherit')+'">'+sgn(x.need)+'%</span>')+'</tr>';
-  });
-  s+='</table></div>'
-   + '<p class="muted" style="margin:6px 2px 0;font-size:12.5px">1회 매수금 '+won(r.once)
-   + '원 · 현재가에서 '+n1(r.step)+'%씩 내려간 자리에서 산다고 봤을 때입니다.</p>';
-
-  /* 적합성·이평 */
-  if(ok){
+  /* 내 평단 */
+  if(r.my){
+    var mc=r.my.rate>=0?'var(--up)':'var(--dn)';
     s+='<div class="row" style="margin-top:12px;gap:18px;flex-wrap:wrap">'
-     + kv('익절 성공률',n1(m.win_rate)+'%') + kv('미회복',n1(m.fail_rate)+'%')
-     + kv('9차 소진',n1(m.full9_rate)+'%') + kv('최대 평가손실',n1(m.worst_dd)+'%')
-     + kv('MA20',sgn(m.ma20_slope)+'%') + kv('배열',m.aligned?'정배열':'역배열')
+     + kv('내 평단', won(r.my.avg)+'원')
+     + kv('내 수익률','<span style="color:'+mc+'">'+sgn(r.my.rate)+'%</span>')
+     + (r.my.pnl!==null?kv('평가손익','<span style="color:'+mc+'">'+(r.my.pnl>=0?'+':'')+won(r.my.pnl)+'원</span>'):'')
+     + (r.my.rate<0?kv('본전까지','+'+n1(r.my.need)+'%'):'')
      + '</div>';
-    var w=[];
-    if(m.ma20_slope<0&&!m.aligned) w.push('20봉 이평이 '+n1(m.ma20_slope)+'%로 아직 내려가는 중입니다. 추가매수를 서두르면 분할매수가 빨리 소진됩니다.');
-    if(m.fail_rate>=5) w.push('과거 '+n1(m.fail_rate)+'%는 기한 안에 못 빠져나왔습니다. 손절이 없는 전략이라 이 비율이 가장 무서운 숫자입니다.');
-    if(m.full9_rate>=5) w.push('9차까지 소진된 적이 '+n1(m.full9_rate)+'% 있습니다. 1회 매수금의 9배를 감당할 수 있는지 먼저 보세요.');
-    if(r.cha>=6) w.push(r.cha+'차 구간입니다. 남은 분할매수가 '+(9-r.cha)+'번뿐이니 추가매수 간격을 넓히는 것도 방법입니다.');
-    if(w.length) s+='<div style="background:#fff8f0;border:1px solid #f0c896;border-radius:10px;padding:11px;margin-top:12px">'
-      + '<div style="font-weight:700;color:#a05014;margin-bottom:4px">확인하세요</div><ul style="margin:0;padding-left:18px">'
-      + w.map(function(x){return '<li style="margin:3px 0">'+x+'</li>'}).join('')+'</ul></div>';
   }
+
+  /* ── 1. 지금 흐름 ── */
+  s+='<h3 style="font-size:16px;margin:20px 0 2px">지금 흐름이 어떤가</h3>'
+   + '<p class="muted" style="font-size:12.5px;margin:0">최근 1년 일봉으로 따진 것입니다.</p>';
+
+  var cells=[];
+  /* 평균선 */
+  var maTxt = t.aligned ? '좋은 모양입니다'
+            : t.deadAligned ? '나쁜 모양입니다' : '엇갈려 있습니다';
+  var maTone = t.aligned?'good':(t.deadAligned?'bad':'flat');
+  cells.push(box('평균 가격선 모양',
+    pill(maTxt,maTone)+'<div style="margin-top:6px">'
+    + (t.aligned?'짧은 기간 평균이 긴 기간 평균보다 위에 있습니다. 오름세가 이어질 때 나오는 모양입니다.'
+       :(t.deadAligned?'짧은 기간 평균이 긴 기간 평균보다 아래에 있습니다. 내림세가 이어질 때 나오는 모양입니다.'
+       :'평균선들이 서로 엉켜 있습니다. 방향이 아직 정해지지 않았습니다.'))+'</div>',
+    '20일 평균 '+won(t.ma20)+'원 · 60일 평균 '+won(t.ma60)+'원 · 20일선 10일간 '+sgn(t.slope20)+'%'));
+
+  /* 과열 */
+  var rs=t.rsi, rsTxt, rsTone, rsDesc;
+  if(rs>=70){ rsTxt='단기 과열'; rsTone='warn'; rsDesc='짧은 기간에 많이 올랐습니다. 쉬어 갈 수 있습니다.'; }
+  else if(rs<=30){ rsTxt='많이 눌림'; rsTone='warn'; rsDesc='짧은 기간에 많이 빠졌습니다. 되돌림이 나오기도 하는 자리입니다.'; }
+  else { rsTxt='보통'; rsTone='flat'; rsDesc='한쪽으로 치우치지 않았습니다.'; }
+  cells.push(box('많이 올랐나, 많이 빠졌나',
+    pill(rsTxt,rsTone)+'<div style="margin-top:6px">'+rsDesc+'</div>'
+    + meter(rs,'0에 가까울수록 많이 빠진 상태, 100에 가까울수록 많이 오른 상태'),
+    '최근 14일 기준 '+n1(rs)+'점'));
+
+  /* 흐름 전환 */
+  var mc2=t.macd, mcTxt, mcTone, mcDesc;
+  function ago(n){ return n===0?'오늘':(n===1?'어제':n+'거래일 전에'); }
+  if(mc2&&mc2.cross==='golden'&&mc2.crossAgo<=20){ mcTxt='위로 꺾임'; mcTone='good';
+    mcDesc=ago(mc2.crossAgo)+' 흐름이 위쪽으로 돌아섰습니다.'; }
+  else if(mc2&&mc2.cross==='dead'&&mc2.crossAgo<=20){ mcTxt='아래로 꺾임'; mcTone='bad';
+    mcDesc=ago(mc2.crossAgo)+' 흐름이 아래쪽으로 돌아섰습니다.'; }
+  else if(mc2&&mc2.hist>0){ mcTxt='위쪽 유지'; mcTone='good'; mcDesc='한동안 위쪽 흐름이 이어지고 있습니다.'; }
+  else { mcTxt='아래쪽 유지'; mcTone='bad'; mcDesc='한동안 아래쪽 흐름이 이어지고 있습니다.'; }
+  cells.push(box('흐름이 바뀌었나',
+    pill(mcTxt,mcTone)+'<div style="margin-top:6px">'+mcDesc+'</div>',
+    '짧은 평균과 긴 평균의 벌어진 정도로 봅니다'));
+
+  /* 1년 중 위치 */
+  var w=t.w52;
+  cells.push(box('1년 중 어디쯤인가',
+    pill(w.pos>=75?'꼭대기 쪽':(w.pos<=25?'바닥 쪽':'가운데'), w.pos>=75?'warn':(w.pos<=25?'warn':'flat'))
+    + '<div style="margin-top:6px">1년 가장 낮았던 값과 가장 높았던 값 사이에서 '
+    + '<b>'+Math.round(w.pos)+'%</b> 자리에 있습니다.</div>'
+    + meter(w.pos, won(w.lo)+'원  ~  '+won(w.hi)+'원'),
+    '최근 '+w.days+'거래일 기준'));
+
+  /* 거래량 */
+  if(t.vol){
+    var vr=t.vol.ratio, vTxt=vr>=1.5?'평소보다 많음':(vr<=0.7?'평소보다 적음':'평소와 비슷');
+    cells.push(box('사람들이 많이 사고파나',
+      pill(vTxt, vr>=1.5?'good':(vr<=0.7?'flat':'flat'))
+      + '<div style="margin-top:6px">요즘 5일 거래량이 지난 20일 평균의 <b>'+n1(vr)+'배</b>입니다.'
+      + (vr>=1.5?' 관심이 몰리고 있습니다.':(vr<=0.7?' 관심이 식어 있습니다.':''))+'</div>',
+      '하루 평균 출렁임 '+(t.atrPct!==null?n1(t.atrPct)+'%':'—')));
+  }
+
+  /* 버팀목·걸림돌 */
+  var sup=t.levels.support, res=t.levels.resist;
+  var lvTxt='';
+  if(sup.length) lvTxt+='<div>아래 버팀목 — <b class="mono">'
+    + sup.map(function(x){return won(x.price)+'원';}).join(', ')+'</b></div>';
+  if(res.length) lvTxt+='<div style="margin-top:4px">위 걸림돌 — <b class="mono">'
+    + res.map(function(x){return won(x.price)+'원';}).join(', ')+'</b></div>';
+  if(!lvTxt) lvTxt='<div class="muted">눈에 띄는 자리가 없습니다.</div>';
+  cells.push(box('과거에 자주 멈췄던 가격',
+    lvTxt+'<div class="muted" style="margin-top:6px;font-size:12.5px">'
+    + '전에 여러 번 되돌아섰던 값입니다. 반드시 지켜지는 선은 아닙니다.</div>'));
+
+  s+=grid(cells);
+
+  /* ── 2. 회사가 돈을 버나 ── */
+  if(r.f){
+    var f=r.f, ys=f.years.slice(-4);
+    s+='<h3 style="font-size:16px;margin:22px 0 2px">회사가 돈을 잘 버나</h3>'
+     + '<p class="muted" style="font-size:12.5px;margin:0">공공데이터로 받은 연간 실적입니다. 분기 실적은 들어 있지 않습니다.</p>';
+    s+='<div style="overflow-x:auto;margin-top:10px"><table><thead><tr>'
+     + '<th style="text-align:left">연도</th><th>판 돈(매출)</th><th>장사로 남긴 돈</th><th>최종 남은 돈</th>'
+     + '</tr></thead><tbody>';
+    ys.forEach(function(y){
+      s+='<tr><td style="text-align:left">'+y.yr+'년</td>'
+       + '<td class="num">'+money(y.sale)+'</td>'
+       + '<td class="num">'+money(y.op)+'</td>'
+       + '<td class="num"'+(y.np!==null&&y.np<0?' style="color:var(--dn)"':'')+'>'+money(y.np)+'</td></tr>';
+    });
+    s+='</tbody></table></div>';
+
+    var fc=[];
+    if(f.opMargin!==null)
+      fc.push(box('얼마나 남기나',
+        pill(f.opMargin>=15?'잘 남깁니다':(f.opMargin>=5?'보통입니다':'빠듯합니다'),
+             f.opMargin>=15?'good':(f.opMargin>=5?'flat':'warn'))
+        + '<div style="margin-top:6px">100원어치 팔아서 <b>'+n1(f.opMargin)+'원</b>을 남깁니다.</div>'));
+    if(f.roe!==null)
+      fc.push(box('주주 돈으로 얼마나 버나',
+        pill(f.roe>=15?'좋습니다':(f.roe>=5?'보통입니다':(f.roe>=0?'낮습니다':'손실입니다')),
+             f.roe>=15?'good':(f.roe>=5?'flat':'warn'))
+        + '<div style="margin-top:6px">주주 몫 100원으로 한 해에 <b>'+n1(f.roe)+'원</b>을 벌었습니다.</div>'));
+    if(f.debtRatio!==null)
+      fc.push(box('빚은 얼마나 되나',
+        pill(f.debtRatio<=100?'가벼운 편':(f.debtRatio<=200?'보통':'무거운 편'),
+             f.debtRatio<=100?'good':(f.debtRatio<=200?'flat':'warn'))
+        + '<div style="margin-top:6px">자기 돈 100원당 빚이 <b>'+Math.round(f.debtRatio)+'원</b>입니다.</div>'));
+    if(f.saleGrow!==null||f.opGrow!==null)
+      fc.push(box('작년보다 나아졌나',
+        '<div>판 돈 <b>'+(f.saleGrow!==null?sgn(f.saleGrow)+'%':'—')+'</b>'
+        + ' · 장사로 남긴 돈 <b>'+(f.opGrow!==null?sgn(f.opGrow)+'%':'—')+'</b></div>'
+        + '<div class="muted" style="margin-top:5px;font-size:12.5px">'
+        + f.latest.yr+'년과 '+(f.latest.yr-1)+'년을 견준 것입니다.</div>'));
+    if(fc.length) s+=grid(fc);
+  }
+
+  /* ── 3. 지금 가격이 싼가 ── */
+  if(r.bd&&(r.bd.per||r.bd.pbr)){
+    var bd=r.bd;
+    s+='<h3 style="font-size:16px;margin:22px 0 2px">지금 가격이 싼 편인가</h3>'
+     + '<p class="muted" style="font-size:12.5px;margin:0">다른 종목과 견주지 않고, '
+     + '<b>이 종목이 지난 몇 해 동안 받아 온 값</b>과만 견줍니다.</p>';
+    var vc=[];
+    if(bd.per&&bd.now&&bd.now.per){
+      vc.push(box('버는 돈에 비해',
+        pill(bd.perPct<=30?'싼 편':(bd.perPct>=70?'비싼 편':'보통'),
+             bd.perPct<=30?'good':(bd.perPct>=70?'warn':'flat'))
+        + '<div style="margin-top:6px">지금 값은 한 해 버는 돈의 <b>'+n1(bd.now.per)+'배</b>입니다.</div>'
+        + meter(bd.perPct, '지난 몇 해 중 '+Math.round(bd.perPct)+'% 자리 · 가장 쌌을 때 '
+          + n1(bd.per.lo)+'배, 보통 '+n1(bd.per.mid)+'배, 가장 비쌌을 때 '+n1(bd.per.hi)+'배')));
+    }
+    if(bd.pbr&&bd.now&&bd.now.pbr){
+      vc.push(box('가진 재산에 비해',
+        pill(bd.pbrPct<=30?'싼 편':(bd.pbrPct>=70?'비싼 편':'보통'),
+             bd.pbrPct<=30?'good':(bd.pbrPct>=70?'warn':'flat'))
+        + '<div style="margin-top:6px">지금 값은 회사 순재산의 <b>'+n1(bd.now.pbr)+'배</b>입니다.</div>'
+        + meter(bd.pbrPct, '지난 몇 해 중 '+Math.round(bd.pbrPct)+'% 자리 · 가장 쌌을 때 '
+          + n1(bd.pbr.lo)+'배, 보통 '+n1(bd.pbr.mid)+'배, 가장 비쌌을 때 '+n1(bd.pbr.hi)+'배')));
+    }
+    if(vc.length) s+=grid(vc,220);
+
+    if(r.fv){
+      var fv=r.fv, gap=(fv.mid/r.cur-1)*100, wide=(fv.hi/Math.max(1,fv.lo))>=3;
+      s+='<div class="warn" style="margin-top:12px">'
+       + '<div style="font-weight:700;margin-bottom:4px">참고 가격대 — 증권사 목표가가 아닙니다</div>'
+       + (wide
+          ? '이 종목은 그동안 받아 온 값이 '+won(fv.lo)+'원에서 '+won(fv.hi)+'원까지 너무 들쭉날쭉해서, '
+          + '참고할 만한 가격대를 뽑기 어렵습니다.'
+          : '이 종목이 지난 몇 해 받아 온 값을 최근 실적에 그대로 대입하면 '
+          + '<b class="mono">'+won(fv.mid)+'원</b> 언저리가 나옵니다. 지금보다 '+sgn(gap)+'%이고, '
+          + '폭으로 보면 '+won(fv.lo)+'원에서 '+won(fv.hi)+'원 사이입니다.')
+       + '<div class="muted" style="margin-top:6px;font-size:12.5px">'
+       + '증권사 목표주가는 돈을 내고 사야 하는 자료라 이 사이트에 싣지 않습니다. '
+       + '위 숫자는 과거 수치를 기계로 계산한 것일 뿐, 회사의 앞날을 내다본 것이 아닙니다.</div></div>';
+    }
+  } else if(r.fin===null && window.LocalFin){
+    s+='<p class="muted" style="margin-top:16px;font-size:12.5px">'
+     + '이 종목은 재무 자료가 아직 준비되지 않아 회사 실적과 가격 수준은 건너뛰었습니다.</p>';
+  }
+
+  s+='<p class="muted" style="margin:16px 0 0;font-size:12px;line-height:1.6">'
+   + '이 분석은 과거 수치를 계산해 보여 주는 것이며, 특정 종목을 사거나 팔라는 권유가 아닙니다. '
+   + '판단과 책임은 본인에게 있습니다.</p>';
   s+='</div>';
   return s;
 }
 function kv(k,v){return '<div><div class="muted" style="font-size:12px">'+k+'</div>'
   +'<div class="mono" style="font-weight:700;font-size:15px">'+v+'</div></div>';}
+
 function th(t){return '<th style="text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);font-weight:600">'+t+'</th>';}
 function td(t){return '<td style="padding:7px 8px;border-bottom:1px solid var(--border)" class="mono">'+t+'</td>';}
 
@@ -481,7 +636,8 @@ function renderList(){
   $('#h-list').innerHTML = a.map(function(x,i){
     return '<div class="row" style="align-items:center;gap:10px;padding:7px 2px;border-bottom:1px solid var(--border)">'
       +'<div style="flex:1;font-weight:600">'+esc(x.name)+' <span class="muted mono" style="font-size:12px">'+esc(x.code)+'</span></div>'
-      +'<div class="mono">'+won(x.avg)+'원</div><div class="mono">'+x.qty.toLocaleString()+'주</div>'
+      +'<div class="mono muted">'+(x.avg>0?won(x.avg)+'원':'평단 없음')+'</div>'
+      +'<div class="mono muted">'+(x.qty>0?x.qty.toLocaleString()+'주':'')+'</div>'
       +'<button class="btn sm" data-del="'+i+'">삭제</button></div>';
   }).join('');
   $('#h-list').querySelectorAll('[data-del]').forEach(function(b){
@@ -494,8 +650,8 @@ $('#h-add').addEventListener('click',async function(){
   var q=$('#h-name').value.trim(), avg=parseFloat(($('#h-avg').value||'').replace(/,/g,'')),
       qty=parseInt(($('#h-qty').value||'').replace(/,/g,''),10);
   if(!q) return msg('종목명이나 코드를 넣어주세요.');
-  if(!(avg>0)) return msg('평단을 넣어주세요.');
-  if(!(qty>0)) return msg('수량을 넣어주세요.');
+  if(!(avg>0)) avg=0;                       /* 평단·수량은 선택 */
+  if(!(qty>0)) qty=0;
   msg('종목 확인 중…');
   try{
     var r=await resolveCode(q);
@@ -515,25 +671,25 @@ $('#h-run').addEventListener('click',async function(){
   var a=hList(); if(!a.length)return;
   if(!kwCfg().ak && !(window.LocalBars && await LocalBars.ready()))
     return msg('내장 일봉이 아직 없습니다 — ⚙️ 키움 설정에 앱키를 넣으면 바로 쓸 수 있어요.');
-  var tp=parseFloat($('#h-tp').value)||3, step=parseFloat($('#h-step').value)||3,
-      once=parseInt(($('#h-once').value||'').replace(/,/g,''),10)||1000000;
-  var c={once:once,drops:(function(){var o=[];for(var i=1;i<=8;i++)o.push(step*i);return o})(),
-         tp:tp,max_days:120,daily_max:3};
   $('#h-run').disabled=true; $('#h-prog').hidden=false; $('#h-res').innerHTML=''; $('#h-sum').innerHTML='';
   var out=[],done=0;
   for(var i=0;i<a.length;i++){
     msg('('+(i+1)+'/'+a.length+') '+a[i].name+' 분석 중…');
-    try{ out.push(await analyze(a[i],c)); }
+    try{ out.push(await analyze(a[i])); }
     catch(e){ $('#h-res').innerHTML+='<div class="card" style="margin-top:14px"><b>'+esc(a[i].name)
-      +'</b> — 분석 실패: '+esc(e.message||e)+'</div>'; }
+      +'</b> — 분석하지 못했습니다: '+esc(e.message||e)+'</div>'; }
     done++; $('#h-progi').style.width=(done/a.length*100)+'%';
   }
-  out.sort(function(x,y){return x.d-y.d});
-  var tot=out.reduce(function(s,r){return s+r.pnl},0), buy=out.reduce(function(s,r){return s+r.buyAmt},0);
-  if(out.length) $('#h-sum').innerHTML='<div class="card" style="margin-top:14px"><div class="row" style="gap:20px;flex-wrap:wrap">'
-    + kv('종목 수',out.length+'개') + kv('매입금액',won(buy)+'원')
-    + kv('평가손익','<span style="color:'+(tot>=0?'var(--up)':'var(--dn)')+'">'+(tot>=0?'+':'')+won(tot)+'원</span>')
-    + kv('수익률',buy?sgn(tot/buy*100)+'%':'—') + '</div></div>';
+  out.sort(function(x,y){ return (y.t?y.t.score:0)-(x.t?x.t.score:0); });   /* 흐름 좋은 것부터 */
+  var held=out.filter(function(r){return r.my&&r.my.qty>0;});
+  if(held.length){
+    var tot=held.reduce(function(s,r){return s+(r.my.pnl||0);},0),
+        buy=held.reduce(function(s,r){return s+r.my.avg*r.my.qty;},0);
+    $('#h-sum').innerHTML='<div class="card" style="margin-top:14px"><div class="row" style="gap:20px;flex-wrap:wrap">'
+      + kv('평단을 넣은 종목',held.length+'개') + kv('산 금액',won(buy)+'원')
+      + kv('지금 손익','<span style="color:'+(tot>=0?'var(--up)':'var(--dn)')+'">'+(tot>=0?'+':'')+won(tot)+'원</span>')
+      + kv('수익률',buy?sgn(tot/buy*100)+'%':'—') + '</div></div>';
+  }
   $('#h-res').innerHTML += out.map(card).join('');
   $('#h-run').disabled=false; $('#h-prog').hidden=true; msg('');
 });
