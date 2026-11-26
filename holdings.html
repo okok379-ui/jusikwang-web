@@ -162,6 +162,7 @@ td.num{font-family:var(--mono)}
 </div></div>
 
 <script src="barcache.js"></script>
+<script src="split10fit.js"></script>
 <script src="analysis.js"></script>
 <script src="localfin.js"></script>
 <script src="synbars.js"></script>
@@ -170,7 +171,9 @@ td.num{font-family:var(--mono)}
 (function(){
 'use strict';
 var $=function(s){return document.querySelector(s)};
-var AN=window.Analysis;
+var AN=window.Analysis, F=window.Split10Fit;
+/* 10분할 적합도 기본 설정 — 적합종목 화면의 기본값과 같다 */
+var FIT={once:1000000, drops:[3,6,9,12,15,18,21,24], tp:3, max_days:120, daily_max:3};
 
 /* ── 로그인 확인 (허브 세션 공유) ───────────────────────── */
 function session(){try{return JSON.parse(localStorage.getItem('jusikwang_hub')||'{}')}catch(e){return{}}}
@@ -415,6 +418,15 @@ async function analyze(h){
     bd=AN.bands(fin,shares,bars);
     if(bd) fv=AN.fairValue(fin,shares,bd);
   }
+  var fit=null, fitWarn=[];
+  try{
+    if(F && raw.length>=FIT.max_days+61){
+      /* 적합종목 화면과 같은 창(기한+61봉)으로 잘라 써야 점수가 서로 같다 */
+      var fm=F.run(raw.slice(-(FIT.max_days+61)),FIT);
+      if(fm && fm.ok){ fit=fm; fitWarn=F.warnings(fm,FIT); }
+    }
+  }catch(e){}
+
   var my=null;
   if(h.avg>0){
     my={avg:h.avg, rate:(cur-h.avg)/h.avg*100, qty:h.qty||0};
@@ -422,7 +434,7 @@ async function analyze(h){
     my.need=cur>0?(h.avg/cur-1)*100:0;
   }
   return {h:h,bars:bars,t:t,cur:cur,prev:prev,fin:fin,f:f,bd:bd,fv:fv,shares:shares,my:my,
-          lastDate:bars[bars.length-1].t};
+          fit:fit,fitWarn:fitWarn,lastDate:bars[bars.length-1].t};
 }
 function todayStr(){var t=new Date();return ''+(t.getFullYear()*10000+(t.getMonth()+1)*100+t.getDate());}
 
@@ -550,6 +562,57 @@ function card(r){
     + '전에 여러 번 되돌아섰던 값입니다. 반드시 지켜지는 선은 아닙니다.</div>'));
 
   s+=grid(cells);
+
+  /* ── 1-2. 10분할매수 적합도 ── */
+  if(r.fit){
+    var m=r.fit, gcol={A:'good',B:'good',C:'flat',D:'warn',E:'bad'}[m.grade]||'flat';
+    s+='<h3 style="font-size:16px;margin:22px 0 2px">10분할매수로 버티기 좋은 종목인가</h3>'
+     + '<p class="muted" style="font-size:12.5px;margin:0">손절 없이 '
+     + '−3%씩 나눠 사며 버티는 방식으로, 과거 일봉 전 구간에서 '+m.trials+'번 돌려본 결과입니다.</p>';
+    s+='<div style="margin-top:10px;padding:13px 15px;border:1px solid var(--border);border-radius:11px;'
+     + 'display:flex;align-items:center;gap:14px;flex-wrap:wrap">'
+     + '<div style="font-size:30px;font-weight:800;line-height:1">'+n1(m.score)+'<span class="muted" '
+     + 'style="font-size:15px;font-weight:600">점</span></div>'
+     + '<div>'+pill(m.grade+'급 · '+m.comment,gcol)+'</div>'
+     + '<div style="flex:1;min-width:200px" class="muted">'
+     + (m.grade==='A'?'이 방식으로 버티기에 잘 맞는 종목입니다.'
+       :m.grade==='B'?'버틸 만합니다.'
+       :m.grade==='C'?'된다면 금액을 줄여서 하세요.'
+       :m.grade==='D'?'이 방식에는 잘 맞지 않습니다.'
+       :'이 방식으로는 권하지 않습니다.')+'</div></div>';
+    if(m.capped)
+      s+='<div class="warn" style="margin-top:8px"><b>점수에 상한을 걸었습니다</b> — '+esc(m.cap_why)+'<br>'
+       + '<span class="muted" style="font-size:12.5px">나눠 사는 방식은 떨어지는 중에도 작은 익절을 반복해 '
+       + '성공률이 높게 나옵니다. 그래서 못 돌아온 비율·평가손실·추세가 나쁘면 등급을 올리지 않습니다.</span></div>';
+
+    var fc=[];
+    fc.push(box('과거에 몇 번이나 돌아왔나',
+      pill(m.win_rate>=97?'거의 다 돌아왔다':(m.win_rate>=85?'대체로 돌아왔다':'자주 못 돌아왔다'),
+           m.win_rate>=97?'good':(m.win_rate>=85?'flat':'warn'))
+      + '<div style="margin-top:6px">100번 중 <b>'+Math.round(m.win_rate)+'번</b>은 '
+      + '평단보다 '+FIT.tp+'% 위까지 되돌아왔습니다.</div>',
+      '기한 '+FIT.max_days+'거래일 안에 · '+m.trials+'번 시뮬'));
+    fc.push(box('돌아오는 데 걸린 날',
+      pill(m.avg_days<=10?'빠른 편':(m.avg_days<=20?'보통':'오래 걸림'),
+           m.avg_days<=10?'good':(m.avg_days<=20?'flat':'warn'))
+      + '<div style="margin-top:6px">평균 <b>'+n1(m.avg_days)+'일</b>, 절반은 '+n1(m.med_days)+'일 안에.</div>',
+      '길게 걸린 쪽 10%는 '+n1(m.p90_days)+'일'));
+    fc.push(box('버티는 동안 얼마나 깨졌나',
+      pill(m.worst_dd>-20?'견딜 만함':(m.worst_dd>-35?'깊다':'매우 깊다'),
+           m.worst_dd>-20?'good':(m.worst_dd>-35?'warn':'bad'))
+      + '<div style="margin-top:6px">가장 나빴을 때 평단보다 <b>'+n1(m.worst_dd)+'%</b>까지 내려갔습니다.</div>',
+      '손절이 없으니 그대로 버텨야 하는 폭입니다'));
+    fc.push(box('돈이 얼마나 들어가나',
+      '<div>1회 '+(FIT.once/10000)+'만원씩이면 지금 값에 <b>'+m.qty1+'주</b>씩입니다.</div>'
+      + '<div style="margin-top:4px">끝까지 다 쓰면 <b>'+won(m.max_cost)+'원</b>까지 들어갔습니다.</div>',
+      '분할을 끝까지 쓴 경우 '+n1(m.full9_rate)+'%'));
+    s+=grid(fc);
+
+    if(r.fitWarn && r.fitWarn.length)
+      s+='<div class="warn" style="margin-top:10px"><b>미리 알아 두세요</b>'
+       + '<ul style="margin:6px 0 0;padding-left:18px">'
+       + r.fitWarn.map(function(w){return '<li>'+esc(w)+'</li>';}).join('')+'</ul></div>';
+  }
 
   /* ── 2. 회사가 돈을 버나 ── */
   if(r.f){
