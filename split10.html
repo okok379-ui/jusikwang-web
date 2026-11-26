@@ -40,6 +40,8 @@ input.mono{font-family:var(--mono)}
 .tab{border:0;background:none;color:var(--muted);font-family:inherit;font-size:15px;font-weight:700;
   padding:10px 14px;cursor:pointer;border-bottom:2px solid transparent}
 .tab.on{color:var(--fg);border-bottom-color:var(--accent)}
+.tab.hot{color:#c62828}
+.tab.hot.on{color:#c62828;border-bottom-color:#c62828}
 table{width:100%;border-collapse:collapse;font-size:13.5px}
 th,td{padding:9px 8px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
 th:nth-child(2),td:nth-child(2){text-align:left}
@@ -99,12 +101,12 @@ td.num{font-family:var(--mono)}
   </div>
 
   <div class="tabs">
-    <button class="tab on" data-t="one">종목 검색</button>
-    <button class="tab" data-t="top">기준일 TOP 10</button>
+    <button class="tab hot on" data-t="top">기준일 TOP 10</button>
+    <button class="tab" data-t="one">내 종목 적합도 보기</button>
   </div>
 
   <!-- 종목 검색 -->
-  <section id="p-one">
+  <section id="p-one" hidden>
     <div class="card">
       <div class="row">
         <div class="fld" style="flex:1;min-width:200px"><label>종목명 또는 6자리 코드</label>
@@ -118,7 +120,7 @@ td.num{font-family:var(--mono)}
   </section>
 
   <!-- TOP 10 -->
-  <section id="p-top" hidden>
+  <section id="p-top">
     <div class="card">
       <div class="row">
         <div class="fld"><label>후보 종목 수(거래대금 상위)</label>
@@ -126,6 +128,9 @@ td.num{font-family:var(--mono)}
         <div class="fld"><label>&nbsp;</label>
           <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer">
             <input type="checkbox" id="f-buyable" checked> 매수 가능 종목만</label></div>
+        <div class="fld"><label>&nbsp;</label>
+          <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" id="f-onlyA" checked> A급만</label></div>
         <button class="btn primary" id="b-top">적합종목 10개 찾기</button>
       </div>
       <div class="bar" id="bar2" hidden><i></i></div>
@@ -498,17 +503,27 @@ $('#b-top').addEventListener('click',async function(){
     /* 매수 가능 = 지금 1차 진입 조건을 넘는 종목 (MA20 기울기 ≥ 0% · 정배열).
        efree2 10분할매수 탭의 '이평이 오르는 중일 때만 1차 진입' 과 같은 기준. */
     var nbuy=scored.filter(function(r){return r.m.ma20_slope>=0 && r.m.aligned;}).length;
-    var only=$('#f-buyable').checked;
+    var only=$('#f-buyable').checked, onlyA=$('#f-onlyA').checked;
+    var nA=scored.filter(function(r){return r.m.grade==='A';}).length;
     var list=only?scored.filter(function(r){return r.m.ma20_slope>=0 && r.m.aligned;}):scored;
+    if(onlyA) list=list.filter(function(r){return r.m.grade==='A';});
     var top=list.slice(0,10);
     msg.textContent='완료 — '+srcTxt+' '+cand.length+'개 중 '+scored.length+'개 채점, '+skipped
-      +'개 제외 · 매수 가능 '+nbuy+'개(MA20 ≥ 0%·정배열)';
+      +'개 제외 · 매수 가능 '+nbuy+'개(MA20 ≥ 0%·정배열) · A급 '+nA+'개';
     if(!top.length){
-      res.innerHTML='<div class="card">'+(only&&scored.length
-        ? scored.length+'개를 채점했지만 <b>지금 1차 진입 조건</b>(MA20 기울기 ≥ 0% · 정배열)을 넘는 종목이 없습니다.<br>'
+      var why;
+      if(!scored.length) why='조건을 넘긴 종목이 없습니다. 후보 수를 늘리거나 기준일을 바꿔보세요.';
+      else if(onlyA && !nA)
+        why='채점한 '+scored.length+'개 중 <b>A급이 없습니다.</b><br>'
+          +'<span class="muted">후보 종목 수를 늘리거나, [A급만] 체크를 풀어 B급까지 보세요. '
+          +'장 전반이 좋지 않을 때는 A급이 하나도 없는 날이 있습니다.</span>';
+      else if(only)
+        why=scored.length+'개를 채점했지만 <b>지금 1차 진입 조건</b>(MA20 기울기 ≥ 0% · 정배열)을 넘는 '
+          +(onlyA?'A급 ':'')+'종목이 없습니다.<br>'
           +'<span class="muted">[매수 가능 종목만] 체크를 풀면 점수순 전체가 보입니다. '
-          +'장 전반이 조정일 때는 없는 게 정상입니다.</span>'
-        : '조건을 넘긴 종목이 없습니다. 후보 수를 늘리거나 기준일을 바꿔보세요.')+'</div>';
+          +'장 전반이 조정일 때는 없는 게 정상입니다.</span>';
+      else why='조건을 넘긴 종목이 없습니다. 후보 수를 늘리거나 기준일을 바꿔보세요.';
+      res.innerHTML='<div class="card">'+why+'</div>';
       return;}
     var html='<div class="card" style="overflow-x:auto"><table><thead><tr>'
       +'<th>순위</th><th>종목</th><th>점수</th><th>등급</th><th>성공률</th><th>소요일</th>'
